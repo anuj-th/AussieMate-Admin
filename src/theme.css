@@ -1,0 +1,9 @@
+@theme {
+  --color-primary: #071437;
+  --color-primary-light: #78829D;
+
+  
+  /* Font Family */
+  --font-family-sans: 'Helvetica Neue', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+

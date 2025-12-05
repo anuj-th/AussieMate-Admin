@@ -1,0 +1,21 @@
+@import "./Theme.css";
+@import "tailwindcss";
+
+
+/* Apply General Sans font globally - ONLY General Sans */
+* {
+  font-family: 'General Sans' !important;
+}
+
+body {
+  font-family: 'General Sans' !important;
+}
+
+html {
+  font-family: 'General Sans' !important;
+}
+
+/* Force General Sans on all elements - NO FALLBACKS */
+div, span, p, h1, h2, h3, h4, h5, h6, a, button, input, textarea, select, label {
+  font-family: 'General Sans' !important;
+}

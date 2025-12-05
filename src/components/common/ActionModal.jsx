@@ -1,0 +1,143 @@
+import { X } from "lucide-react";
+import React, { useEffect } from "react";
+
+/**
+ * Reusable centered action modal.
+ *
+ * Props:
+ * - isOpen: boolean – controls visibility
+ * - onClose: () => void – called when backdrop or X is clicked
+ * - illustration: ReactNode – top illustration (img / svg / JSX)
+ * - title: string | ReactNode
+ * - description: string | ReactNode
+ * - primaryLabel: string
+ * - onPrimary: () => void
+ * - primaryVariant: "primary" | "danger" | "success" (button color)
+ * - secondaryLabel?: string
+ * - onSecondary?: () => void
+ * - hideSecondary?: boolean
+ * - footerContent?: ReactNode – custom footer instead of default buttons
+ * - className?: string – extra classes for the card
+ */
+
+const VARIANT_CLASSES = {
+  primary:
+    "bg-[#1F6FEB] hover:bg-[#1B63D6] text-white focus:ring-[#1F6FEB]/30",
+  danger:
+    "bg-[#F04438] hover:bg-[#D92D20] text-white focus:ring-[#F04438]/30",
+  success:
+    "bg-[#16A34A] hover:bg-[#15803D] text-white focus:ring-[#16A34A]/30",
+};
+
+export default function ActionModal({
+  isOpen,
+  onClose,
+  illustration,
+  title,
+  description,
+  primaryLabel,
+  onPrimary,
+  primaryVariant = "primary",
+  secondaryLabel = "Cancel",
+  onSecondary,
+  hideSecondary = false,
+  footerContent,
+  className = "",
+}) {
+  // Close on ESC
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose?.();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const primaryClasses =
+    VARIANT_CLASSES[primaryVariant] || VARIANT_CLASSES.primary;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3 sm:px-4">
+      {/* Backdrop click closes */}
+      <div
+        className="absolute inset-0"
+        onClick={() => onClose?.()}
+        aria-hidden="true"
+      />
+
+      {/* Modal card */}
+      <div
+        className={`relative z-10 w-full max-w-[500px] rounded-2xl bg-white shadow-xl border border-[#E5E7EB] flex flex-col overflow-hidden ${className}`}
+      >
+        {/* Close button */}
+        <button
+          type="button"
+          onClick={() => onClose?.()}
+          className="absolute right-4 top-4 text-gray-500 hover:text-gray-700 focus:outline-none"
+          aria-label="Close"
+        >
+          <X className="w-5 h-5 cursor-pointer" />
+        </button>
+
+        <div className="px-6 sm:px-10 pt-10 pb-8 sm:pb-10 text-center">
+          {/* Illustration */}
+          {illustration && (
+            <div className="mb-6 sm:mb-8 flex justify-center">
+              {illustration}
+            </div>
+          )}
+
+          {/* Title */}
+          {title && (
+            <h2 className="text-lg sm:text-xl font-semibold text-[#111827] mb-3">
+              {title}
+            </h2>
+          )}
+
+          {/* Description */}
+          {description && (
+            <p className="text-xs sm:text-sm text-[#6B7280] max-w-xl mx-auto">
+              {description}
+            </p>
+          )}
+
+          {/* Footer */}
+          <div className="mt-8 sm:mt-10">
+            {footerContent ? (
+              footerContent
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:justify-center gap-3 sm:gap-4">
+                {!hideSecondary && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSecondary?.();
+                      if (!onSecondary) onClose?.();
+                    }}
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200"
+                  >
+                    {secondaryLabel}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={onPrimary}
+                  className={`px-5 sm:px-6 py-2 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 ${primaryClasses}`}
+                >
+                  {primaryLabel}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
