@@ -157,7 +157,7 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
       </div>
 
       {/* Tabs Navigation - No background, border, or shadow */}
-        <div className="border-b border-[#EEF0F5]">
+        <div className="border-b border-[#EEF0F5] ">
         <div className="flex overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
               <button
@@ -177,7 +177,7 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
 
       {/* Tab Heading */}
       <div className="mt-4">
-        <h2 className="text-lg md:text-xl font-semibold text-primary">
+        <h2 className="font-semibold text-primary">
           {tabs.find((tab) => tab.id === activeTab)?.label || "Overview (Default)"}
         </h2>
               </div>

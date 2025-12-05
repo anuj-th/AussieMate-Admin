@@ -22,9 +22,9 @@ import React, { useEffect } from "react";
 
 const VARIANT_CLASSES = {
   primary:
-    "bg-[#1F6FEB] hover:bg-[#1B63D6] text-white focus:ring-[#1F6FEB]/30",
+    "bg-[#1F6FEB] hover:bg-[#1B63D6] text-white text-[13px] focus:ring-[#1F6FEB]/30",
   danger:
-    "bg-[#F04438] hover:bg-[#D92D20] text-white focus:ring-[#F04438]/30",
+    "bg-[#EF4444] hover:bg-[#DC2626] text-white text-[13px] focus:ring-[#EF4444]/30",
   success:
     "bg-[#16A34A] hover:bg-[#15803D] text-white focus:ring-[#16A34A]/30",
 };
@@ -127,7 +127,7 @@ export default function ActionModal({
                 <button
                   type="button"
                   onClick={onPrimary}
-                  className={`px-5 sm:px-6 py-2 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 ${primaryClasses}`}
+                  className={`px-5 sm:px-6 py-2 rounded-lg font-medium focus:outline-none focus:ring-2 ${primaryClasses}`}
                 >
                   {primaryLabel}
                 </button>

@@ -19,24 +19,38 @@ const Button = ({
   
   // Variant classes
   const variantClasses = {
-    primary: 'bg-[#1F6FEB] hover:bg-[#1F6FEB] text-white ',
+    primary: 'bg-[#1F6FEB] hover:bg-[#1B63D6] text-white text-[13px]',
     secondary: 'bg-white border border-[#9CC0F6] text-primary-600 shadow-custom',
     outline: 'bg-transparent border border-gray-300 text-gray-700 hover:bg-gray-50 ',
     ghost: 'bg-gray-100 hover:bg-gray-200 text-gray-700',
-    danger: 'bg-red-500 hover:text-[#B80A34] text-red-500',
+    danger: 'bg-[#EF4444] hover:bg-[#DC2626] text-white text-[13px]',
     success: 'bg-green-500 hover:text-[#00832D] text-green-500',
     warning: 'bg-yellow-500 hover:bg-yellow-600 text-white ',
     link: 'bg-transparent text-primary-600 hover:underline  p-0'
   };
   
-  // Size classes
+  // Size classes (padding only, text size handled by variant or conditionally)
   const sizeClasses = {
-    xs: 'px-2 py-1 text-xs',
-    sm: 'px-3 py-2 text-sm',
-    md: 'px-4 py-3 text-base',
-    lg: 'px-6 py-3 text-lg',
-    xl: 'px-8 py-3 text-xl'
+    xs: 'px-2 py-1',
+    sm: 'px-3 py-2',
+    md: 'px-4 py-3',
+    lg: 'px-6 py-3',
+    xl: 'px-8 py-3'
   };
+  
+  // Text size classes (for non-primary/danger variants)
+  const textSizeClasses = {
+    xs: 'text-xs',
+    sm: 'text-sm',
+    md: 'text-base',
+    lg: 'text-lg',
+    xl: 'text-xl'
+  };
+  
+  // Use 13px for primary/danger variants, otherwise use size-based text
+  const textSizeClass = (variant === 'primary' || variant === 'danger') 
+    ? '' 
+    : textSizeClasses[size] || '';
   
   // Width classes
   const widthClasses = fullWidth ? 'w-full' : '';
@@ -46,6 +60,7 @@ const Button = ({
     ${baseClasses}
     ${variantClasses[variant]}
     ${sizeClasses[size]}
+    ${textSizeClass}
     ${widthClasses}
     ${className}
   `.trim().replace(/\s+/g, ' ');
