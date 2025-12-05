@@ -1,4 +1,6 @@
+import SettingsComponent from "../components/setting/Settings";
+
 export default function Settings() {
-  return <h1>Settings Page</h1>;
+  return <SettingsComponent />;
 }
 

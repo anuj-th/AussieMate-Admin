@@ -15,13 +15,13 @@ const Button = ({
   ...props 
 }) => {
   // Base classes
-  const baseClasses = 'font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none cursor-pointer';
+  const baseClasses = 'font-medium rounded-[6px] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none cursor-pointer text-[14px] font-[500]';
   
   // Variant classes
   const variantClasses = {
     primary: 'bg-[#1F6FEB] hover:bg-[#1F6FEB] text-white ',
     secondary: 'bg-white border border-[#9CC0F6] text-primary-600 shadow-custom',
-    outline: 'bg-transparent border border-gray-300 text-gray-700 hover:bg-gray-50 ',
+    outline: 'bg-transparent border border-[#DBDFE9] text-gray-700 hover:bg-gray-50 ',
     ghost: 'bg-gray-100 hover:bg-gray-200 text-gray-700',
     danger: 'bg-red-500 hover:text-[#B80A34] text-red-500',
     success: 'bg-green-500 hover:text-[#00832D] text-green-500',
@@ -33,7 +33,7 @@ const Button = ({
   const sizeClasses = {
     xs: 'px-2 py-1 text-xs',
     sm: 'px-3 py-2 text-sm',
-    md: 'px-4 py-3 text-base',
+    md: 'px-4 py-3 text-[14px]',
     lg: 'px-6 py-3 text-lg',
     xl: 'px-8 py-3 text-xl'
   };
