@@ -135,7 +135,7 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
             {/* Role, joined date, jobs completed */}
             <div className="flex flex-wrap items-center justify-center gap-4 mt-1 text-[12px] text-[#78829D]">
               <span className="flex items-center gap-1.5">
-                <span>Professional Cleaner</span>
+                <span>{cleaner.role || "Professional Cleaner"}</span>
               </span>
               <span className="flex items-center gap-1.5">
                 <span>Joined: {cleaner.joined}</span>
@@ -331,7 +331,7 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
           }
           description={
             activeAction === "approve"
-              ? "This will enable her to receive jobs in her radius (0–20 km)."
+              ? `This will enable her to receive jobs in her radius (${cleaner.radius || "0–20 km"}).`
               : activeAction === "reject"
               ? `Are you sure you want to reject application of ${cleaner.name}?`
               : `Are you sure you want to suspend ${cleaner.name}?`
