@@ -19,3 +19,31 @@ html {
 div, span, p, h1, h2, h3, h4, h5, h6, a, button, input, textarea, select, label {
   font-family: 'General Sans' !important;
 }
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Swiper uniform height for feedback cards */
+.feedback-swiper {
+  padding: 12px 0 !important;
+  margin: -12px 0 !important;
+  height: 100% !important;
+}
+
+.feedback-swiper .swiper-wrapper {
+  display: flex;
+  align-items: stretch;
+  height: 100% !important;
+}
+
+.feedback-swiper .swiper-slide {
+  height: 100% !important;
+  display: flex;
+}

@@ -1,6 +1,9 @@
 @theme {
   --color-primary: #071437;
   --color-primary-light: #78829D;
+  --color-gray: #F1F1F4;
+
+  --shadow-widget: 0px 3px 4px rgba(0, 0, 0, 0.03);
 
   
   /* Font Family */

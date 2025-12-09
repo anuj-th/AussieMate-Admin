@@ -8,7 +8,7 @@ const INITIAL_DOCUMENTS = [
         label: "ABN Number",
         value: "24352 65467",
         type: "abn",
-        status: "Verified",
+        status: "Pending",
     },
     {
         id: 2,
@@ -67,26 +67,22 @@ export default function DocumentsTab({ cleaner }) {
                             {doc.type === "abn" && (
                                 <div className="flex w-full items-center gap-3">
                                     <div className="flex-1">
-                                        <div className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-md px-3 py-2 text-xs text-[#111827]">
+                                        <div className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-md px-3 py-2 text-sm ">
                                             {doc.value}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Checkbox
                                             checked={doc.status === "Verified"}
-                                            onChange={(e) =>
-                                                updateDocumentStatus(
-                                                    doc.id,
-                                                    e.target.checked
-                                                        ? "Verified"
-                                                        : "Pending"
-                                                )
-                                            }
+                                            onChange={(e) => {
+                                                const newStatus = e.target.checked ? "Verified" : "Pending";
+                                                updateDocumentStatus(doc.id, newStatus);
+                                            }}
                                             checkboxSize="w-4 h-4"
                                             className="items-center"
                                         />
                                         {doc.status === "Verified" && (
-                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#EAFFF1] text-[#17C653] border border-[#17C65333] text-[11px]">
+                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#EAFFF1] text-[#17C653] border border-[#17C65333] text-[11px] whitespace-nowrap">
                                                 <CheckCircle2 size={14} />
                                                 Verified
                                             </span>

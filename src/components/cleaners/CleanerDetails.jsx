@@ -1,8 +1,6 @@
 import { useState } from "react";
 import {
   Star,
-  CheckCircle2 as ApproveIcon,
-  XCircle,
   Ban,
   MapPin,
   Calendar,
@@ -67,26 +65,9 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
             align="right"
             items={[
               {
-                id: "approve",
-                label: "Approve (Verify KYC)",
-                icon: <ApproveIcon size={18} className="text-[#2563EB]" />,
-                onClick: () => {
-                  setActiveAction("approve");
-                },
-              },
-              {
-                id: "reject",
-                label: "Reject Application",
-                icon: <XCircle size={18} className="text-[#9CA3AF]" />,
-                onClick: () => {
-                  setActiveAction("reject");
-                },
-              },
-              {
                 id: "suspend",
                 label: "Suspend",
                 icon: <Ban size={18} className="text-[#9CA3AF]" />,
-                divider: true,
                 onClick: () => {
                   setActiveAction("suspend");
                 },
@@ -118,7 +99,7 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
             </div>
 
             {/* Joined date, jobs completed, location */}
-            <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4 mt-1 text-[11px] md:text-[12px] text-[#78829D]">
+            <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4 mt-1 text-xs md:text-sm text-primary-light font-medium">
               <span className="flex items-center gap-1.5">
                 <MapPin size={12} className="md:w-[14px] md:h-[14px]" />
                 <span>Parramatta, NSW</span>
@@ -138,14 +119,14 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
           <div className="mt-4 px-3 md:px-4 py-2 bg-[#F9FAFB] border border-[#E5E7EB] rounded-md">
             <span className="text-xs md:text-sm font-medium">
               <span className="text-primary">Earnings</span>{" "}
-              <span className="text-primary-light">AU${cleaner.earnings?.toLocaleString() || "12,420"}</span>
+              <span className="text-primary-light font-semibold">AU${cleaner.earnings?.toLocaleString() || "12,420"}</span>
             </span>
           </div>
 
           {/* Rating & Tier */}
           <div className="flex items-center justify-center gap-2 md:gap-3 mt-4">
-            <span className="inline-flex items-center gap-1.5 px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-medium bg-[#FFF8DD] border border-[#F6B10033] text-[#F6B100]">
-              <Star size={12} className="md:w-[14px] md:h-[14px] text-[#F6B100] fill-[#F6B100]" />
+            <span className="inline-flex items-center gap-1.5 px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-medium bg-[#FFF4E0] border border-[#F6B10033] text-[#F6B100]">
+              <Star size={12} className="md:w-[14px] md:h-[14px] text-[#F6B100] fill-[#F59E0B]" />
               <span>{cleaner.rating || 4.2}</span>
             </span>
             <span className="inline-flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-medium bg-[#F3F4F6] border border-[#E5E7EB] text-[#4B5563]">
@@ -163,9 +144,9 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 md:px-6 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`px-4 md:px-6 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
                   activeTab === tab.id
-                    ? "border-[#2563EB] text-[#2563EB]"
+                    ? "border-[#1F6FEB] text-[#1F6FEB] font-medium"
                     : "border-transparent text-[#78829D] hover:text-primary"
                 }`}
               >

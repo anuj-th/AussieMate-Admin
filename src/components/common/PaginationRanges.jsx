@@ -1,8 +1,9 @@
 import React from "react";
+import CustomSelect from "./CustomSelect";
 
 const PaginationRanges = ({
   currentPage,
-  rowsPerPage,
+  rowsPerPage = 10,
   totalItems,
   onPageChange,
   onRowsPerPageChange,
@@ -16,20 +17,18 @@ const PaginationRanges = ({
       <div className="flex items-center gap-2">
         <span className="bg-secondary-light">Show</span>
 
-        <select
-          value={rowsPerPage}
-          onChange={(e) => {
-            onRowsPerPageChange(Number(e.target.value));
+        <CustomSelect
+          value={String(rowsPerPage)}
+          onChange={(value) => {
+            onRowsPerPageChange(Number(value));
             onPageChange(1); // reset page
           }}
-          className="border border-[#E4E6EF] rounded-md px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-        >
-          {rowsPerPageOptions.map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
+          options={rowsPerPageOptions.map((n) => String(n))}
+          placeholder=""
+          className="w-auto min-w-[80px]"
+          optionClassName="p-1"
+          itemPadding="px-2 py-1"
+        />
 
         <span className="bg-secondary-light">per page</span>
       </div>

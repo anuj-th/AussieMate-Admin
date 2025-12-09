@@ -1,4 +1,5 @@
 import { Briefcase, Star, MapPin, Calendar } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const recentJobsData = [
     {
@@ -44,41 +45,47 @@ const recentJobsData = [
 ];
 
 export default function OverviewTab({ cleaner }) {
+    const navigate = useNavigate();
+
+    const handleViewJobs = () => {
+        navigate("/jobs");
+    };
+
     return (
         <div className="space-y-6">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#EBF2FD] flex items-center justify-center flex-shrink-0">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-3 shadow-sm">
+                    <div className="w-10 h-10 rounded-lg bg-[#F9F9F9] border border-[#E5E7EB] flex items-center justify-center flex-shrink-0">
                         <Briefcase size={20} className="text-[#2563EB]" />
                     </div>
                     <div className="min-w-0">
-                        <p className="text-xs text-[#78829D]">Jobs completed</p>
                         <p className="text-lg font-semibold text-primary">
                             {cleaner?.jobs || 128}
                         </p>
+                        <p className="text-sm font-medium text-primary-light">Jobs completed</p>
                     </div>
                 </div>
-                <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#EBF2FD] flex items-center justify-center flex-shrink-0">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-3 shadow-sm">
+                    <div className="w-10 h-10 rounded-lg bg-[#F9F9F9] border border-[#E5E7EB] flex items-center justify-center flex-shrink-0">
                         <Star size={20} className="text-[#2563EB]" />
                     </div>
                     <div className="min-w-0">
-                        <p className="text-xs text-[#78829D]">Avg Rating</p>
                         <p className="text-lg font-semibold text-primary">
                             {cleaner?.rating || 4.2}
                         </p>
+                        <p className="text-sm font-medium text-primary-light">Avg Rating</p>
                     </div>
                 </div>
-                <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#EBF2FD] flex items-center justify-center flex-shrink-0">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-3 shadow-sm">
+                    <div className="w-10 h-10 rounded-lg bg-[#F9F9F9] border border-[#E5E7EB] flex items-center justify-center flex-shrink-0">
                         <span className="text-[#2563EB] font-bold text-lg">$</span>
                     </div>
                     <div className="min-w-0">
-                        <p className="text-xs text-[#78829D]">Total Earnings</p>
-                        <p className="text-lg font-semibold text-primary">
-                            AU${cleaner?.earnings?.toLocaleString() || "12,420"}
+                        <p className="text-lg font-semibold">
+                            <span className="text-primary">AU${cleaner?.earnings?.toLocaleString() || "12,420"}</span>
                         </p>
+                        <p className="text-sm font-medium text-primary-light">Total Earnings</p>
                     </div>
                 </div>
             </div>
@@ -89,7 +96,10 @@ export default function OverviewTab({ cleaner }) {
                     <h3 className="font-semibold text-primary text-base md:text-lg">
                         Recent jobs
                     </h3>
-                    <button className="text-sm text-[#2563EB] hover:underline whitespace-nowrap">
+                    <button 
+                        onClick={handleViewJobs}
+                        className="text-sm text-primary font-medium cursor-pointer whitespace-nowrap"
+                    >
                         View Jobs
                     </button>
                 </div>
@@ -99,21 +109,21 @@ export default function OverviewTab({ cleaner }) {
                         return (
                             <div
                                 key={job.id}
-                                className="bg-white border border-[#E5E7EB] rounded-lg p-4 space-y-2 min-w-[200px]"
+                                className="bg-white border border-gray-200 rounded-lg p-4 space-y-2 min-w-[200px] shadow-sm"
                             >
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs text-[#78829D] whitespace-nowrap">
+                                <div>
+                                    <p className="text-primary font-medium whitespace-nowrap mb-1">
                                         {job.type} • {job.subType}
-                                    </span>
+                                    </p>
                                     <span
-                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
+                                        className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                                             isInProgress
                                                 ? "bg-[#FFF8DD] text-[#F6B100] border border-[#F6B10033]"
                                                 : "bg-[#EAFFF1] text-[#17C653] border border-[#17C65333]"
                                         }`}
                                     >
                                         <span
-                                            className={`w-1.5 h-1.5 rounded-full ${
+                                            className={`w-1.5 h-1.5 rounded-full inline-block mr-1 ${
                                                 isInProgress
                                                     ? "bg-[#F6B100]"
                                                     : "bg-[#17C653]"
@@ -122,19 +132,20 @@ export default function OverviewTab({ cleaner }) {
                                         {job.status}
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-1.5 text-xs text-[#78829D]">
+                                <div className="flex items-center gap-1.5 text-sm font-medium text-primary-light">
                                     <MapPin size={12} className="flex-shrink-0" />
                                     <span className="truncate">{job.location}</span>
                                 </div>
-                                <div className="flex items-center gap-1.5 text-xs text-[#78829D]">
+                                <div className="flex items-center gap-1.5 text-sm font-medium text-primary-light">
                                     <Calendar size={12} className="flex-shrink-0" />
                                     <span>{job.date}</span>
                                 </div>
-                                <div className="pt-2 border-t border-[#E5E7EB]">
-                                    <p className="text-xs text-primary font-medium">
-                                        Payment: ${job.payment}
+                                <div className="pt-2 flex justify-between">
+                                    <p className="text-sm font-medium">
+                                        <span className="text-[#374151]">Payment: </span>
+                                        <span className="text-primary">${job.payment}</span>
                                     </p>
-                                    <p className="text-[10px] text-[#78829D]">
+                                    <p className="text-sm font-medium text-[#374151]">
                                         {job.releasedDate}
                                     </p>
                                 </div>

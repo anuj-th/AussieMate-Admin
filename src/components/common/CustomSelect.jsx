@@ -6,7 +6,12 @@ const CustomSelect = ({
   onChange,
   options = [],
   placeholder = 'Select...',
-  className = ''
+  className = '',
+  buttonClassName = '',
+  dropdownClassName = '',
+  optionClassName = '',
+  itemPadding = '',
+  showSelectedHeader = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -44,7 +49,7 @@ const CustomSelect = ({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full flex items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-1.5 text-sm focus:border-[#2563EB] focus:outline-none cursor-pointer gap-2"
+        className={`w-full flex items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-1.5 text-sm focus:border-[#2563EB] focus:outline-none cursor-pointer gap-2 ${buttonClassName}`}
       >
         <span
           className={`${
@@ -59,29 +64,37 @@ const CustomSelect = ({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1 min-w-full w-max rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-auto">
-          {normalizedOptions.map((option) => {
-            const isSelected = value === option.value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => handleSelect(option.value)}
-                className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors cursor-pointer ${
-                  isSelected
-                    ? 'bg-[#EBF2FD] text-[#2563EB] font-medium'
-                    : 'text-[#6B7280] hover:bg-gray-50'
-                }`}
-              >
-                <span className="whitespace-nowrap">
-                  {option.label}
-                </span>
-                {isSelected && (
-                  <Check className="h-4 w-4 text-[#2563EB]" />
-                )}
-              </button>
-            );
-          })}
+        <div className={`absolute z-50 mt-2 min-w-full w-max rounded-xl border border-[#E5E7EB] bg-white shadow-lg max-h-60 overflow-auto ${dropdownClassName}`}>
+          {showSelectedHeader && selectedOption && (
+            <div className="flex items-center justify-between px-4 py-2 bg-[#EBF2FD] text-[#2563EB] font-semibold border-b border-[#E5E7EB]">
+              <span className="whitespace-nowrap">{selectedOption.label}</span>
+              <ChevronDown className="h-4 w-4 text-[#2563EB]" />
+            </div>
+          )}
+          <div className={optionClassName || "p-2"}>
+            {normalizedOptions.map((option) => {
+              const isSelected = value === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleSelect(option.value)}
+                  className={`w-full flex items-center justify-between ${itemPadding || (optionClassName ? 'px-3 py-2' : 'px-4 py-3')} rounded-lg text-sm transition-colors cursor-pointer mb-1 last:mb-0 ${
+                    isSelected
+                      ? 'bg-[#EBF2FD] text-[#2563EB] font-semibold'
+                      : 'text-[#111827] hover:bg-[#F9FAFB]'
+                  }`}
+                >
+                  <span className="whitespace-nowrap">
+                    {option.label}
+                  </span>
+                  {isSelected && (
+                    <Check className="h-4 w-4 text-[#2563EB] flex-shrink-0 ml-2" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

@@ -7,6 +7,90 @@ import DatePicker from "../common/DatePicker";
 import PaginationRanges from "../common/PaginationRanges";
 import tableSortIcon from "../../assets/icon/tableSort.svg";
 
+const defaultJobHistory = [
+    {
+        id: 1,
+        jobId: "AM10432",
+        jobType: "Bond Cleaning",
+        cleaner: {
+            name: "Lori Mosciski",
+            avatar: "https://i.pravatar.cc/150?img=11",
+        },
+        amount: 320,
+        status: "Completed",
+    },
+    {
+        id: 2,
+        jobId: "AM10433",
+        jobType: "Carpet Cleaning",
+        cleaner: {
+            name: "Randolph Hirthe",
+            avatar: "https://i.pravatar.cc/150?img=12",
+        },
+        amount: 220,
+        status: "Completed",
+    },
+    {
+        id: 3,
+        jobId: "AM10434",
+        jobType: "NDIS Assistance",
+        cleaner: {
+            name: "Constance Harris",
+            avatar: "https://i.pravatar.cc/150?img=13",
+        },
+        amount: 150,
+        status: "Completed",
+    },
+    {
+        id: 4,
+        jobId: "AM10435",
+        jobType: "Bond Cleaning",
+        cleaner: {
+            name: "Guy Brakus",
+            avatar: "https://i.pravatar.cc/150?img=14",
+        },
+        amount: 320,
+        status: "Cancelled",
+    },
+    {
+        id: 5,
+        jobId: "AM10436",
+        jobType: "Carpet Cleaning",
+        cleaner: {
+            name: "Andre Abshire",
+            avatar: "https://i.pravatar.cc/150?img=15",
+        },
+        amount: 220,
+        status: "Completed",
+    },
+    {
+        id: 6,
+        jobId: "AM10437",
+        jobType: "NDIS Assistance",
+        cleaner: {
+            name: "Andre Abshire",
+            avatar: "https://i.pravatar.cc/150?img=15",
+        },
+        amount: 150,
+        status: "Completed",
+    },
+];
+
+const customerJobHistory = {
+    1: defaultJobHistory,
+    2: defaultJobHistory,
+    3: defaultJobHistory,
+    4: defaultJobHistory,
+    5: defaultJobHistory,
+    6: defaultJobHistory,
+    7: defaultJobHistory,
+    8: defaultJobHistory,
+    9: defaultJobHistory,
+    10: defaultJobHistory,
+    11: defaultJobHistory,
+    12: defaultJobHistory,
+};
+
 const defaultCustomers = [
     {
         id: 1,
@@ -444,10 +528,10 @@ export default function CustomersTable({ onViewCustomer }) {
                                             className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover flex-shrink-0"
                                         />
                                         <div className="min-w-0">
-                                            <p className="font-medium text-gray-900 text-xs md:text-sm truncate">
+                                            <p className="text-sm font-medium text-primary truncate">
                                                 {customer.name}
                                             </p>
-                                            <p className="text-[10px] md:text-xs text-gray-500 truncate">
+                                            <p className="text-sm text-primary-light truncate">
                                                 {customer.email}
                                             </p>
                                         </div>
@@ -456,19 +540,27 @@ export default function CustomersTable({ onViewCustomer }) {
                                 <td className="min-w-[140px] md:min-w-[160px] px-2 md:px-4 py-2 md:py-4 text-gray-700 border-r border-gray-200 text-xs md:text-sm">
                                     {customer.phone}
                                 </td>
-                                <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-gray-700 border-r border-gray-200 text-xs md:text-sm">
+                                <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-sm font-medium text-primary border-r border-gray-200">
                                     {customer.jobsPosted}
                                 </td>
-                                <td className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-4 text-gray-700 border-r border-gray-200 text-xs md:text-sm">
+                                <td className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-4 text-sm font-medium text-primary border-r border-gray-200">
                                     AU${customer.spend}
                                 </td>
-                                <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-gray-700 border-r border-gray-200 text-xs md:text-sm">
+                                <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-sm font-medium text-primary border-r border-gray-200">
                                     {customer.joined}
                                 </td>
                                 <td className="w-16 md:w-20 px-2 md:px-4 py-2 md:py-4 text-center">
                                     <button
                                         type="button"
-                                        onClick={() => onViewCustomer && onViewCustomer(customer)}
+                                        onClick={() => {
+                                            const history =
+                                                customerJobHistory[customer.id] || defaultJobHistory;
+                                            onViewCustomer &&
+                                                onViewCustomer({
+                                                    ...customer,
+                                                    jobHistory: history.map((job) => ({ ...job })),
+                                                });
+                                        }}
                                         className="rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors mx-auto"
                                     >
                                         <Eye size={20} className="text-[#78829D] cursor-pointer" />

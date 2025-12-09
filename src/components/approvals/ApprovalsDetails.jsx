@@ -61,8 +61,8 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
     tier.toLowerCase() === "gold"
       ? goldTierIcon
       : tier.toLowerCase() === "bronze"
-      ? bronzeTierIcon
-      : silverTierIcon;
+        ? bronzeTierIcon
+        : silverTierIcon;
 
   const updateDocumentStatus = (id, status) => {
     setDocuments((prev) =>
@@ -161,7 +161,7 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
       </div>
 
       {/* Documents gallery */}
-      <div className="bg-white rounded-[20px] border border-[#EEF0F5] shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[12px] border border-[#EEF0F5] shadow-sm overflow-hidden">
         <div className="px-4 md:px-6 py-3 border-b border-[#EEF0F5]">
           <h3 className="font-semibold text-primary">
             Documents Gallery
@@ -204,12 +204,7 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
                         checkboxSize="w-4 h-4"
                         className="items-center"
                       />
-                      {doc.status === "Verified" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#EAFFF1] text-[#17C653] border border-[#17C65333] text-[11px]">
-                          <CheckCircle2 size={14} />
-                          Verified
-                        </span>
-                      )}
+                      Verified
                     </div>
                   </div>
                 )}
@@ -227,7 +222,7 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
                 {doc.type === "file" && (
                   <button
                     type="button"
-                    className="inline-flex items-center gap-2 text-xs font-medium"
+                    className="inline-flex items-center gap-2 text-xs font-medium cursor-pointer"
                   >
                     <FileText
                       size={18}
@@ -246,7 +241,7 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
 
                 {/* Status / actions (skip for ABN row) */}
                 {doc.type !== "abn" && (
-                  <div className="ml-auto flex items-center gap-3 text-[11px]">
+                  <div className="ml-auto flex items-center gap-3 text-sm ">
                     {doc.status === "Verified" && (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#EAFFF1] text-[#17C653] border border-[#17C65333]">
                         <CheckCircle2 size={14} />
@@ -255,14 +250,14 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
                     )}
 
                     {doc.status === "Approved" && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#EAFFF1] text-[#17C653] border border-[#17C65333]">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#EAFFF1] text-[#17C653] border border-[#17C65333] !cursor-pointer">
                         <CheckCircle2 size={14} />
                         Approved
                       </span>
                     )}
 
                     {doc.status === "Rejected" && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#FFE5E9] text-[#F1416C] border border-[#F1416C33]">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#FFE5E9] text-[#F1416C] border border-[#F1416C33] !cursor-pointer">
                         <XCircle size={14} />
                         Rejected
                       </span>
@@ -309,15 +304,15 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
                 activeAction === "approve"
                   ? approveKycImg
                   : activeAction === "reject"
-                  ? rejectKycImg
-                  : suspenseKycImg
+                    ? rejectKycImg
+                    : suspenseKycImg
               }
               alt={
                 activeAction === "approve"
                   ? "Approve KYC"
                   : activeAction === "reject"
-                  ? "Reject application"
-                  : "Suspend cleaner"
+                    ? "Reject application"
+                    : "Suspend cleaner"
               }
               className="max-h-52 w-auto"
             />
@@ -326,22 +321,22 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
             activeAction === "approve"
               ? `Approve ${cleaner.name} as Professional Cleaner?`
               : activeAction === "reject"
-              ? "Reject Application"
-              : `Suspend ${cleaner.name}`
+                ? "Reject Application"
+                : `Suspend ${cleaner.name}`
           }
           description={
             activeAction === "approve"
               ? `This will enable her to receive jobs in her radius (${cleaner.radius || "0–20 km"}).`
               : activeAction === "reject"
-              ? `Are you sure you want to reject application of ${cleaner.name}?`
-              : `Are you sure you want to suspend ${cleaner.name}?`
+                ? `Are you sure you want to reject application of ${cleaner.name}?`
+                : `Are you sure you want to suspend ${cleaner.name}?`
           }
           primaryLabel={
             activeAction === "approve"
               ? "Approve KYC"
               : activeAction === "reject"
-              ? "Yes, Reject"
-              : "Yes, Suspend"
+                ? "Yes, Reject"
+                : "Yes, Suspend"
           }
           primaryVariant={
             activeAction === "approve" ? "primary" : "danger"

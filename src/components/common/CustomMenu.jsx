@@ -19,7 +19,7 @@ import React, { useState, useEffect, useRef } from "react";
  * - className?: string – extra classes for the popover container
  */
 
-export default function CustomMenu({
+export default function  CustomMenu({
   trigger,
   items = [],
   align = "right",
@@ -85,18 +85,17 @@ export default function CustomMenu({
 
   return (
     <div className="relative inline-block text-left" ref={menuRef}>
-      <div onClick={!trigger ? undefined : toggle}>
-        {trigger ? (
-          React.cloneElement(trigger, {
-            onClick: (e) => {
-              trigger.props?.onClick?.(e);
-              toggle();
-            },
-          })
-        ) : (
-          <DefaultTrigger />
-        )}
-      </div>
+      {trigger ? (
+        React.cloneElement(trigger, {
+          onClick: (e) => {
+            e.stopPropagation();
+            trigger.props?.onClick?.(e);
+            toggle();
+          },
+        })
+      ) : (
+        <DefaultTrigger />
+      )}
 
       {open && (
         <div
@@ -121,7 +120,7 @@ export default function CustomMenu({
                   : "text-[#6B7280]";
 
                  const dividerClasses = item.divider
-                   ? "border-t-[0.6px] border-[#FFEDBA] bg-[#FFF4E0] pt-2 mt-1"
+                   ? "border-t-[0.6px] border-[#E5E7EB] pt-2 mt-1"
                    : "";
 
                  return (
