@@ -549,7 +549,7 @@ export default function JobsTable({ onViewJob }) {
                             </th>
                             <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    <span className="font-medium text-gray-700 text-[10px] md:text-xs">
                                         Job ID
                                     </span>
                                     <img
@@ -561,7 +561,7 @@ export default function JobsTable({ onViewJob }) {
                             </th>
                             <th className="min-w-[120px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    <span className="font-medium text-gray-700 text-[10px] md:text-xs">
                                         Job Type
                                     </span>
                                     <img
@@ -573,7 +573,7 @@ export default function JobsTable({ onViewJob }) {
                             </th>
                             <th className="min-w-[180px] md:min-w-[220px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    <span className="font-medium text-gray-700 text-[10px] md:text-xs">
                                         Customer
                                     </span>
                                     <img
@@ -585,7 +585,7 @@ export default function JobsTable({ onViewJob }) {
                             </th>
                             <th className="min-w-[150px] md:min-w-[180px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    <span className="font-medium text-gray-700 text-[10px] md:text-xs">
                                         Cleaner
                                     </span>
                                     <img
@@ -597,7 +597,7 @@ export default function JobsTable({ onViewJob }) {
                             </th>
                             <th className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    <span className="font-medium text-gray-700 text-[10px] md:text-xs">
                                         Job Status
                                     </span>
                                     <img
@@ -609,7 +609,7 @@ export default function JobsTable({ onViewJob }) {
                             </th>
                             <th className="min-w-[130px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    <span className="font-medium text-gray-700 text-[10px] md:text-xs">
                                         Payment Status
                                     </span>
                                     <img
@@ -621,7 +621,7 @@ export default function JobsTable({ onViewJob }) {
                             </th>
                             <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    <span className="font-medium text-gray-700 text-[10px] md:text-xs">
                                         Date
                                     </span>
                                     <img
@@ -633,7 +633,7 @@ export default function JobsTable({ onViewJob }) {
                             </th>
                             <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    <span className="font-medium text-gray-700 text-[10px] md:text-xs">
                                         Amount Paid
                                     </span>
                                     <img
@@ -672,7 +672,7 @@ export default function JobsTable({ onViewJob }) {
                                         </span>
                                     </td>
                                     <td className="min-w-[120px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                                        <span className="text-primary text-xs md:text-sm">
+                                        <span className="text-primary font-medium text-xs md:text-sm">
                                             {job.jobType}
                                         </span>
                                     </td>
@@ -693,7 +693,7 @@ export default function JobsTable({ onViewJob }) {
                                                 <p className="font-medium text-primary text-xs md:text-sm truncate">
                                                     {job.customer.name}
                                                 </p>
-                                                <p className="text-[10px] md:text-xs text-primary-light truncate">
+                                                <p className="text-xs md:text-sm text-primary-light truncate">
                                                     {job.customer.email}
                                                 </p>
                                             </div>
