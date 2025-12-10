@@ -117,7 +117,7 @@ export default function OverviewTab({ customer, onViewJobs }) {
       {/* Recent Jobs Section */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-primary text-base md:text-lg">
+          <h3 className="font-semibold text-primary text-base md:text-base">
             Recent jobs
           </h3>
           <button

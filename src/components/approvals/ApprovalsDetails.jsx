@@ -133,7 +133,7 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
             </h2>
 
             {/* Role, joined date, jobs completed */}
-            <div className="flex flex-wrap items-center justify-center gap-4 mt-1 text-[12px] text-[#78829D]">
+            <div className="flex flex-wrap items-center justify-center gap-4 mt-1 text-sm text-[#78829D]">
               <span className="flex items-center gap-1.5">
                 <span>{cleaner.role || "Professional Cleaner"}</span>
               </span>
@@ -147,12 +147,12 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
           </div>
 
           {/* Rating & Tier */}
-          <div className="flex items-center justify-center gap-3 mt-4">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[#FFF8DD] border border-[#F6B10033] text-[#F6B100]">
+          <div className="flex items-center justify-center gap-3 mt-4 ">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-[#FFF8DD] border border-[#F6B10033] text-[#F6B100]">
               <Star size={14} className="text-[#F6B100] fill-[#F6B100]" />
               <span>4.8</span>
             </span>
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[#F3F4F6] border border-[#E5E7EB] text-[#4B5563]">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-[#F3F4F6] border border-[#E5E7EB] text-[#4B5563]">
               <img src={tierIcon} alt={tierLabel} className="w-4 h-4" />
               <span>{tierLabel}</span>
             </span>
@@ -172,11 +172,11 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
           {documents.map((doc) => (
             <div
               key={doc.id}
-              className="px-4 md:px-6 py-3 md:py-4 flex flex-col md:flex-row md:items-center gap-2 md:gap-4"
+              className="px-4 md:px-6 py-3 md:py-4 flex flex-col md:flex-row md:items-center gap-2 md:gap-4 font-medium"
             >
               {/* Label */}
-              <div className="w-full md:w-1/5 flex items-center gap-2 text-sm text-primary">
-                <span className="text-primary">{doc.id}.</span>
+              <div className="w-full md:w-1/5 flex items-center gap-2 text-sm text-primary ">
+                <span className="text-primary font-medium">{doc.id}.</span>
                 <span className="font-medium text-primary">
                   {doc.label}
                 </span>
@@ -188,11 +188,11 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
                 {doc.type === "abn" && (
                   <div className="flex w-full items-center gap-3">
                     <div className="flex-1">
-                      <div className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-md px-3 py-2 text-xs text-[#111827]">
+                      <div className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-md px-3 py-2 text-sm text-[#111827]">
                         {doc.value}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 text-xs">
                       <Checkbox
                         checked={doc.status === "Verified"}
                         onChange={(e) =>
@@ -241,9 +241,9 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
 
                 {/* Status / actions (skip for ABN row) */}
                 {doc.type !== "abn" && (
-                  <div className="ml-auto flex items-center gap-3 text-sm ">
+                  <div className="ml-auto flex items-center gap-3 text-sm">
                     {doc.status === "Verified" && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#EAFFF1] text-[#17C653] border border-[#17C65333]">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#EAFFF1] text-[#17C653] border border-[#17C65333] ">
                         <CheckCircle2 size={14} />
                         Verified
                       </span>

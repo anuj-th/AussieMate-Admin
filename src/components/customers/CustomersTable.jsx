@@ -455,7 +455,7 @@ export default function CustomersTable({ onViewCustomer }) {
                                     className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                                     onClick={() => handleSort("name")}
                                 >
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    <span className="font-medium text-primary-light text-xs md:text-xs">
                                         Customer
                                     </span>
                                     <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
@@ -467,7 +467,7 @@ export default function CustomersTable({ onViewCustomer }) {
                                     className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                                     onClick={() => handleSort("phone")}
                                 >
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Phone Number</span>
+                                    <span className="font-medium text-primary-light text-xs md:text-xs">Phone Number</span>
                                     <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
                                     {getSortIcon("phone")}
                                 </div>
@@ -477,7 +477,7 @@ export default function CustomersTable({ onViewCustomer }) {
                                     className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                                     onClick={() => handleSort("jobsPosted")}
                                 >
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Jobs Posted</span>
+                                    <span className="font-medium text-primary-light text-xs md:text-xs">Jobs Posted</span>
                                     <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
                                     {getSortIcon("jobsPosted")}
                                 </div>
@@ -487,7 +487,7 @@ export default function CustomersTable({ onViewCustomer }) {
                                     className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                                     onClick={() => handleSort("spend")}
                                 >
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Spend</span>
+                                    <span className="font-medium text-primary-light text-xs md:text-xs">Spend</span>
                                     <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
                                     {getSortIcon("spend")}
                                 </div>
@@ -497,7 +497,7 @@ export default function CustomersTable({ onViewCustomer }) {
                                     className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                                     onClick={() => handleSort("joined")}
                                 >
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Joined</span>
+                                    <span className="font-medium text-primary-light text-xs md:text-xs">Joined</span>
                                     <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
                                     {getSortIcon("joined")}
                                 </div>
@@ -537,7 +537,7 @@ export default function CustomersTable({ onViewCustomer }) {
                                         </div>
                                     </div>
                                 </td>
-                                <td className="min-w-[140px] md:min-w-[160px] px-2 md:px-4 py-2 md:py-4 text-gray-700 border-r border-gray-200 text-xs md:text-sm">
+                                <td className="min-w-[140px] md:min-w-[160px] px-2 md:px-4 py-2 md:py-4 text-primary-light border-r border-gray-200 text-xs md:text-sm">
                                     {customer.phone}
                                 </td>
                                 <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-sm font-medium text-primary border-r border-gray-200">

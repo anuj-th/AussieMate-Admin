@@ -349,6 +349,7 @@ export default function PaymentsTab({ customer }) {
                     </div>
                 </div>
             </div>
+            <h3 className="font-semibold text-primary">Payment History</h3>
 
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
                 <div className="p-3 md:p-4 border-b border-gray-200">
@@ -409,7 +410,7 @@ export default function PaymentsTab({ customer }) {
                                         className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                                         onClick={() => handleSort("date")}
                                     >
-                                        <span className="font-medium text-gray-700 text-xs md:text-sm">Date</span>
+                                        <span className="font-medium text-gray-700 text-xs md:text-xs">Date</span>
                                         <img
                                             src={tableSortIcon}
                                             alt="sort"
@@ -423,7 +424,7 @@ export default function PaymentsTab({ customer }) {
                                         className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                                         onClick={() => handleSort("amount")}
                                     >
-                                        <span className="font-medium text-gray-700 text-xs md:text-sm">Amount</span>
+                                        <span className="font-medium text-gray-700 text-xs md:text-xs">Amount</span>
                                         <img
                                             src={tableSortIcon}
                                             alt="sort"
@@ -437,7 +438,7 @@ export default function PaymentsTab({ customer }) {
                                         className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                                         onClick={() => handleSort("paymentMode")}
                                     >
-                                        <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                        <span className="font-medium text-gray-700 text-xs md:text-xs">
                                             Payment Mode
                                         </span>
                                         <img
@@ -449,7 +450,7 @@ export default function PaymentsTab({ customer }) {
                                     </div>
                                 </th>
                                 <th className="min-w-[140px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Status</span>
+                                    <span className="font-medium text-gray-700 text-xs md:text-xs">Status</span>
                                 </th>
                                 <th className="w-14 md:w-16 px-2 md:px-4 py-2 md:py-3 text-center"></th>
                             </tr>

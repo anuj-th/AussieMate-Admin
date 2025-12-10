@@ -40,10 +40,10 @@ export default function RecentActivity({
   return (
     <div className="bg-white rounded-[16px] border border-[#EEF0F5] shadow-sm h-full flex flex-col">
       <div className="flex items-center justify-between px-7 py-4 border-b border-[#EEF0F5] pb-3">
-        <h2 className="text-sm font-semibold text-primary">
+        <h2 className="font-semibold text-primary">
           {title}
         </h2>
-        <div className="flex items-center gap-2 text-xs text-[#4B5675]">
+        <div className="flex items-center gap-2 text-sm font-medium text-[#4B5675]">
           <span >Auto refresh: {autoRefresh ? "on" : "off"}</span>
           <div className="pl-2">
             <Toggle

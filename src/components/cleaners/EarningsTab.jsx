@@ -54,13 +54,13 @@ export default function EarningsTab({ cleaner }) {
                             className="bg-white border border-gray-200 rounded-xl p-4 md:p-5 flex items-center justify-between gap-4 shadow-sm hover:shadow-md transition-shadow"
                         >
                             <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-primary">
+                                <p className="font-semibold text-primary ">
                                     {payout.type} • {payout.subType}
                                 </p>
                                 <p className="font-medium text-primary mb-1">
                                     AU${payout.amount.toLocaleString()}
                                 </p>
-                                <p className="text-sm text-primary-light font-medium">
+                                <p className="text-xs text-primary-light font-medium ">
                                     {payout.date}
                                 </p>
                             </div>

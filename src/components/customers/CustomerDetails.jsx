@@ -117,7 +117,7 @@ export default function CustomerDetails({ customer, onBackToList }) {
           {/* Total Spend Box */}
           <div className="mt-4 px-3 md:px-4 py-2 bg-[#F9FAFB] border border-[#E5E7EB] rounded-md">
             <span className="text-xs md:text-sm font-medium">
-              <span className="text-primary">Total Spend</span>{" "}
+              <span className="text-primary font-medium">Total Spend</span>{" "}
               <span className="text-primary-light font-semibold">
                 AU${customer.spend || "3,240"}
               </span>

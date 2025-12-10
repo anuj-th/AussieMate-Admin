@@ -137,7 +137,7 @@ export default function FeedbackTab({ customer }) {
                 style={{ width: "auto", height: "100%", display: "flex" }}
               >
                 <div className="bg-white border border-[#E5E7EB] rounded-[14px] p-4 shadow-sm flex flex-col gap-3 md:min-w-[350px] h-full min-h-full cursor-pointer">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <img
                         src={item.avatar}
@@ -145,14 +145,12 @@ export default function FeedbackTab({ customer }) {
                         className="w-9 h-9 rounded-full object-cover flex-shrink-0"
                       />
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-primary truncate">
+                        <p className="text-sm font-medium text-primary truncate">
                           {item.name}
-                        </p>
-                        <p className="text-xs text-primary-light truncate">
-                          {item.service}
                         </p>
                       </div>
                     </div>
+
                     <button
                       onClick={() => handleFlagReview(item.id)}
                       className="flex items-center gap-1 text-xs text-[#2563EB] font-medium whitespace-nowrap"
@@ -162,9 +160,15 @@ export default function FeedbackTab({ customer }) {
                     </button>
                   </div>
 
-                  <p className="text-sm text-primary leading-relaxed flex-grow">
-                    {item.feedback}
-                  </p>
+                  <div className="flex flex-col leading-tight">
+                    <p className="text-xs text-primary-light">
+                      {item.service}
+                    </p>
+                    <p className="text-sm text-primary">
+                      {item.feedback}
+                    </p>
+                  </div>
+
 
                   <div className="flex items-center gap-2">
                     {renderStars(item.rating)}
@@ -182,7 +186,7 @@ export default function FeedbackTab({ customer }) {
       {/* MatePoints table */}
       <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm" ref={matePointsRef}>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-7.5 py-4 border-b border-[#EEF0F5]">
-          <h3 className="text-base font-semibold text-primary">MatePoints</h3>
+          <h3 className="text-base font-medium text-primary">MatePoints</h3>
           <button
             type="button"
             onClick={handleExportReport}
@@ -198,11 +202,10 @@ export default function FeedbackTab({ customer }) {
             {matePoints.map((row, index) => (
               <div
                 key={row.id}
-                className={`flex items-center gap-6 py-2 ${
-                  index !== matePoints.length - 1 ? "" : ""
-                }`}
+                className={`flex items-center gap-6 py-2 ${index !== matePoints.length - 1 ? "" : ""
+                  }`}
               >
-                <div className="text-base font-semibold text-primary whitespace-nowrap min-w-[80px]">
+                <div className="text-base font-medium text-primary whitespace-nowrap min-w-[80px]">
                   {row.points} pts
                 </div>
                 <div className="text-sm text-primary-light whitespace-nowrap min-w-[100px]">

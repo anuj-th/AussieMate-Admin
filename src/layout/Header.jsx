@@ -186,7 +186,7 @@ export default function Header({
                     // Add your logout logic here
                     console.log("Logout clicked");
                   }}
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm font-medium text-[#1C1C1C] hover:bg-gray-50 transition-colors text-center"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-xs font-medium text-[#1C1C1C] hover:bg-gray-50 transition-colors text-center"
                 >
                   Log out
                 </button>

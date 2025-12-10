@@ -13,7 +13,7 @@ export default function Approvals() {
   return (
     <div>
       <PageHeader
-        title={selectedCleaner ? selectedCleaner.name : "Approvals"}
+        title={selectedCleaner ? selectedCleaner.name : "Cleaner Approval Queue"}
         showBackArrow={!!selectedCleaner}
         onBack={selectedCleaner ? handleBack : undefined}
       />

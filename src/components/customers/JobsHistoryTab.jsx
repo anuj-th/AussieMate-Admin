@@ -304,7 +304,7 @@ export default function JobsHistoryTab({ customer }) {
                   className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                   onClick={() => handleSort("jobId")}
                 >
-                  <span className="font-medium text-gray-700 text-xs md:text-sm">
+                  <span className="font-medium text-gray-700 text-xs md:text-xs">
                     Job ID
                   </span>
                   <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
@@ -316,7 +316,7 @@ export default function JobsHistoryTab({ customer }) {
                   className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                   onClick={() => handleSort("jobType")}
                 >
-                  <span className="font-medium text-gray-700 text-xs md:text-sm">
+                  <span className="font-medium text-gray-700 text-xs md:text-xs">
                     Job Type
                   </span>
                   <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
@@ -324,7 +324,7 @@ export default function JobsHistoryTab({ customer }) {
                 </div>
               </th>
               <th className="min-w-[180px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <span className="font-medium text-gray-700 text-xs md:text-sm">
+                <span className="font-medium text-gray-700 text-xs md:text-xs">
                   Cleaner
                 </span>
               </th>
@@ -333,7 +333,7 @@ export default function JobsHistoryTab({ customer }) {
                   className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                   onClick={() => handleSort("amount")}
                 >
-                  <span className="font-medium text-gray-700 text-xs md:text-sm">
+                  <span className="font-medium text-gray-700 text-xs md:text-xs">
                     Amount
                   </span>
                   <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
@@ -341,7 +341,7 @@ export default function JobsHistoryTab({ customer }) {
                 </div>
               </th>
               <th className="min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <span className="font-medium text-gray-700 text-xs md:text-sm">
+                <span className="font-medium text-gray-700 text-xs md:text-xs">
                   Status
                 </span>
               </th>
@@ -364,14 +364,14 @@ export default function JobsHistoryTab({ customer }) {
                   <p className="text-sm font-medium text-primary">{job.jobId}</p>
                 </td>
                 <td className="min-w-[200px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                  <p className="text-sm text-primary">{job.jobType}</p>
+                  <p className="text-sm text-primary font-medium">{job.jobType}</p>
                 </td>
                 <td className="min-w-[180px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
                   <div className="flex items-center gap-2">
                     <img
                       src={job.cleaner.avatar}
                       alt={job.cleaner.name}
-                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                      className="w-9 h-9 rounded-full object-cover flex-shrink-0"
                     />
                     <p className="text-sm font-medium text-primary">
                       {job.cleaner.name}
