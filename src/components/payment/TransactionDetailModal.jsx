@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { X, ArrowUp } from "lucide-react";
+import { X, ArrowUp, Upload } from "lucide-react";
 
 export default function TransactionDetailModal({ isOpen, onClose, transaction }) {
   // Close on ESC key
@@ -65,9 +65,9 @@ export default function TransactionDetailModal({ isOpen, onClose, transaction })
 
     return (
       <span
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${config.text} text-xs font-medium`}
+        className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border text-[10px] sm:text-xs font-medium ${config.bg} ${config.border} ${config.text}`}
       >
-        <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
+        <span className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${config.dot}`} />
         {status}
       </span>
     );
@@ -79,12 +79,52 @@ export default function TransactionDetailModal({ isOpen, onClose, transaction })
   const totalPayable = transaction.payableAmount || transaction.totalAmount - platformFee - gstFee;
 
   const handleExportHistory = () => {
-    // TODO: Implement export history functionality
-    console.log("Export history for transaction:", transaction.transactionId);
+    try {
+      // Prepare CSV data
+      const csvRows = [
+        ["Transaction Details"],
+        [],
+        ["Job ID", transaction.jobId],
+        ["Transaction ID", transaction.transactionId],
+        ["Customer Name", transaction.customer?.name || "N/A"],
+        ["Customer Email", transaction.customer?.email || "N/A"],
+        ["Cleaner Name", transaction.cleaner?.name || "N/A"],
+        ["Cleaner Email", transaction.cleaner?.email || "N/A"],
+        ["Amount Paid", formatCurrency(transaction.totalAmount)],
+        ["Platform Fee", formatCurrency(platformFee)],
+        ["GST Fee", formatCurrency(gstFee)],
+        ["Total Payable", formatCurrency(totalPayable)],
+        ["Status", transaction.status],
+        ["Date", transaction.date ? formatDateTime(transaction.date) : "N/A"],
+      ];
+
+      // Convert to CSV format
+      const csvContent = csvRows
+        .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+        .join("\n");
+
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute(
+        "download",
+        `Transaction_${transaction.transactionId}_${new Date().toISOString().split("T")[0]}.csv`
+      );
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error exporting transaction history:", error);
+      alert("Failed to export transaction history. Please try again.");
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3 sm:px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-2 sm:px-3 md:px-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0"
@@ -93,129 +133,149 @@ export default function TransactionDetailModal({ isOpen, onClose, transaction })
       />
 
       {/* Modal Card */}
-      <div className="relative z-10 w-full max-w-2xl rounded-2xl bg-white shadow-xl border border-[#E5E7EB] flex flex-col overflow-hidden max-h-[90vh] overflow-y-auto">
+      <div className="px-3 sm:px-4 md:px-6 lg:px-8 pt-4 sm:pt-5 md:pt-6 relative z-10 w-full max-w-2xl rounded-xl sm:rounded-2xl bg-white shadow-xl border border-gray flex flex-col overflow-hidden max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-[#E5E7EB] flex items-center justify-between bg-white sticky top-0">
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold text-primary mb-1">
+        <div className="flex flex-row items-center justify-between gap-2 sm:gap-3 bg-white sticky top-0 pb-3 sm:pb-0">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base sm:text-lg md:text-xl font-semibold text-primary truncate">
               {transaction.jobId}
             </h2>
-            <p className="text-sm text-primary-light">
+            <p className="text-[10px] sm:text-xs md:text-sm text-primary-light truncate">
               Transaction ID: {transaction.transactionId}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
             <button
               type="button"
               onClick={handleExportHistory}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200 transition-colors"
+              className="flex items-center gap-1 sm:gap-1.5 md:gap-2 px-2 sm:px-2.5 md:px-3 lg:px-4 py-1.5 sm:py-2 rounded-lg border border-gray-300 text-[10px] sm:text-xs font-medium text-gray-700 cursor-pointer hover:bg-gray-50 transition-colors"
             >
-              <ArrowUp size={16} />
-              Export history
+              <Upload size={12} className="sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 text-gray-600 flex-shrink-0" />
+              <span className="hidden sm:inline">Export history</span>
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+              className="text-gray-500 hover:text-gray-700 focus:outline-none p-1 flex-shrink-0"
               aria-label="Close"
             >
-              <X className="w-5 h-5 cursor-pointer" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5 cursor-pointer" />
             </button>
           </div>
         </div>
 
         {/* Transaction Content */}
-        <div className="px-6 py-6">
+        <div className="pb-4 sm:pb-6">
           {/* Payment Section */}
-          <div className="mb-6">
-            <h3 className="text-lg font-bold text-primary mb-4">Payment</h3>
+          <div className="mb-4 sm:mb-6 border border-gray-200 rounded-lg sm:rounded-xl mt-3 sm:mt-4">
+            <h3 className="font-medium text-sm sm:text-base text-primary px-3 sm:px-5 md:px-7 py-2.5 sm:py-3 border-b border-gray-200">
+              Payment
+            </h3>
             
-            <div className="space-y-3">
+            <div className="">
               {/* Job ID */}
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-sm text-primary-light">Job ID:</span>
-                <span className="text-sm font-medium text-primary">
+              <div className="flex justify-between sm:justify-start gap-1 sm:gap-0 border-b border-gray-200 px-3 sm:px-5 md:px-7 py-2.5 sm:py-3">
+                <span className="text-xs sm:text-sm text-primary-light font-medium sm:w-32 md:w-36 flex-shrink-0">
+                  Job ID:
+                </span>
+                <span className="text-xs sm:text-sm font-medium text-primary break-all sm:break-normal text-end sm:text-left">
                   {transaction.jobId}
                 </span>
               </div>
 
               {/* Transaction ID */}
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-sm text-primary-light">Transaction ID:</span>
-                <span className="text-sm font-medium text-primary">
+              <div className="flex justify-between sm:justify-start gap-1 sm:gap-0 border-b border-gray-200 px-3 sm:px-5 md:px-7 py-2.5 sm:py-3">
+                <span className="text-xs sm:text-sm text-primary-light font-medium sm:w-32 md:w-36 flex-shrink-0">
+                  Transaction ID:
+                </span>
+                <span className="text-xs sm:text-sm font-medium text-primary break-all sm:break-normal text-end sm:text-left">
                   {transaction.transactionId}
                 </span>
               </div>
 
               {/* Customer */}
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-sm text-primary-light">Customer:</span>
-                <div className="text-right">
-                  <span className="text-sm font-bold text-primary block">
+              <div className="flex justify-between sm:justify-start gap-1 sm:gap-0 border-b border-gray-200 px-3 sm:px-5 md:px-7 py-2.5 sm:py-3">
+                <span className="text-xs sm:text-sm text-primary-light font-medium sm:w-32 md:w-36 flex-shrink-0">
+                  Customer:
+                </span>
+                <div className="flex flex-wrap items-center gap-1 min-w-0 text-end sm:text-left sm:justify-start justify-end">
+                  <span className="text-xs sm:text-sm font-medium text-primary">
                     {transaction.customer?.name || "N/A"}
                   </span>
                   {transaction.customer?.email && (
-                    <span className="text-sm text-primary-light">
-                      {transaction.customer.email}
+                    <span className="text-xs sm:text-sm text-primary-light break-all sm:break-normal">
+                      - {transaction.customer.email}
                     </span>
                   )}
                 </div>
               </div>
 
               {/* Cleaner */}
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-sm text-primary-light">Cleaner:</span>
-                <div className="text-right">
-                  <span className="text-sm font-bold text-primary block">
+              <div className="flex justify-between sm:justify-start gap-1 sm:gap-0 border-b border-gray-200 px-3 sm:px-5 md:px-7 py-2.5 sm:py-3">
+                <span className="text-xs sm:text-sm text-primary-light font-medium sm:w-32 md:w-36 flex-shrink-0">
+                  Cleaner:
+                </span>
+                <div className="flex flex-wrap items-center gap-1 min-w-0 text-end sm:text-left sm:justify-start justify-end">
+                  <span className="text-xs sm:text-sm font-medium text-primary">
                     {transaction.cleaner?.name || "N/A"}
                   </span>
                   {transaction.cleaner?.email && (
-                    <span className="text-sm text-primary-light">
-                      {transaction.cleaner.email}
+                    <span className="text-xs sm:text-sm text-primary-light break-all sm:break-normal">
+                      - {transaction.cleaner.email}
                     </span>
                   )}
                 </div>
               </div>
 
               {/* Amount Paid */}
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-sm text-primary-light">Amount Paid:</span>
-                <span className="text-sm font-medium text-primary">
+              <div className="flex justify-between sm:justify-start gap-1 sm:gap-0 px-3 sm:px-5 md:px-7 py-2.5 sm:py-3 border-b border-gray-200">
+                <span className="text-xs sm:text-sm text-primary-light font-medium sm:w-32 md:w-36 flex-shrink-0">
+                  Amount Paid:
+                </span>
+                <span className="text-xs sm:text-sm font-medium text-primary text-end sm:text-left">
                   {formatCurrency(transaction.totalAmount)}
                 </span>
               </div>
 
               {/* Platform Fee */}
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-sm text-primary-light">Platform Fee:</span>
-                <span className="text-sm font-medium text-primary">
+              <div className="flex justify-between sm:justify-start gap-1 sm:gap-0 px-3 sm:px-5 md:px-7 py-2.5 sm:py-3 border-b border-gray-200">
+                <span className="text-xs sm:text-sm text-primary-light font-medium sm:w-32 md:w-36 flex-shrink-0">
+                  Platform Fee:
+                </span>
+                <span className="text-xs sm:text-sm font-medium text-primary text-end sm:text-left">
                   {formatCurrency(platformFee)}
                 </span>
               </div>
 
               {/* GST Fee */}
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-sm text-primary-light">GST Fee:</span>
-                <span className="text-sm font-medium text-primary">
+              <div className="flex justify-between sm:justify-start gap-1 sm:gap-0 px-3 sm:px-5 md:px-7 py-2.5 sm:py-3 border-b border-gray-200">
+                <span className="text-xs sm:text-sm text-primary-light font-medium sm:w-32 md:w-36 flex-shrink-0">
+                  GST Fee:
+                </span>
+                <span className="text-xs sm:text-sm font-medium text-primary text-end sm:text-left">
                   {formatCurrency(gstFee)}
                 </span>
               </div>
 
               {/* Total Payable */}
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-sm text-primary-light">Total Payable:</span>
-                <span className="text-sm font-medium text-primary">
+              <div className="flex justify-between sm:justify-start gap-1 sm:gap-0 px-3 sm:px-5 md:px-7 py-2.5 sm:py-3 border-b border-gray-200">
+                <span className="text-xs sm:text-sm text-primary-light font-medium sm:w-32 md:w-36 flex-shrink-0">
+                  Total Payable:
+                </span>
+                <span className="text-xs sm:text-sm font-medium text-primary text-end sm:text-left">
                   {formatCurrency(totalPayable)}
                 </span>
               </div>
 
               {/* Status */}
-              <div className="flex justify-between items-center py-2">
-                <span className="text-sm text-primary-light">Status:</span>
-                <div className="flex items-center gap-2">
+              <div className="flex justify-between sm:justify-start gap-2 sm:gap-0 px-3 sm:px-5 md:px-7 py-2.5 sm:py-3">
+                <span className="text-xs sm:text-sm text-primary-light font-medium sm:w-32 md:w-36 flex-shrink-0">
+                  Status:
+                </span>
+                <div className="flex flex-wrap items-center gap-2 min-w-0 justify-end sm:justify-start">
                   {getStatusBadge(transaction.status)}
                   {transaction.date && (
-                    <span className="text-sm text-primary-light">
+                    <span className="text-xs sm:text-sm text-primary-light whitespace-nowrap">
                       on {formatDateTime(transaction.date)}
                     </span>
                   )}

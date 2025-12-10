@@ -165,7 +165,7 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
 
       {/* Tab Content */}
       <div className="mt-4">
-        {activeTab === "overview" && <OverviewTab cleaner={cleaner} />}
+        {activeTab === "overview" && <OverviewTab cleaner={cleaner} onViewJobHistory={() => setActiveTab("jobHistory")} />}
         {activeTab === "documents" && <DocumentsTab cleaner={cleaner} />}
         {activeTab === "jobHistory" && <JobHistoryTab cleaner={cleaner} />}
         {activeTab === "earnings" && <EarningsTab cleaner={cleaner} />}

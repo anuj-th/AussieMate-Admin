@@ -1,19 +1,30 @@
-import { ArrowLeft, MoreVertical, Star, Flag, Clock, Mail, Phone, Footprints } from "lucide-react";
-import silverTierIcon from "../../assets/icon/silver.svg";
+import { Star, MoreVertical } from "lucide-react";
+import OverviewTab from "./OverviewTab";
+import JobInfoTab from "./JobInfoTab";
+import TimelineTab from "./TimelineTab";
+import FeedbackTab from "./FeedbackTab";
+import AttachmentsTab from "./AttachmentsTab";
 
 export default function JobDetails({ job, onBackToList }) {
     if (!job) return null;
 
-    const calculatedEscrow = job?.payment?.amountPaid - (job?.payment?.platformFees + job?.payment?.gst);
+    // Derive payment figures when only summary data is available from JobsTable
+    const amountPaid = job?.payment?.amountPaid ?? job?.amountPaid ?? 0;
+    const platformFees =
+        job?.payment?.platformFees ?? Math.round(amountPaid * 0.15 * 100) / 100;
+    const gst = job?.payment?.gst ?? Math.round(amountPaid * 0.1 * 100) / 100;
+    const escrow =
+        job?.payment?.escrow ?? Math.max(amountPaid - (platformFees + gst), 0);
+    const escrowReleased = job?.payment?.escrowReleased || job?.date || "20-09-2025";
 
     const jobDetails = {
         jobId: job?.jobId || "AM10432",
-        jobTitle: job?.jobTitle || "Bond Cleaning",
+        jobTitle: job?.jobTitle || job?.jobType || "Bond Cleaning",
         jobType: job?.jobType || "Cleaning",
-        category: job?.category || "Pet Sitter",
-        datePosted: job?.datePosted || "19-09-2025",
+        category: job?.category || job?.jobType || "Pet Sitter",
+        datePosted: job?.datePosted || job?.date || "19-09-2025",
         postedBy: job?.postedBy || "AM10432",
-        status: job?.status || "Completed",
+        status: job?.status || job?.jobStatus || "Completed",
         customer: {
             name: job?.customer?.name || "Jason Tatum",
             email: job?.customer?.email || "selina.k@email.com",
@@ -31,20 +42,23 @@ export default function JobDetails({ job, onBackToList }) {
         },
         payment: {
             mode: job?.payment?.mode || "Online",
-            amountPaid: job?.payment?.amountPaid || 320,
-            platformFees: job?.payment?.platformFees || 48,
-            gst: job?.payment?.gst || 4.8,
-            escrow: job?.payment?.escrow || 267.2,
-            escrowReleased: job?.payment?.escrowReleased || "20-09-2025",
-            escrowStatus: job?.payment?.escrowStatus || "Released",
+            amountPaid,
+            platformFees,
+            gst,
+            escrow,
+            escrowReleased,
+            escrowStatus: job?.payment?.escrowStatus || job?.paymentStatus || "Released",
         },
         jobInfo: {
             category: job?.jobInfo?.category || "Pet Sitter",
             petType: job?.jobInfo?.petType || "Dog",
             breed: job?.jobInfo?.breed || "husky",
             numberOfPets: job?.jobInfo?.numberOfPets || 2,
-            serviceType: job?.jobInfo?.serviceType || "Walking",
-            description: job?.jobInfo?.description || "Make sure you come prepared with all you need for this service",
+            serviceType: job?.jobInfo?.serviceType || job?.jobType || "Walking",
+            description:
+                job?.jobInfo?.description ||
+                job?.description ||
+                "Make sure you come prepared with all you need for this service",
             images: job?.jobInfo?.images || [
                 "https://images.unsplash.com/photo-1552053831-71594a27632d?w=400",
                 "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400",
@@ -101,8 +115,89 @@ export default function JobDetails({ job, onBackToList }) {
         return "bg-[#FFF8DD] text-[#F6B100] border-[#F6B10033]";
     };
 
+    const highlightUserNames = (text) => {
+        const cleanerName = jobDetails.cleaner.name;
+        const customerName = jobDetails.customer.name;
+        
+        // Remove trailing period if present for matching
+        const cleanerNameClean = cleanerName.replace(/\.$/, "");
+        const customerNameClean = customerName.replace(/\.$/, "");
+        
+        // Create regex patterns for both full names and variations
+        const names = [cleanerName, cleanerNameClean, customerName, customerNameClean].filter(Boolean);
+        
+        // Sort by length (longest first) to match longer names first
+        names.sort((a, b) => b.length - a.length);
+        
+        let result = text;
+        const parts = [];
+        let lastIndex = 0;
+        
+        // Find all matches with their positions
+        const matches = [];
+        names.forEach(name => {
+            const regex = new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                matches.push({
+                    start: match.index,
+                    end: match.index + match[0].length,
+                    name: match[0]
+                });
+            }
+        });
+        
+        // Sort matches by start position
+        matches.sort((a, b) => a.start - b.start);
+        
+        // Merge overlapping matches
+        const mergedMatches = [];
+        matches.forEach(match => {
+            const lastMatch = mergedMatches[mergedMatches.length - 1];
+            if (lastMatch && match.start <= lastMatch.end) {
+                // Overlapping or adjacent, merge them
+                lastMatch.end = Math.max(lastMatch.end, match.end);
+                lastMatch.name = text.substring(lastMatch.start, lastMatch.end);
+            } else {
+                mergedMatches.push({ ...match });
+            }
+        });
+        
+        // Build the parts array
+        mergedMatches.forEach(match => {
+            // Add text before match
+            if (match.start > lastIndex) {
+                parts.push({
+                    text: text.substring(lastIndex, match.start),
+                    isName: false
+                });
+            }
+            // Add highlighted name
+            parts.push({
+                text: match.name,
+                isName: true
+            });
+            lastIndex = match.end;
+        });
+        
+        // Add remaining text
+        if (lastIndex < text.length) {
+            parts.push({
+                text: text.substring(lastIndex),
+                isName: false
+            });
+        }
+        
+        // If no matches found, return original text
+        if (parts.length === 0) {
+            parts.push({ text, isName: false });
+        }
+        
+        return parts;
+    };
+
     return (
-        <div className="space-y-6 max-w-full mx-auto overflow-x-hidden pb-10  w-6xl ">
+        <div className="space-y-6 mx-auto w-full max-w-6xl overflow-x-hidden pb-10">
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
 
@@ -111,11 +206,11 @@ export default function JobDetails({ job, onBackToList }) {
 
                     {/* Header Card */}
                     <div className="w-full flex flex-col md:flex-row md:items-center md:justify-between rounded-[12px] 
-                p-5 sm:p-6 md:p-[30px] border border-[#F1F1F4] bg-white shadow-sm gap-4 md:gap-0">
+                p-4 sm:p-5 md:p-6 lg:p-[30px] border border-[#F1F1F4] bg-white shadow-sm gap-4 md:gap-0">
 
                         {/* Left Section */}
-                        <div className="space-y-2 w-full">
-                            <p className="text-xs sm:text-sm font-medium text-primary-light">Posted by</p>
+                        <div className="w-full">
+                            <p className="text-xs font-medium text-primary-light">Posted by</p>
 
                             <div className="flex flex-wrap items-center gap-3">
                                 <span className="font-semibold text-xl sm:text-2xl text-primary">
@@ -140,274 +235,27 @@ export default function JobDetails({ job, onBackToList }) {
                         </div>
                     </div>
 
-
                     {/* Job Overview */}
-                    <div className="bg-white rounded-lg border border-[#EEF0F5] shadow-sm w-full ">
-
-                        <div className="flex items-center justify-between h-[56px] px-7.5 py-5 border-b border-[#F1F1F4]">
-                            <h2 className="text-lg sm:text-xl font-semibold text-primary">Job Overview</h2>
-                            <button className="p-1 hover:bg-gray-100 rounded-lg">
-                                <MoreVertical size={20} className="text-primary" />
-                            </button>
-
-                        </div>
-
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-7.5 py-5 mb-6">
-
-                            {/* Customer */}
-                            <div className="border border-[#F1F1F4] rounded-[12px] p-4 bg-white shadow-sm w-full">
-                                <h3 className="text-xs sm:text-sm font-semibold text-primary mb-3 ">Customer</h3>
-
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden">
-                                        <img src={jobDetails.customer.avatar} alt={jobDetails.customer.name} className="w-full h-full object-cover" />
-                                    </div>
-
-                                    <div className="flex-1">
-                                        <p className="font-semibold text-sm sm:text-base text-primary">{jobDetails.customer.name}</p>
-
-                                        <div className="space-y-1.5 mt-2">
-                                            <div className="flex items-center gap-2 text-xs sm:text-sm text-primary-light">
-                                                <Mail size={16} />
-                                                <span className="truncate">{jobDetails.customer.email}</span>
-                                            </div>
-
-                                            <div className="flex items-center gap-2 text-xs sm:text-sm text-primary-light">
-                                                <Phone size={16} />
-                                                <span className="truncate">{jobDetails.customer.phone}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Cleaner */}
-                            <div className="border border-[#F1F1F4] rounded-[12px] p-4 bg-white shadow-sm w-full px-7.5 py-5">
-                                <h3 className="text-xs sm:text-sm font-semibold text-primary mb-3">Cleaner</h3>
-
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden">
-                                        <img src={jobDetails.cleaner.avatar} alt={jobDetails.cleaner.name} className="w-full h-full object-cover" />
-                                    </div>
-
-                                    <div className="flex-1 space-y-2">
-                                        <div className="flex flex-wrap gap-2">
-                                            <p className="font-semibold text-sm sm:text-base text-primary">{jobDetails.cleaner.name}</p>
-                                            <p className="text-xs sm:text-sm text-primary-light">• {jobDetails.cleaner.role}</p>
-                                        </div>
-
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[10px] sm:text-xs font-medium"
-                                                style={{ backgroundColor: "#FFF4E0", border: "1px solid #FFEDBA" }}>
-                                                ⭐ {jobDetails.cleaner.rating}
-                                            </span>
-
-                                            <span className="text-[10px] sm:text-xs text-primary-light">({jobDetails.cleaner.jobsCompleted} jobs)</span>
-
-                                            <div className="flex items-center gap-2 px-2 py-1 rounded-xl text-[10px] sm:text-xs font-medium bg-[linear-gradient(90deg,#FDFDFD_0%,#E9E9E9_100%)]">
-                                                <img src={silverTierIcon} alt="Silver Tier" className="w-4 h-4 sm:w-5 sm:h-5" />
-                                                <span className="text-primary-light">{jobDetails.cleaner.tier} Tier</span>
-                                            </div>
-                                        </div>
-
-                                        <p className="text-[10px] sm:text-xs text-primary-light">{jobDetails.cleaner.distance}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {/* Payment Card */}
-                        <div className="bg-white rounded-[20px] p-5 sm:p-5 px-7 sm:px-5 lg:px-7.5">
-                            <h3 className="text-xs sm:text-sm md:text-base font-semibold text-primary mb-4">
-                                Payment
-                            </h3>
-
-                            <div className="space-y-3">
-
-                                <div className="grid grid-cols-2 sm:grid-cols-3 items-center">
-                                    <span className="text-xs sm:text-sm text-primary-light">Mode:</span>
-                                    <span className="text-xs sm:text-sm font-medium text-primary">
-                                        {jobDetails.payment.mode}
-                                    </span>
-                                </div>
-
-                                <div className="grid grid-cols-2 sm:grid-cols-3 items-center">
-                                    <span className="text-xs sm:text-sm text-primary-light">Amount Paid:</span>
-                                    <span className="text-xs sm:text-sm font-medium text-primary">
-                                        AU${jobDetails.payment.amountPaid}
-                                    </span>
-                                </div>
-
-                                <div className="grid grid-cols-2 sm:grid-cols-3 items-center">
-                                    <span className="text-xs sm:text-sm text-primary-light">Platform Fees 15%:</span>
-                                    <span className="text-xs sm:text-sm font-medium text-primary">
-                                        AU${jobDetails.payment.platformFees}
-                                    </span>
-                                </div>
-
-                                <div className="grid grid-cols-2 sm:grid-cols-3 items-center">
-                                    <span className="text-xs sm:text-sm text-primary-light">GST 10%:</span>
-                                    <span className="text-xs sm:text-sm font-medium text-primary">
-                                        AU${jobDetails.payment.gst}
-                                    </span>
-                                </div>
-
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                                    <span className="text-xs sm:text-sm text-primary-light">Escrow:</span>
-
-                                    <span className="text-xs sm:text-sm font-medium text-primary mr-25">
-                                        AU${jobDetails.payment.escrow} •{" "}
-                                        <span className="text-xs sm:text-sm text-primary-light">
-                                            released {jobDetails.payment.escrowReleased}
-                                        </span>
-                                    </span>
-
-                                    <div className="flex justify-start sm:justify-end mt-2 sm:mt-0">
-                                        <span
-                                            className={`inline-flex items-center px-3 py-1 rounded-[6px] 
-            text-[8px] sm:text-xs font-medium border ${getStatusColor(
-                                                jobDetails.payment.escrowStatus
-                                            )}`}>
-                                            {jobDetails.payment.escrowStatus}
-                                        </span>
-                                    </div>
-                                </div>
-
-
-                            </div>
-                        </div>
-
-
-
-                    </div>
+                    <OverviewTab jobDetails={jobDetails} getStatusColor={getStatusColor} />
 
                     {/* Job Info */}
-                    <div className="bg-white rounded-[20px] border border-[#EEF0F5] shadow-sm p-4 sm:p-7.5 py-8 sm:py-10">
-                        <h2 className="text-lg sm:text-xl font-semibold text-primary mb-4">Job Info</h2>
-
-                        <div className="space-y-4">
-                            <div>
-                                <p className="text-sm sm:text-base text-primary font-medium">
-                                    {jobDetails.jobInfo.category} • {jobDetails.jobInfo.petType} • {jobDetails.jobInfo.breed}
-                                </p>
-                                <p className="text-xs sm:text-sm text-primary-light mt-1">
-                                    Number of pets: {jobDetails.jobInfo.numberOfPets}
-                                </p>
-                            </div>
-
-                            <div className="flex items-center gap-2 font-medium">
-                                <Footprints size={16} className="text-primary-light" />
-                                <span className="text-xs sm:text-sm text-primary">
-                                    {jobDetails.jobInfo.serviceType}
-                                </span>
-                            </div>
-
-                            <p className="text-xs sm:text-sm text-primary-light">{jobDetails.jobInfo.description}</p>
-
-                            <div className="w-fit">
-                                <div className="grid grid-cols-2 gap-3 mt-4">
-                                    {jobDetails.jobInfo.images.map((img, index) => (
-                                        <div key={index} className="w-[90px] h-[90px] sm:w-[100px] sm:h-[100px] rounded-lg overflow-hidden">
-                                            <img src={img} alt={`Pet ${index + 1}`} className="w-full h-full object-cover" />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <JobInfoTab jobDetails={jobDetails} />
                 </div>
 
                 {/* RIGHT SIDEBAR */}
                 <div className="space-y-6 w-full">
 
                     {/* Timeline */}
-                    <div className="bg-white rounded-[20px] border border-[#EEF0F5] shadow-sm p-4 sm:p-7.5 pl-8 sm:pl-10 ">
-                        <h2 className="text-lg sm:text-xl font-semibold text-primary mb-4">Timeline</h2>
-
-                        <div className="space-y-4">
-                            {jobDetails.timeline.map((item, index) => (
-                                <div key={index} className="flex items-start gap-3">
-                                    <Clock size={16} className="text-gray-400 mt-0.5" />
-                                    <div className="flex-1">
-                                        <p className="text-sm sm:text-base text-primary">{item.event}</p>
-                                        <p className="text-xs sm:text-sm text-primary-light mt-1">{item.time}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    <TimelineTab jobDetails={jobDetails} highlightUserNames={highlightUserNames} />
 
                     {/* Feedback */}
-                    <div className="bg-white rounded-[20px] border border-[#EEF0F5] shadow-sm p-4 sm:p-7.5  pl-8 sm:pl-10">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-lg sm:text-xl font-semibold text-primary">Feedback</h2>
-                            <button className="flex items-center gap-1 px-3 py-1.5 text-xs sm:text-sm text-blue-600 hover:bg-blue-100 rounded-lg transition">
-                                <Flag size={16} /> Flag Review
-                            </button>
-                        </div>
-
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-1">
-                                {renderStars(jobDetails.feedback.rating)}
-                                <span className="text-xs sm:text-sm">{jobDetails.feedback.rating}</span>
-                            </div>
-
-                            <p className="text-xs sm:text-sm text-primary">{jobDetails.feedback.comment}</p>
-                            <div className="flex items-center justify-between text-[10px] sm:text-xs text-primary-light">
-                                <span>{jobDetails.feedback.reviewer}</span>
-                                <span>{jobDetails.feedback.date}</span>
-                            </div>
-                        </div>
-                    </div>
+                    <FeedbackTab jobDetails={jobDetails} renderStars={renderStars} />
 
                     {/* Attachments */}
-                    <div className="bg-white rounded-[20px] border border-[#EEF0F5] shadow-sm p-4 sm:p-7.  pl-8 sm:pl-10">
-                        <h2 className="text-lg sm:text-xl font-semibold text-primary mb-4">Attachments</h2>
-
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-
-                                <div className="relative w-full h-full">
-                                    <div className="relative aspect-square rounded-[12px] overflow-hidden bg-gray-100">
-                                        <img
-                                            src={jobDetails.attachments.before}
-                                            alt="Before"
-                                            className="w-full h-full object-cover"
-                                        />
-
-                                        {/* Overlay Text */}
-                                        <span className="absolute top-2 right-2 text-white text-sm font-semibold drop-shadow-md">
-                                            Before
-                                        </span>
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                            <div>
-
-                                <div className="relative aspect-square rounded-[12px] overflow-hidden bg-gray-100">
-                                    <img
-                                        src={jobDetails.attachments.after}
-                                        alt="After"
-                                        className="w-full h-full object-cover"
-                                    />
-
-                                    {/* Overlay Text */}
-                                    <span className="absolute top-2 right-2 text-white text-sm font-semibold drop-shadow-md">
-                                        After
-                                    </span>
-
-
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <AttachmentsTab jobDetails={jobDetails} />
 
                 </div>
             </div>
         </div>
     );
-
 }

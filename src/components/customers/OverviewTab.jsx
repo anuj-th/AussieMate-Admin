@@ -1,5 +1,4 @@
 import { Briefcase, CheckCircle, Star, DollarSign, MapPin, Calendar } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
@@ -43,11 +42,11 @@ const recentJobsData = [
   },
 ];
 
-export default function OverviewTab({ customer }) {
-  const navigate = useNavigate();
-
+export default function OverviewTab({ customer, onViewJobs }) {
   const handleViewJobs = () => {
-    navigate("/jobs");
+    if (onViewJobs) {
+      onViewJobs();
+    }
   };
 
   // Calculate stats from customer data

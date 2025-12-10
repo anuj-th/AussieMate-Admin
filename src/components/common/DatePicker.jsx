@@ -21,6 +21,7 @@ export default function DatePicker({
     return new Date(today.getFullYear(), today.getMonth(), 1);
   });
   const [selectingStart, setSelectingStart] = useState(true);
+  const [showCalendar, setShowCalendar] = useState(null); // null | 'from' | 'to'
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -48,7 +49,18 @@ export default function DatePicker({
     const day = String(d.getDate()).padStart(2, "0");
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const year = d.getFullYear();
-    return `${month}/${day}/${year}`;
+    // dd/mm/yyyy
+    return `${day}/${month}/${year}`;
+  };
+
+  // Compact display format (no year) for UI chips/inputs
+  const formatDisplayDate = (date) => {
+    if (!date) return "";
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    // dd/mm (no year)
+    return `${day}/${month}`;
   };
 
   const formatMonthYear = (date) => {
@@ -114,19 +126,24 @@ export default function DatePicker({
     return new Date(date).setHours(0, 0, 0, 0) === new Date(end).setHours(0, 0, 0, 0);
   };
 
+  const isDateDisabled = (date, start) => {
+    if (!start) return false;
+    const dateTime = new Date(date).setHours(0, 0, 0, 0);
+    const startTime = new Date(start).setHours(0, 0, 0, 0);
+    return dateTime < startTime;
+  };
+
   const handleDateClick = (date) => {
-    if (!customRange.start || (customRange.start && customRange.end) || !selectingStart) {
-      // Start new selection
-      setCustomRange({ start: date, end: null });
-      setSelectingStart(false);
-    } else {
-      // Complete selection
-      if (date < customRange.start) {
-        setCustomRange({ start: date, end: customRange.start });
-      } else {
-        setCustomRange({ ...customRange, end: date });
+    if (showCalendar === 'from') {
+      setCustomRange({ ...customRange, start: date });
+      setShowCalendar(null);
+    } else if (showCalendar === 'to') {
+      // Only allow dates on or after the start date
+      if (customRange.start && date < customRange.start) {
+        return; // Don't allow selection if before start date
       }
-      setSelectingStart(true);
+      setCustomRange({ ...customRange, end: date });
+      setShowCalendar(null);
     }
   };
 
@@ -165,11 +182,12 @@ export default function DatePicker({
       return;
     }
 
-    // Custom – keep dropdown open and show range picker
+    // Custom – keep dropdown open and show From/To inputs
     if (preset === "Custom") {
+      setShowCalendar(null); // Reset calendar view
       setCustomRange((prev) => ({
-        start: prev.start || today,
-        end: prev.end || today,
+        start: prev.start || null,
+        end: prev.end || null,
       }));
     }
   };
@@ -191,7 +209,9 @@ export default function DatePicker({
       return value.preset;
     }
     if (value.start && value.end) {
-      return `${formatDate(value.start)} - ${formatDate(value.end)}`;
+      const startStr = formatDisplayDate(value.start);
+      const endStr = formatDisplayDate(value.end);
+      return `${startStr} - ${endStr}`;
     }
     return label;
   };
@@ -201,11 +221,11 @@ export default function DatePicker({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between rounded-lg border border-[#D0D5DD] bg-white px-3.5 py-1.5 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB33] focus:border-[#2563EB] cursor-pointer gap-2"
+        className="w-full flex items-center justify-between rounded-lg border border-[#D0D5DD] bg-white px-3.5 py-1.5 text-xs md:text-sm  focus:border-[#2563EB] cursor-pointer gap-2"
       >
         <div className="flex items-center gap-2">
           <CalendarIcon size={16} className="text-gray-400" />
-          <span className={value ? "text-[#111827]" : "text-gray-400"}>
+          <span className={`${value ? "text-[#111827]" : "text-gray-400"} flex items-center gap-1 whitespace-nowrap`}>
             {displayLabel()}
           </span>
         </div>
@@ -244,157 +264,171 @@ export default function DatePicker({
             })}
           </div>
 
-          {/* Custom range calendar (two calendars side-by-side) */}
+          {/* Custom range - From/To inputs or Calendar */}
           {selectedPreset === "Custom" && (
             <div className="border-t border-gray-200 bg-white">
-              {/* Calendar Header with Navigation */}
-              <div className="flex items-center justify-between px-4 pt-4 pb-2">
-                <button
-                  type="button"
-                  onClick={() => navigateMonth(-1)}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <ChevronLeft size={20} className="text-gray-600" />
-                </button>
-                <div className="flex items-center gap-4">
-                  <span className="text-sm font-medium text-gray-900">
-                    {formatMonthYear(currentMonth)}
-                  </span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {formatMonthYear(getNextMonth())}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => navigateMonth(1)}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <ChevronRight size={20} className="text-gray-600" />
-                </button>
-              </div>
-
-              {/* Two Calendars Side by Side */}
-              <div className="grid grid-cols-2 gap-4 px-4 pb-4">
-                {/* Left Calendar */}
-                <div>
-                  <div className="grid grid-cols-7 gap-1 mb-2">
-                    {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
-                      <div
-                        key={day}
-                        className="text-xs font-medium text-gray-500 text-center py-1"
+              {!showCalendar ? (
+                <>
+                  {/* From/To Input Fields */}
+                  <div className="px-4 py-3 flex items-end gap-3">
+                    {/* From Date */}
+                    <div className="flex-1">
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                        From
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCalendar('from');
+                          // Set calendar to show the start date month if available
+                          if (customRange.start) {
+                            setCurrentMonth(new Date(customRange.start.getFullYear(), customRange.start.getMonth(), 1));
+                          }
+                        }}
+                        className="w-full flex !gap-1 items-center justify-between rounded-lg border border-[#D0D5DD] bg-white px-1 py-2 text-sm text-left cursor-pointer hover:bg-gray-50"
                       >
-                        {day}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-7 gap-1">
-                    {getDaysInMonth(currentMonth).map((dayObj, idx) => {
-                      const dayDate = dayObj.date;
-                      const isInRange = isDateInRange(
-                        dayDate,
-                        customRange.start,
-                        customRange.end
-                      );
-                      const isStart = isStartDate(dayDate, customRange.start);
-                      const isEnd = isEndDate(dayDate, customRange.end);
-                      const isSelected = isStart || isEnd;
+                        <span className={customRange.start ? "text-[#111827]" : "text-gray-400"}>
+                          {customRange.start ? formatDate(customRange.start) : "dd/mm/yyyy"}
+                        </span>
+                        <CalendarIcon size={16} className="text-gray-400" />
+                      </button>
+                    </div>
 
-                      return (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleDateClick(dayDate)}
-                          className={`text-xs py-2 rounded ${
-                            !dayObj.isCurrentMonth
-                              ? "text-gray-300"
-                              : isSelected
-                              ? "bg-[#2563EB] text-white font-semibold"
-                              : isInRange
-                              ? "bg-[#EBF2FD] text-[#2563EB]"
-                              : "text-gray-700 hover:bg-gray-100"
-                          }`}
-                        >
-                          {dayDate.getDate()}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Right Calendar */}
-                <div>
-                  <div className="grid grid-cols-7 gap-1 mb-2">
-                    {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
-                      <div
-                        key={day}
-                        className="text-xs font-medium text-gray-500 text-center py-1"
+                    {/* To Date */}
+                    <div className="flex-1">
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                        To
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCalendar('to');
+                          // Set calendar to show the end date month if available, otherwise start date month
+                          if (customRange.end) {
+                            setCurrentMonth(new Date(customRange.end.getFullYear(), customRange.end.getMonth(), 1));
+                          } else if (customRange.start) {
+                            setCurrentMonth(new Date(customRange.start.getFullYear(), customRange.start.getMonth(), 1));
+                          }
+                        }}
+                        className="w-full flex gap-1 items-center justify-between rounded-lg border border-[#D0D5DD] bg-white px-1 py-2 text-sm text-left cursor-pointer hover:bg-gray-50"
                       >
-                        {day}
+                        <span className={customRange.end ? "text-[#111827]" : "text-gray-400"}>
+                          {customRange.end ? formatDate(customRange.end) : "dd/mm/yyyy"}
+                        </span>
+                        <CalendarIcon size={16} className="text-gray-400" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Footer with Buttons */}
+                  <div className="border-t border-gray-200 px-4 py-3 bg-gray-50 flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsOpen(false);
+                      }}
+                      className="px-4 py-1.5 rounded-lg text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleApplyCustom}
+                      disabled={!customRange.start || !customRange.end}
+                      className="px-4 py-1.5 rounded-lg text-sm font-medium bg-[#2563EB] text-white hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Single Calendar for From/To Selection */}
+                  <div className="px-4 py-3">
+                    {/* Calendar Header with Navigation */}
+                    <div className="flex items-center justify-between mb-3">
+                      <button
+                        type="button"
+                        onClick={() => navigateMonth(-1)}
+                        className="p-1 hover:bg-gray-100 rounded"
+                      >
+                        <ChevronLeft size={20} className="text-gray-600" />
+                      </button>
+                      <span className="text-sm font-medium text-gray-900">
+                        {formatMonthYear(currentMonth)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => navigateMonth(1)}
+                        className="p-1 hover:bg-gray-100 rounded"
+                      >
+                        <ChevronRight size={20} className="text-gray-600" />
+                      </button>
+                    </div>
+
+                    {/* Calendar Grid */}
+                    <div>
+                      <div className="grid grid-cols-7 gap-1 mb-2">
+                        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+                          <div
+                            key={day}
+                            className="text-xs font-medium text-gray-500 text-center py-1"
+                          >
+                            {day}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-7 gap-1">
-                    {getDaysInMonth(getNextMonth()).map((dayObj, idx) => {
-                      const dayDate = dayObj.date;
-                      const isInRange = isDateInRange(
-                        dayDate,
-                        customRange.start,
-                        customRange.end
-                      );
-                      const isStart = isStartDate(dayDate, customRange.start);
-                      const isEnd = isEndDate(dayDate, customRange.end);
-                      const isSelected = isStart || isEnd;
+                      <div className="grid grid-cols-7 gap-1">
+                        {getDaysInMonth(currentMonth).map((dayObj, idx) => {
+                          const dayDate = dayObj.date;
+                          const isInRange = isDateInRange(
+                            dayDate,
+                            customRange.start,
+                            customRange.end
+                          );
+                          const isStart = isStartDate(dayDate, customRange.start);
+                          const isEnd = isEndDate(dayDate, customRange.end);
+                          const isSelected = isStart || isEnd;
+                          const isDisabled = showCalendar === 'to' && isDateDisabled(dayDate, customRange.start);
 
-                      return (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleDateClick(dayDate)}
-                          className={`text-xs py-2 rounded ${
-                            !dayObj.isCurrentMonth
-                              ? "text-gray-300"
-                              : isSelected
-                              ? "bg-[#2563EB] text-white font-semibold"
-                              : isInRange
-                              ? "bg-[#EBF2FD] text-[#2563EB]"
-                              : "text-gray-700 hover:bg-gray-100"
-                          }`}
-                        >
-                          {dayDate.getDate()}
-                        </button>
-                      );
-                    })}
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => handleDateClick(dayDate)}
+                              disabled={isDisabled}
+                              className={`text-xs py-2 rounded ${
+                                !dayObj.isCurrentMonth
+                                  ? "text-gray-300"
+                                  : isDisabled
+                                  ? "text-gray-300 cursor-not-allowed opacity-50"
+                                  : isSelected
+                                  ? "bg-[#2563EB] text-white font-semibold"
+                                  : isInRange
+                                  ? "bg-[#EBF2FD] text-[#2563EB]"
+                                  : "text-gray-700 hover:bg-gray-100"
+                              }`}
+                            >
+                              {dayDate.getDate()}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Footer with Date Range and Buttons */}
-              <div className="border-t border-gray-200 px-4 py-3 bg-gray-50 flex items-center justify-between">
-                <span className="text-sm text-gray-700">
-                  {customRange.start && customRange.end
-                    ? `${formatDate(customRange.start)} - ${formatDate(customRange.end)}`
-                    : "Select date range"}
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsOpen(false);
-                    }}
-                    className="px-4 py-1.5 rounded-lg text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleApplyCustom}
-                    disabled={!customRange.start || !customRange.end}
-                    className="px-4 py-1.5 rounded-lg text-sm font-medium bg-[#2563EB] text-white hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Apply
-                  </button>
-                </div>
-              </div>
+                  {/* Back Button */}
+                  <div className="border-t border-gray-200 px-4 py-3 bg-gray-50">
+                    <button
+                      type="button"
+                      onClick={() => setShowCalendar(null)}
+                      className="w-full px-4 py-1.5 rounded-lg text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

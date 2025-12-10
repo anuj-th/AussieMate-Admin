@@ -154,7 +154,7 @@ export default function CustomerDetails({ customer, onBackToList }) {
 
       {/* Tab Content */}
       <div className="mt-4">
-        {activeTab === "overview" && <OverviewTab customer={customer} />}
+        {activeTab === "overview" && <OverviewTab customer={customer} onViewJobs={() => setActiveTab("jobsHistory")} />}
         {activeTab === "jobsHistory" && <JobsHistoryTab customer={customer} />}
         {activeTab === "payments" && <PaymentsTab customer={customer} />}
         {activeTab === "feedback" && <FeedbackTab customer={customer} />}

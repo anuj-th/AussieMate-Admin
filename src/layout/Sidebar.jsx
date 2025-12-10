@@ -38,8 +38,8 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
       <div
         className={`fixed top-0 h-screen bg-white z-40 overflow-hidden transition-all duration-300 ease-in-out
         ${isOpen 
-          ? 'left-0 w-[290px] md:w-[240px] lg:w-[290px] border-r border-gray-200' 
-          : '-left-[290px] md:-left-[240px] lg:-left-[290px] w-0'
+          ? 'left-0 w-[290px] lg:w-[240px] xl:w-[290px] border-r border-gray-200' 
+          : '-left-[290px] lg:-left-[240px] xl:-left-[290px] w-0'
         }`}
         style={{ overflow: isOpen ? "visible" : "hidden" }}
       >

@@ -48,7 +48,7 @@ export default function AppLayout() {
       <div 
         className={`flex-1 flex flex-col transition-all duration-300 ease-in-out
           ${isSidebarOpen 
-            ? 'lg:ml-[290px] md:ml-[240px] ml-0' 
+            ? 'xl:ml-[290px] lg:ml-[240px] ml-0' 
             : 'ml-0'
           }`}
         style={{ 

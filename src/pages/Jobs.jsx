@@ -9,40 +9,19 @@ export default function Jobs() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   const navigate = useNavigate();
   const location = useLocation();
   const { jobId } = useParams();
 
 
-  // Handle deep-link when landing on /jobs/:jobId with state
-  useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        setLoading(true);
-        // Replace with your actual API endpoint
-        const response = await fetch("/api/jobs");
-        if (!response.ok) throw new Error("Failed to fetch jobs");
-        const data = await response.json();
-        setJobs(data);
-        setError(null);
-      } catch (err) {
-        setError(err.message);
-        console.error("Error fetching jobs:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchJobs();
-  }, []);
 
   const handleBack = () => {
     setSelectedJob(null);
     navigate("/jobs", { replace: true });
   };
 
-    useEffect(() => {
+  useEffect(() => {
     if (location.state?.job) {
       setSelectedJob(location.state.job);
     } else if (jobId && jobs.length > 0) {
@@ -55,16 +34,19 @@ export default function Jobs() {
     setSelectedJob(job);
     navigate(`/jobs/${job.jobId}`, { state: { job }, replace: true });
   };
-  
+
 
   return (
-    <div>
+    <div className="w-full overflow-x-hidden">
+      <div className="mx-auto w-6xl">
         <PageHeader
           title={selectedJob ? selectedJob.jobId : "Jobs"}
           subtitle={selectedJob ? (selectedJob.jobTitle || selectedJob.jobType) : ""}
+          role={selectedJob?.cleaner?.role}
           showBackArrow={!!selectedJob}
           onBack={selectedJob ? handleBack : undefined}
         />
+      </div>
 
       {selectedJob ? (
         <JobDetails job={selectedJob} onBackToList={handleBack} />

@@ -1,5 +1,4 @@
 import { Briefcase, Star, MapPin, Calendar } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 const recentJobsData = [
     {
@@ -44,11 +43,11 @@ const recentJobsData = [
     },
 ];
 
-export default function OverviewTab({ cleaner }) {
-    const navigate = useNavigate();
-
+export default function OverviewTab({ cleaner, onViewJobHistory }) {
     const handleViewJobs = () => {
-        navigate("/jobs");
+        if (onViewJobHistory) {
+            onViewJobHistory();
+        }
     };
 
     return (

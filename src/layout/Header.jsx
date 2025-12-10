@@ -83,7 +83,7 @@ export default function Header({
     <header 
       className={`fixed top-0 right-0 z-30 flex items-center justify-between bg-white px-6 py-4 border-b border-gray-200 transition-all duration-300 ease-in-out
         ${sidebarOpen 
-          ? 'lg:left-[290px] md:left-[240px] left-0' 
+          ? 'lg:left-[240px] xl:left-[290px] left-0' 
           : 'left-0'
         }`}
     >

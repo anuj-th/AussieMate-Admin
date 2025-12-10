@@ -270,21 +270,29 @@ export default function PaymentsTable({ onViewTransaction }) {
         return {
           dot: "bg-[#17C653]",
           text: "text-[#17C653]",
+          bg: "bg-[#EAFFF1]",
+          border: "border-[#17C65333]",
         };
       case "Held":
         return {
           dot: "bg-[#F6B100]",
           text: "text-[#F6B100]",
+          bg: "bg-[#FFF8DD]",
+          border: "border-[#F6B10033]",
         };
       case "Failed":
         return {
           dot: "bg-[#EF4444]",
           text: "text-[#EF4444]",
+          bg: "bg-[#FFE5E9]",
+          border: "border-[#EF444433]",
         };
       default:
         return {
           dot: "bg-gray-400",
           text: "text-gray-400",
+          bg: "bg-gray-100",
+          border: "border-gray-300",
         };
     }
   };
@@ -310,7 +318,7 @@ export default function PaymentsTable({ onViewTransaction }) {
           <SearchInput
             placeholder="Search by Job ID, Customer Name, Cleaner Name"
             onChange={setSearchQuery}
-            className="md:w-[350px]"
+            className="w-full xl:w-[400px]"
           />
 
           {/* Filters */}
@@ -478,7 +486,7 @@ export default function PaymentsTable({ onViewTransaction }) {
                   <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-primary font-medium border-r border-gray-200 text-xs md:text-sm">
                     {transaction.jobId}
                   </td>
-                  <td className="min-w-[150px] md:min-w-[180px] px-2 md:px-4 py-2 md:py-4 text-primary border-r border-gray-200 text-xs md:text-sm">
+                  <td className="min-w-[150px] md:min-w-[180px] px-2 md:px-4 py-2 md:py-4 text-primary font-medium border-r border-gray-200 text-xs md:text-sm">
                     {transaction.transactionId}
                   </td>
                   <td className="min-w-[180px] md:min-w-[220px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
@@ -530,7 +538,7 @@ export default function PaymentsTable({ onViewTransaction }) {
                   </td>
                   <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${statusColors.text} text-xs md:text-sm font-medium`}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs md:text-sm font-medium ${statusColors.bg} ${statusColors.border} ${statusColors.text}`}
                     >
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${statusColors.dot}`}
