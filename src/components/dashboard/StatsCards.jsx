@@ -47,10 +47,10 @@ export default function StatsCards({ items = cards }) {
           </div>
 
           <div className="flex flex-col">
-            <span className="text-xl font-semibold text-[#1C1C1C] leading-tight">
+            <span className="text-[28px] font-semibold text-[#1C1C1C] leading-tight">
               {card.value}
             </span>
-            <span className="text-xs font-medium text-[#7E7E87] mt-1">
+            <span className="text-sm font-medium text-[#7E7E87] mt-1">
               {card.label}
             </span>
           </div>

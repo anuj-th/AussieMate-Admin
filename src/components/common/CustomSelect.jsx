@@ -79,7 +79,7 @@ const CustomSelect = ({
                   key={option.value}
                   type="button"
                   onClick={() => handleSelect(option.value)}
-                  className={`w-full flex items-center justify-between ${itemPadding || (optionClassName ? 'px-3 py-2' : 'px-4 py-3')} rounded-lg text-sm transition-colors cursor-pointer mb-1 last:mb-0 ${
+                  className={`w-full flex items-center justify-between ${itemPadding || (optionClassName ? 'px-3 py-2' : 'px-4 py-3')} rounded-lg text-xs transition-colors cursor-pointer mb-1 last:mb-0 ${
                     isSelected
                       ? 'bg-[#EBF2FD] text-[#2563EB] font-semibold'
                       : 'text-[#111827] hover:bg-[#F9FAFB]'

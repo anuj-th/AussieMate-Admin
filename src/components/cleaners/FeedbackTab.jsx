@@ -94,19 +94,24 @@ export default function FeedbackTab({ cleaner }) {
         <div className="space-y-6">
             {/* Average Rating Card + Feedback Cards */}
             <div className="flex gap-4 -mx-1 px-1 items-stretch">
-                {/* Average Rating Summary Card */}
-                <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 md:p-6 shadow-md w-[280px] md:w-[320px] flex-shrink-0 self-stretch flex flex-col justify-center items-center">
-                    <p className="text-sm md:text-sm font-medium text-primary-light mb-2 md:mb-3">Avg rating</p>
+
+                {/* ⭐ Average Rating Summary Card (same height as others) */}
+                <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 md:p-6 shadow-md 
+        w-[280px] md:w-[320px] flex-shrink-0 self-stretch flex flex-col justify-center 
+        items-center min-h-[230px] md:min-h-[270px]">
+
+                    <p className="text-sm md:text-sm font-medium text-primary-light mb-2 md:mb-3">
+                        Avg rating
+                    </p>
+
                     <div className="space-y-2 md:space-y-3 flex flex-col items-center">
-                        <div>
-                            {renderStars(averageRating, 32)}
-                        </div>
+                        <div>{renderStars(averageRating, 32)}</div>
                         <p className="text-2xl font-semibold text-primary">{averageRating}</p>
                     </div>
                 </div>
 
-                {/* Feedback Cards Swiper */}
-                <div className="flex-1 min-w-0 flex items-stretch pb-2">
+                {/* ⭐ Feedback Cards Swiper */}
+                <div className="flex-1 min-w-0 flex items-stretch pb-2 ">
                     <Swiper
                         modules={[Autoplay]}
                         spaceBetween={16}
@@ -117,19 +122,36 @@ export default function FeedbackTab({ cleaner }) {
                         }}
                         loop={true}
                         className="feedback-swiper !flex"
-                        style={{ height: "100%", display: "flex", alignItems: "stretch", paddingBottom: "8px" }}
+                        style={{
+                            height: "100%",
+                            display: "flex",
+                            alignItems: "stretch",
+                            paddingBottom: "8px",
+                        }}
                     >
                         {feedbackData.map((feedback) => (
-                            <SwiperSlide key={feedback.id} style={{ width: "auto", height: "100%", display: "flex" }}>
-                                <div className="bg-white border border-[#E5E7EB] rounded-[14px] p-3 md:p-4 shadow-md w-[280px] md:w-[320px] flex flex-col h-full cursor-pointer">
-                                    {/* Header with Title and Flag Button */}
-                                    <div className="flex items-start  justify-between mb-2 gap-2">
+                            <SwiperSlide
+                                key={feedback.id}
+                                style={{
+                                    width: "auto",
+                                    height: "100%",
+                                    display: "flex",
+                                }}
+                            >
+                                {/* ⭐ Feedback Card (same min-height as Avg Rating card) */}
+                                <div className="bg-white border border-[#E5E7EB] rounded-[14px] p-3 md:p-4 shadow-md 
+                w-[280px] md:w-[320px] flex flex-col h-full min-h-[230px] md:min-h-[270px] cursor-pointer">
+
+                                    {/* Header */}
+                                    <div className="flex items-start justify-between mb-2 gap-2">
                                         <h3 className="text-sm font-semibold text-primary-light flex-1">
                                             {feedback.title}
                                         </h3>
+
                                         <button
                                             onClick={() => handleFlagReview(feedback.id)}
-                                            className="flex items-center gap-1 text-xs text-[#2563EB] font-medium cursor-pointer transition-colors flex-shrink-0 whitespace-nowrap"
+                                            className="flex items-center gap-1 text-xs text-[#2563EB] font-medium 
+                  cursor-pointer transition-colors flex-shrink-0 whitespace-nowrap"
                                         >
                                             <Flag size={12} className="md:w-[14px] md:h-[14px]" />
                                             <span>Flag Review</span>
@@ -156,7 +178,8 @@ export default function FeedbackTab({ cleaner }) {
                                         {feedback.tags.map((tag, index) => (
                                             <span
                                                 key={index}
-                                                className="px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium bg-[#EBF2FD] text-[#2563EB] border border-[#2563EB33]"
+                                                className="px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs 
+                    font-medium bg-[#EBF2FD] text-[#2563EB] border border-[#2563EB33]"
                                             >
                                                 {tag}
                                             </span>
@@ -181,5 +204,6 @@ export default function FeedbackTab({ cleaner }) {
                 </div>
             </div>
         </div>
+
     );
 }

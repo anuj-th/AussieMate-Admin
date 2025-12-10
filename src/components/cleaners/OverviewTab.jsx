@@ -1,5 +1,12 @@
 import { Briefcase, Star, MapPin, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+
+
 
 const recentJobsData = [
     {
@@ -96,64 +103,85 @@ export default function OverviewTab({ cleaner }) {
                     <h3 className="font-semibold text-primary text-base md:text-lg">
                         Recent jobs
                     </h3>
-                    <button 
+                    <button
                         onClick={handleViewJobs}
                         className="text-sm text-primary font-medium cursor-pointer whitespace-nowrap"
                     >
                         View Jobs
                     </button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto">
-                    {recentJobsData.map((job) => {
-                        const isInProgress = job.status === "In Progress";
-                        return (
-                            <div
-                                key={job.id}
-                                className="bg-white border border-gray-200 rounded-lg p-4 space-y-2 min-w-[200px] shadow-sm"
-                            >
-                                <div>
-                                    <p className="text-primary font-medium whitespace-nowrap mb-1">
-                                        {job.type} • {job.subType}
-                                    </p>
-                                    <span
-                                        className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                                            isInProgress
-                                                ? "bg-[#FFF8DD] text-[#F6B100] border border-[#F6B10033]"
-                                                : "bg-[#EAFFF1] text-[#17C653] border border-[#17C65333]"
-                                        }`}
-                                    >
-                                        <span
-                                            className={`w-1.5 h-1.5 rounded-full inline-block mr-1 ${
-                                                isInProgress
-                                                    ? "bg-[#F6B100]"
-                                                    : "bg-[#17C653]"
-                                            }`}
-                                        />
-                                        {job.status}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-1.5 text-sm font-medium text-primary-light">
-                                    <MapPin size={12} className="flex-shrink-0" />
-                                    <span className="truncate">{job.location}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 text-sm font-medium text-primary-light">
-                                    <Calendar size={12} className="flex-shrink-0" />
-                                    <span>{job.date}</span>
-                                </div>
-                                <div className="pt-2 flex justify-between">
-                                    <p className="text-sm font-medium">
-                                        <span className="text-[#374151]">Payment: </span>
-                                        <span className="text-primary">${job.payment}</span>
-                                    </p>
-                                    <p className="text-sm font-medium text-[#374151]">
-                                        {job.releasedDate}
-                                    </p>
-                                </div>
-                            </div>
-                        );
-                    })}
+
+                <div className="overflow-hidden">
+                    <Swiper
+                        modules={[Autoplay]}
+                        spaceBetween={16}
+                        slidesPerView="auto"
+                        autoplay={{ delay: 2800, disableOnInteraction: false }}
+                        loop={true}
+                        className="!overflow-hidden !flex"
+                        style={{ display: "flex", alignItems: "stretch", paddingBottom: "8px" }}
+                    >
+                        {recentJobsData.map((job) => {
+                            const isInProgress = job.status === "In Progress";
+                            return (
+                                <SwiperSlide
+                                    key={job.id}
+                                    className="h-full flex"
+                                    style={{ width: "auto", height: "100%", display: "flex" }}
+                                >
+
+                                    <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-2 min-w-[260px] md:min-w-[320px] h-full shadow-sm flex flex-col">
+
+                                        {/* Type & Status */}
+                                        <div>
+                                            <p className="text-primary font-medium whitespace-nowrap mb-1">
+                                                {job.type} • {job.subType}
+                                            </p>
+
+                                            <span
+                                                className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-flex items-center gap-1 ${isInProgress
+                                                    ? "bg-[#FFF8DD] text-[#F6B100] border border-[#F6B10033]"
+                                                    : "bg-[#EAFFF1] text-[#17C653] border border-[#17C65333]"
+                                                    }`}
+                                            >
+                                                <span
+                                                    className={`w-1.5 h-1.5 rounded-full ${isInProgress ? "bg-[#F6B100]" : "bg-[#17C653]"
+                                                        }`}
+                                                />
+                                                {job.status}
+                                            </span>
+                                        </div>
+
+                                        {/* Location */}
+                                        <div className="flex items-center gap-1.5 text-sm font-medium text-primary-light">
+                                            <MapPin size={12} className="flex-shrink-0" />
+                                            <span className="truncate">{job.location}</span>
+                                        </div>
+
+                                        {/* Date */}
+                                        <div className="flex items-center gap-1.5 text-sm font-medium text-primary-light">
+                                            <Calendar size={12} className="flex-shrink-0" />
+                                            <span>{job.date}</span>
+                                        </div>
+
+                                        {/* Payment Row */}
+                                        <div className="pt-2 flex justify-between">
+                                            <p className="text-sm font-medium">
+                                                <span className="text-[#374151]">Payment: </span>
+                                                <span className="text-primary">${job.payment}</span>
+                                            </p>
+                                            <p className="text-sm font-medium text-[#374151]">
+                                                {job.releasedDate}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </SwiperSlide>
+                            );
+                        })}
+                    </Swiper>
                 </div>
             </div>
+
         </div>
     );
 }

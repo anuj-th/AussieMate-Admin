@@ -44,9 +44,6 @@ export default function DocumentsTab({ cleaner }) {
 
     return (
         <div className="space-y-4">
-            <h3 className="font-semibold text-primary mb-4 text-base md:text-lg">
-                Documents Gallery
-            </h3>
             <div className="divide-y divide-[#F3F4F6]">
                 {documents.map((doc) => (
                     <div

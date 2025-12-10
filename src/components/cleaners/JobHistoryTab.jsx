@@ -345,7 +345,7 @@ export default function JobHistoryTab({ cleaner }) {
                                     className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                                     onClick={() => handleSort("jobId")}
                                 >
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    <span className="font-medium text-gray-700 text-xs md:text-xs">
                                         Job ID
                                     </span>
                                     <img
@@ -361,7 +361,7 @@ export default function JobHistoryTab({ cleaner }) {
                                     className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                                     onClick={() => handleSort("customer")}
                                 >
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    <span className="font-medium text-gray-700 text-xs md:text-xs">
                                         Customer
                                     </span>
                                     <img
@@ -377,7 +377,7 @@ export default function JobHistoryTab({ cleaner }) {
                                     className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                                     onClick={() => handleSort("joined")}
                                 >
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    <span className="font-medium text-gray-700 text-xs md:text-xs">
                                         Joined
                                     </span>
                                     <img
@@ -393,7 +393,7 @@ export default function JobHistoryTab({ cleaner }) {
                                     className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                                     onClick={() => handleSort("amount")}
                                 >
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    <span className="font-medium text-gray-700 text-xs md:text-xs">
                                         Amount
                                     </span>
                                     <img
@@ -409,7 +409,7 @@ export default function JobHistoryTab({ cleaner }) {
                                     className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                                     onClick={() => handleSort("status")}
                                 >
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    <span className="font-medium text-gray-700 text-xs md:text-xs">
                                         Status
                                     </span>
                                     <img
@@ -456,7 +456,7 @@ export default function JobHistoryTab({ cleaner }) {
                                     </td>
                                     <td className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-4">
                                         <span
-                                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs md:text-sm font-medium ${statusColors.bg} ${statusColors.border} ${statusColors.text}`}
+                                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs md:text-xs font-medium ${statusColors.bg} ${statusColors.border} ${statusColors.text}`}
                                         >
                                             <span
                                                 className={`w-1.5 h-1.5 rounded-full ${statusColors.dot}`}

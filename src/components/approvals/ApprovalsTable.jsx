@@ -347,20 +347,20 @@ export default function ApprovalsTable({ onViewCleaner }) {
                                         <img
                                             src={cleaner.avatar}
                                             alt={cleaner.name}
-                                            className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover flex-shrink-0"
+                                            className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover flex-shrink-0"
                                         />
                                         <div className="min-w-0">
                                             <p className="font-medium text-gray-900 text-xs md:text-sm truncate">
                                                 {cleaner.name}
                                             </p>
-                                            <p className="text-[10px] md:text-xs text-gray-500 truncate">{cleaner.role}</p>
+                                            <p className="text-[10px] md:text-sm text-gray-500 truncate">{cleaner.role}</p>
                                         </div>
                                     </div>
                                 </td>
-                                <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-gray-700 border-r border-gray-200 text-xs md:text-sm">
+                                <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-gray-700 border-r border-gray-200 text-xs md:text-sm font-medium">
                                     {cleaner.radius}
                                 </td>
-                                <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-gray-700 border-r border-gray-200 text-xs md:text-sm">
+                                <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-gray-700 border-r border-gray-200 text-xs md:text-sm font-medium">
                                     {cleaner.joined}
                                 </td>
                                 <td className="min-w-[130px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">

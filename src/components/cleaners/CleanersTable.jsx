@@ -323,7 +323,7 @@ export default function CleanersTable({ onViewCleaner }) {
             </div>
 
             {/* Table Section */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto ">
                 <table className="w-full border-collapse min-w-[1000px]">
                     <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
@@ -335,7 +335,7 @@ export default function CleanersTable({ onViewCleaner }) {
                             </th>
                             <th className="min-w-[200px] md:min-w-[250px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    <span className="font-medium text-gray-700 text-sm md:text-xs">
                                         Cleaner Name & Role
                                     </span>
                                     <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
@@ -343,37 +343,37 @@ export default function CleanersTable({ onViewCleaner }) {
                             </th>
                             <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Badge</span>
+                                    <span className="font-medium text-gray-700 text-xs md:text-xs">Badge</span>
                                     <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
                                 </div>
                             </th>
                             <th className="min-w-[80px] md:min-w-[100px] px-2 md:px-4 font-medium py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Jobs</span>
+                                    <span className="font-medium text-gray-700 text-xs md:text-xs">Jobs</span>
                                     <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
                                 </div>
                             </th>
                             <th className="min-w-[80px] md:min-w-[100px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Rating</span>
+                                    <span className="font-medium text-gray-700 text-xs md:text-xs">Rating</span>
                                     <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
                                 </div>
                             </th>
                             <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Earnings</span>
+                                    <span className="font-medium text-gray-700 text-xs md:text-xs">Earnings</span>
                                     <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
                                 </div>
                             </th>
                             <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Status</span>
+                                    <span className="font-medium text-gray-700 text-xs md:text-xs">Status</span>
                                     <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
                                 </div>
                             </th>
                             <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Joined</span>
+                                    <span className="font-medium text-gray-700 text-xs md:text-xs">Joined</span>
                                     <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
                                 </div>
                             </th>
@@ -435,7 +435,7 @@ export default function CleanersTable({ onViewCleaner }) {
                                             );
                                         })()}
                                     </td>
-                                    <td className="min-w-[80px] md:min-w-[100px] px-2 md:px-4 py-2 md:py-4 text-primary border-r border-gray-200 text-xs md:text-sm">
+                                    <td className="min-w-[80px] md:min-w-[100px] px-2 md:px-4 py-2 md:py-4 text-primary border-r border-gray-200 text-xs md:text-sm font-medium">
                                         {cleaner.jobs}
                                     </td>
                                     <td className="min-w-[80px] md:min-w-[100px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
@@ -452,7 +452,7 @@ export default function CleanersTable({ onViewCleaner }) {
                                     <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-primary font-medium border-r border-gray-200 text-xs md:text-sm">
                                         AU${cleaner.earnings.toLocaleString()}
                                     </td>
-                                    <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
+                                    <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200 ">
                                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${statusColors.bg} ${statusColors.border} ${statusColors.text} text-xs md:text-sm font-medium`}>
                                             <span className={`w-1.5 h-1.5 rounded-full ${statusColors.dot}`} />
                                             {cleaner.status}

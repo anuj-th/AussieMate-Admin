@@ -126,12 +126,12 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
           {/* Rating & Tier */}
           <div className="flex items-center justify-center gap-2 md:gap-3 mt-4">
             <span className="inline-flex items-center gap-1.5 px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-medium bg-[#FFF4E0] border border-[#F6B10033] text-[#F6B100]">
-              <Star size={12} className="md:w-[14px] md:h-[14px] text-[#F6B100] fill-[#F59E0B]" />
-              <span>{cleaner.rating || 4.2}</span>
+              <Star size={12} className="md:w-[12px] md:h-[12px] text-[#F6B100] fill-[#F59E0B]" />
+              <span className="text-sm">{cleaner.rating || 4.2}</span>
             </span>
             <span className="inline-flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-medium bg-[#F3F4F6] border border-[#E5E7EB] text-[#4B5563]">
               <img src={tierIcon} alt={tierLabel} className="w-3 h-3 md:w-4 md:h-4" />
-              <span>{tierLabel}</span>
+              <span className="text-sm">{tierLabel}</span>
             </span>
           </div>
         </div>
@@ -156,12 +156,7 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
           </div>
         </div>
 
-      {/* Tab Heading */}
-      <div className="mt-4">
-        <h2 className="font-semibold text-primary">
-          {tabs.find((tab) => tab.id === activeTab)?.label || "Overview (Default)"}
-        </h2>
-              </div>
+  
 
       {/* Tab Content */}
       <div className="mt-4">
