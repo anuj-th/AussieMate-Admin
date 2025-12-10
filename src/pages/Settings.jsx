@@ -5,7 +5,7 @@ export default function Settings() {
   return(
   <>
     <PageHeader title="Settings" showBackArrow={false} />
-    <SettingsComponent />;
+    <SettingsComponent />
   </>
 )
 }
