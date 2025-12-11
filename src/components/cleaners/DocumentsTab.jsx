@@ -44,6 +44,7 @@ export default function DocumentsTab({ cleaner }) {
 
     return (
         <div className="space-y-4">
+
             <div className="divide-y divide-[#F3F4F6]">
                 {documents.map((doc) => (
                     <div

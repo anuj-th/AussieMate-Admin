@@ -72,7 +72,7 @@ export default function EarningsTab({ cleaner }) {
                                     items={[
                                         {
                                             id: "view",
-                                            label: "View Details",
+                                            label: "Approve Payout",
                                             onClick: () => {
                                                 // TODO: Handle view details
                                                 console.log("View payout details", payout.id);
@@ -80,7 +80,7 @@ export default function EarningsTab({ cleaner }) {
                                         },
                                         {
                                             id: "process",
-                                            label: "Process Payout",
+                                            label: "Export Payout Report",
                                             onClick: () => {
                                                 // TODO: Handle process payout
                                                 console.log("Process payout", payout.id);

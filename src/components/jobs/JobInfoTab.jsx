@@ -24,15 +24,25 @@ export default function JobInfoTab({ jobDetails }) {
 
                 <p className="text-xs sm:text-sm text-primary-light">{jobDetails.jobInfo.description}</p>
 
-                <div className="w-full mt-4">
-                    <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full sm:max-w-[200px] md:max-w-[250px]">
+                <div className="w-full mt-4 ">
+
+                    <div className="grid grid-cols-2 p-2  bg-[#E5E7EB] gap-1 sm:gap-1 sm:max-w-[200px] md:max-w-[250px]  rounded-xl ">
                         {jobDetails.jobInfo.images.map((img, index) => (
-                            <div key={index} className="w-full aspect-square rounded-md overflow-hidden">
-                                <img src={img} alt={`Pet ${index + 1}`} className="w-full h-full object-cover" />
+                            <div
+                                key={index}
+                                className="w-full  aspect-square rounded-xl overflow-hidden sm:max-w-[150px] md:max-w-[150px]"
+                            >
+                                <img
+                                    src={img}
+                                    alt={`Pet ${index + 1}`}
+                                    className="w-full h-full object-cover "
+                                />
                             </div>
                         ))}
+
                     </div>
                 </div>
+
             </div>
         </div>
     );

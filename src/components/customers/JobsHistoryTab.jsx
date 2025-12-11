@@ -254,6 +254,7 @@ export default function JobsHistoryTab({ customer }) {
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+      
       {/* Filters Section */}
       <div className="p-3 md:p-4 border-b border-gray-200">
         <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 items-stretch lg:items-center justify-between">
@@ -324,9 +325,19 @@ export default function JobsHistoryTab({ customer }) {
                 </div>
               </th>
               <th className="min-w-[180px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <span className="font-medium text-gray-700 text-xs md:text-xs">
-                  Cleaner
-                </span>
+                <div className="flex items-center gap-1">
+                  <span className="font-medium text-gray-700 text-xs md:text-xs">
+                    Cleaner
+                  </span>
+
+                  <img
+                    src={tableSortIcon}
+                    alt="sort"
+                    className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
+                  />
+
+                  {getSortIcon("cleaner")}
+                </div>
               </th>
               <th className="min-w-[100px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                 <div
@@ -341,10 +352,21 @@ export default function JobsHistoryTab({ customer }) {
                 </div>
               </th>
               <th className="min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <span className="font-medium text-gray-700 text-xs md:text-xs">
-                  Status
-                </span>
+                <div className="flex items-center gap-1">
+                  <span className="font-medium text-gray-700 text-xs md:text-xs">
+                    Status
+                  </span>
+
+                  <img
+                    src={tableSortIcon}
+                    alt="sort"
+                    className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
+                  />
+
+                  {getSortIcon("status")}
+                </div>
               </th>
+
               <th className="w-14 md:w-16 px-2 md:px-4 py-2 md:py-3 text-center"></th>
             </tr>
           </thead>

@@ -62,7 +62,7 @@ export default function OverviewTab({ cleaner, onViewJobHistory }) {
         <div className="space-y-6">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-3 shadow-sm">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-3 shadow-xs">
                     <div className="w-10 h-10 rounded-lg bg-[#F9F9F9] border border-[#E5E7EB] flex items-center justify-center flex-shrink-0">
                         <Briefcase size={20} className="text-[#2563EB]" />
                     </div>
@@ -73,7 +73,7 @@ export default function OverviewTab({ cleaner, onViewJobHistory }) {
                         <p className="text-sm font-medium text-primary-light">Jobs completed</p>
                     </div>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-3 shadow-sm">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-3 shadow-xs">
                     <div className="w-10 h-10 rounded-lg bg-[#F9F9F9] border border-[#E5E7EB] flex items-center justify-center flex-shrink-0">
                         <Star size={20} className="text-[#2563EB]" />
                     </div>
@@ -84,7 +84,7 @@ export default function OverviewTab({ cleaner, onViewJobHistory }) {
                         <p className="text-sm font-medium text-primary-light">Avg Rating</p>
                     </div>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-3 shadow-sm">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-3 shadow-xs">
                     <div className="w-10 h-10 rounded-lg bg-[#F9F9F9] border border-[#E5E7EB] flex items-center justify-center flex-shrink-0">
                         <span className="text-[#2563EB] font-bold text-lg">$</span>
                     </div>
@@ -130,7 +130,7 @@ export default function OverviewTab({ cleaner, onViewJobHistory }) {
                                     style={{ width: "auto", height: "100%", display: "flex" }}
                                 >
 
-                                    <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-2 min-w-[260px] md:min-w-[320px] h-full shadow-sm flex flex-col">
+                                    <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-2 min-w-[260px] md:min-w-[320px] h-full shadow-xs flex flex-col">
 
                                         {/* Type & Status */}
                                         <div>
