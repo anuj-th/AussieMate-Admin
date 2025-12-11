@@ -454,54 +454,51 @@ export default function CustomersTable({ onViewCustomer }) {
                             </th>
                             <th className="min-w-[200px] md:min-w-[250px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div
-                                    className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                                    onClick={() => handleSort("name")}
+                                    className="flex items-center gap-1.5 md:gap-2 "
+                                  
                                 >
                                     <span className="font-medium text-primary-light text-xs md:text-xs">
                                         Customer
                                     </span>
-                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
-                                    {getSortIcon("name")}
+                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer"      {...getSortIcon("name")}   onClick={() => handleSort("name")}/>
+                               
                                 </div>
                             </th>
                             <th className="min-w-[140px] md:min-w-[160px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div
-                                    className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                                    onClick={() => handleSort("phone")}
+                                    className="flex items-center gap-1.5 md:gap-2"
+                               
                                 >
                                     <span className="font-medium text-primary-light text-xs md:text-xs">Phone Number</span>
-                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
-                                    {getSortIcon("phone")}
+                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer" {...getSortIcon("phone")}  onClick={() => handleSort("phone")}/>
                                 </div>
                             </th>
                             <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div
-                                    className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                                    onClick={() => handleSort("jobsPosted")}
+                                    className="flex items-center gap-1.5 md:gap-2 "
+                                    
                                 >
                                     <span className="font-medium text-primary-light text-xs md:text-xs">Jobs Posted</span>
-                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
-                                    {getSortIcon("jobsPosted")}
+                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer" {...getSortIcon("jobsPosted")}  onClick={() => handleSort("jobsPosted")}/>
                                 </div>
                             </th>
                             <th className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div
-                                    className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                                    onClick={() => handleSort("spend")}
+                                    className="flex items-center gap-1.5 md:gap-2"
+                                   
                                 >
                                     <span className="font-medium text-primary-light text-xs md:text-xs">Spend</span>
-                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
-                                    {getSortIcon("spend")}
+                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer" {...getSortIcon("spend")}  onClick={() => handleSort("spend")}/>
                                 </div>
                             </th>
                             <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div
-                                    className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                                    onClick={() => handleSort("joined")}
+                                    className="flex items-center gap-1.5 md:gap-2 "
+                                   
                                 >
                                     <span className="font-medium text-primary-light text-xs md:text-xs">Joined</span>
-                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
-                                    {getSortIcon("joined")}
+                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer" {...getSortIcon("joined")}  onClick={() => handleSort("joined")}/>
+                                    
                                 </div>
                             </th>
                             <th className="w-16 md:w-20 px-2 md:px-4 py-2 md:py-3 text-center">

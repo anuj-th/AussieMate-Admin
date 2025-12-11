@@ -470,36 +470,41 @@ export default function PaymentsTab({ customer }) {
                                 </th>
                                 <th className="min-w-[140px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                     <div
-                                        className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                                        onClick={() => handleSort("date")}
+                                        className="flex items-center gap-1.5 md:gap-2 "
+                                       
                                     >
-                                        <span className="font-medium text-gray-700 text-xs md:text-xs">Date</span>
+                                        <span className="font-medium text-gray-700 text-xs md:text-xs ">Date</span>
                                         <img
                                             src={tableSortIcon}
                                             alt="sort"
-                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
+                                            className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer"
+                                             {...getSortIcon("date")}
+                                              onClick={() => handleSort("date")}
+                                              
                                         />
-                                        {getSortIcon("date")}
+                                       
                                     </div>
                                 </th>
                                 <th className="min-w-[140px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                     <div
-                                        className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                                        onClick={() => handleSort("amount")}
+                                        className="flex items-center gap-1.5 md:gap-2"
+                                       
                                     >
                                         <span className="font-medium text-gray-700 text-xs md:text-xs">Amount</span>
                                         <img
                                             src={tableSortIcon}
                                             alt="sort"
-                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
+                                            className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer"
+                                             {...getSortIcon("amount")}
+                                              onClick={() => handleSort("amount")}
                                         />
-                                        {getSortIcon("amount")}
+                                       
                                     </div>
                                 </th>
                                 <th className="min-w-[160px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                     <div
-                                        className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                                        onClick={() => handleSort("paymentMode")}
+                                        className="flex items-center gap-1.5 md:gap-2 "
+                                       
                                     >
                                         <span className="font-medium text-gray-700 text-xs md:text-xs">
                                             Payment Mode
@@ -507,14 +512,30 @@ export default function PaymentsTab({ customer }) {
                                         <img
                                             src={tableSortIcon}
                                             alt="sort"
-                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
+                                            className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer"
+                                              {...getSortIcon("paymentMode")}
+                                               onClick={() => handleSort("paymentMode")}
                                         />
-                                        {getSortIcon("paymentMode")}
+                                      
                                     </div>
                                 </th>
                                 <th className="min-w-[140px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                    <span className="font-medium text-gray-700 text-xs md:text-xs">Status</span>
+                                    <div className="flex items-center gap-1"
+                                    >
+                                        <span className="font-medium text-gray-700 text-xs md:text-xs">Status</span>
+
+                                        <img
+                                            src={tableSortIcon}
+                                            alt="sort"
+                                            className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer"
+                                             onClick={() => handleSort("status")}
+                                             {...getSortIcon("status")}
+                                        />
+
+                                        
+                                    </div>
                                 </th>
+
                                 <th className="w-14 md:w-16 px-2 md:px-4 py-2 md:py-3 text-center"></th>
                             </tr>
                         </thead>

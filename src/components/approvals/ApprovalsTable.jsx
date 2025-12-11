@@ -223,11 +223,7 @@ export default function ApprovalsTable({ onViewCleaner }) {
 
     const getSortIcon = (column) => {
         if (sortColumn !== column) return null;
-        return sortDirection === "asc" ? (
-            <ChevronUp size={14} className="text-gray-400" />
-        ) : (
-            <ChevronDown size={14} className="text-gray-400" />
-        );
+        return sortDirection === "asc" ;
     };
 
 
@@ -300,30 +296,30 @@ export default function ApprovalsTable({ onViewCleaner }) {
                             </th>
                             <th className="min-w-[200px] md:min-w-[250px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    <span className="font-medium text-gray-700 text-xs md:text-xs">
                                         Cleaner Name & Role
                                     </span>
-                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
+                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer" {...getSortIcon("name")}  onClick={() => handleSort("name")} />
                                 </div>
                             </th>
                             <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Radius</span>
-                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
+                                    <span className="font-medium text-gray-700 text-xs md:text-xs">Radius</span>
+                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer" {...getSortIcon("radius")}  onClick={() => handleSort("radius")}/>
                                 </div>
                             </th>
                             <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Joined</span>
-                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
+                                    <span className="font-medium text-gray-700 text-xs md:text-xs">Joined</span>
+                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer" {...getSortIcon("joined")}  onClick={() => handleSort("joined")}/>
                                 </div>
                             </th>
                             <th className="min-w-[130px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    <span className="font-medium text-gray-700 text-xs md:text-xs">
                                         Approval Status
                                     </span>
-                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
+                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer" {...getSortIcon("status")}  onClick={() => handleSort("status")}/>
                                 </div>
                             </th>
                             <th className="w-16 md:w-20 px-2 md:px-4 py-2 md:py-3 text-center">

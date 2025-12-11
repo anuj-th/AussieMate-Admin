@@ -304,26 +304,26 @@ export default function JobsHistoryTab({ customer, onViewJob }) {
               </th>
               <th className="min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                 <div
-                  className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                  onClick={() => handleSort("jobId")}
+                  className="flex items-center gap-1.5 md:gap-2 "
+                
                 >
                   <span className="font-medium text-gray-700 text-xs md:text-xs">
                     Job ID
                   </span>
-                  <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
-                  {getSortIcon("jobId")}
+                  <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer" {...getSortIcon("jobId")}   onClick={() => handleSort("jobId")}/>
+                  
                 </div>
               </th>
               <th className="min-w-[200px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                 <div
-                  className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                  onClick={() => handleSort("jobType")}
+                  className="flex items-center gap-1.5 md:gap-2 "
+                 
                 >
                   <span className="font-medium text-gray-700 text-xs md:text-xs">
                     Job Type
                   </span>
-                  <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
-                  {getSortIcon("jobType")}
+                  <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer"  onClick={() => handleSort("jobType")}  {...getSortIcon("jobType")}/>
+                 
                 </div>
               </th>
               <th className="min-w-[180px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
@@ -335,22 +335,25 @@ export default function JobsHistoryTab({ customer, onViewJob }) {
                   <img
                     src={tableSortIcon}
                     alt="sort"
-                    className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
+                    className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer " {...getSortIcon("cleaner")}
+                    onClick={() => handleSort("cleaner")}
                   />
 
-                  {getSortIcon("cleaner")}
+                 
                 </div>
               </th>
               <th className="min-w-[100px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                 <div
-                  className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                  onClick={() => handleSort("amount")}
+                  className="flex items-center gap-1.5 md:gap-2 "
+                 
                 >
                   <span className="font-medium text-gray-700 text-xs md:text-xs">
                     Amount
                   </span>
-                  <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
-                  {getSortIcon("amount")}
+                  <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer" 
+                   onClick={() => handleSort("amount")}
+                     {...getSortIcon("amount")}/>
+                
                 </div>
               </th>
               <th className="min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
@@ -362,10 +365,13 @@ export default function JobsHistoryTab({ customer, onViewJob }) {
                   <img
                     src={tableSortIcon}
                     alt="sort"
-                    className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
+                    className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer"
+                       {...getSortIcon("status")}
+                        onClick={() => handleSort("status")}
+                       
                   />
 
-                  {getSortIcon("status")}
+               
                 </div>
               </th>
 

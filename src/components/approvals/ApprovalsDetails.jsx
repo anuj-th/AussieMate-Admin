@@ -204,7 +204,7 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
                         checkboxSize="w-4 h-4"
                         className="items-center"
                       />
-                      Verified
+                      Verified  
                     </div>
                   </div>
                 )}

@@ -241,13 +241,10 @@ export default function JobHistoryTab({ cleaner, onViewJob }) {
     };
 
     const getSortIcon = (column) => {
-        if (sortColumn !== column) return null;
-        return sortDirection === "asc" ? (
-            <ChevronUp size={14} className="text-gray-400" />
-        ) : (
-            <ChevronDown size={14} className="text-gray-400" />
-        );
-    };
+    if (sortColumn !== column) return tableSortIcon;       // default icon
+    return sortDirection === "asc" ? tableSortIconAsc : tableSortIconDesc;
+};
+
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -375,43 +372,43 @@ export default function JobHistoryTab({ cleaner, onViewJob }) {
 
                             {/* Job ID */}
                             <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <div className="flex items-center gap-1.5 md:gap-2 cursor-pointer" onClick={() => handleSort("jobId")}>
+                                <div className="flex items-center gap-1.5 md:gap-2 ">
                                     <span className="font-medium text-gray-700 text-xs md:text-xs">Job ID</span>
-                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                                    {getSortIcon("jobId")}
+                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-4 md:h-4 cursor-pointer" {...getSortIcon("jobId")}  onClick={() => handleSort("jobId")}/>
+                                    
                                 </div>
                             </th>
 
                             {/* Customer */}
                             <th className="min-w-[180px] md:min-w-[220px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <div className="flex items-center gap-1.5 md:gap-2 cursor-pointer" onClick={() => handleSort("customer")}>
+                                <div className="flex items-center gap-1.5 md:gap-2 " >
                                     <span className="font-medium text-gray-700 text-xs md:text-xs">Customer</span>
-                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                                    {getSortIcon("customer")}
+                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-4 md:h-4 cursor-pointer" onClick={() => handleSort("customer")}  {...getSortIcon("customer")}/>
+                                   
                                 </div>
                             </th>
 
                             {/* Joined */}
                             <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <div className="flex items-center gap-1.5 md:gap-2 cursor-pointer" onClick={() => handleSort("joined")}>
+                                <div className="flex items-center gap-1.5 md:gap-2 " >
                                     <span className="font-medium text-gray-700 text-xs md:text-xs">Joined</span>
-                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                                    {getSortIcon("joined")}
+                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-4 md:h-4 cursor-pointer" onClick={() => handleSort("joined")}  {...getSortIcon("joined")}/>
+                                    
                                 </div>
                             </th>
 
                             {/* Amount */}
                             <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <div className="flex items-center gap-1.5 md:gap-2 cursor-pointer" onClick={() => handleSort("amount")}>
+                                <div className="flex items-center gap-1.5 md:gap-2 " >
                                     <span className="font-medium text-gray-700 text-xs md:text-xs">Amount</span>
-                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                                    {getSortIcon("amount")}
+                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-4 md:h-4 cursor-pointer"  onClick={() => handleSort("amount")}  {...getSortIcon("amount")}/>
+                                   
                                 </div>
                             </th>
                             <th className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div
-                                    className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                                    onClick={() => handleSort("status")}
+                                    className="flex items-center gap-1.5 md:gap-2 "
+                                   
                                 >
                                     <span className="font-medium text-gray-700 text-xs md:text-xs">
                                         Status
@@ -419,9 +416,10 @@ export default function JobHistoryTab({ cleaner, onViewJob }) {
                                     <img
                                         src={tableSortIcon}
                                         alt="sort"
-                                        className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
+                                        className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0 cursor-pointer"
+                                         onClick={() => handleSort("status")}    {...getSortIcon("status")}
                                     />
-                                    {getSortIcon("status")}
+                                 
                                 </div>
                             </th>
                             <th className="w-14 md:w-16 px-2 md:px-4 py-2 md:py-3 text-center"></th>

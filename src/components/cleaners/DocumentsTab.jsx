@@ -80,8 +80,8 @@ export default function DocumentsTab({ cleaner }) {
                                             className="items-center"
                                         />
                                         {doc.status === "Verified" && (
-                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#EAFFF1] text-[#17C653] border border-[#17C65333] text-[11px] whitespace-nowrap">
-                                                <CheckCircle2 size={14} />
+                                            <span className="inline-flex items-center gap-1 px-2 py-1 text-sm font-medium">
+                                              
                                                 Verified
                                             </span>
                                         )}
