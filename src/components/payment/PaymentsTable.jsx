@@ -338,7 +338,7 @@ export default function PaymentsTable({ onViewTransaction }) {
               <CustomSelect
                 value={serviceFilter}
                 onChange={setServiceFilter}
-                placeholder="Service"
+                placeholder="Role"
                 options={serviceOptions}
                 className="w-full"
                 showSelectedHeader

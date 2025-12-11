@@ -73,7 +73,7 @@ export default function OverviewTab({ jobDetails, getStatusColor }) {
             <div className="p-4 sm:p-5 xl:p-6 lg:p-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     {/* Customer */}
-                    <div className="border border-[#F1F1F4] rounded-[12px] p-2 xl:p-3 sm:p-3 lg:px-2 lg:py-4 bg-white shadow-sm w-full">
+                    <div className="border border-[#F1F1F4] rounded-[12px] p-2 xl:p-3 sm:p-3 lg:px-2 lg:py-4 bg-white w-full">
                         <h3 className="text-xs sm:text-sm font-semibold text-primary mb-3 ">Customer</h3>
 
                         <div className="flex items-start gap-3">
@@ -99,7 +99,7 @@ export default function OverviewTab({ jobDetails, getStatusColor }) {
                         </div>
                     </div>
                     {/* Cleaner */}
-                    <div className="border border-[#F1F1F4] rounded-[12px] p-2 xl:p-3 sm:p-3 lg:px-2 lg:py-4 bg-white shadow-sm w-full">
+                    <div className="border border-[#F1F1F4] rounded-[12px] p-2 xl:p-3 sm:p-3 lg:px-2 lg:py-4 bg-white w-full">
                         <h3 className="text-xs sm:text-sm font-semibold text-primary mb-1">Cleaner</h3>
 
                         <div className="flex items-start gap-3">

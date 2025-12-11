@@ -11,7 +11,7 @@ export default function Customers() {
   };
 
   return (
-    <div>
+    <div className="w-6xl mx-auto">
       <PageHeader
         title={selectedCustomer ? selectedCustomer.name : "Customers"}
         showBackArrow={!!selectedCustomer}

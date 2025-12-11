@@ -62,7 +62,7 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
     <div className="space-y-6 w-full max-w-7xl mx-auto">
       {/* Profile header */}
       <div
-        className="px-4 md:px-6 lg:px-10 pt-8 md:pt-10 pb-6 relative overflow-hidden bg-white rounded-[20px] border border-[#EEF0F5] shadow-sm"
+        className="px-4 md:px-6 lg:px-10 pt-8 md:pt-10 pb-6 relative overflow-hidden bg-white rounded-[20px] border border-[#EEF0F5] "
         style={{
           backgroundImage: `url(${approvalsBg})`,
           backgroundSize: 'cover',
@@ -88,7 +88,7 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
         </div>
 
         <div className="relative flex flex-col items-center text-center gap-2">
-          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-[3px] border-[#EBF2FD] shadow-md mb-1 bg-white">
+          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-[3px] border-[#EBF2FD] shadow-sm mb-1 bg-white">
             <img
               src={cleaner.avatar}
               alt={cleaner.name}

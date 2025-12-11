@@ -381,13 +381,23 @@ export default function PaymentsTab({ customer }) {
                         <ShieldCheck size={20} className="text-[#1F6FEB]" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-xl font-semibold text-primary">
+                        {/* Amount + Job ID in SAME LINE */}
+                        <span className="text-xl font-semibold text-primary flex items-center gap-1">
                             {formatCurrency(activeEscrowAmount)}
+
+                            {activeEscrowJob.jobId && (
+                                <span className="text-sm text-[#94A3B8] font-medium">
+                                    (Job {activeEscrowJob.jobId})
+                                </span>
+                            )}
                         </span>
-                        <span className="text-sm text-primary-light">
-                            Active Escrow {activeEscrowJob.jobId ? `(Job ${activeEscrowJob.jobId})` : ""}
+
+                        {/* Label Below */}
+                        <span className="text-sm text-primary-light mt-0.5">
+                            Active Escrow
                         </span>
                     </div>
+
                 </div>
 
                 <div className="bg-white border border-[#EEF0F5] rounded-2xl shadow-sm p-4 flex items-start gap-3">

@@ -495,6 +495,15 @@ export default function JobsTable({ onViewJob }) {
 
                     {/* Filters */}
                     <div className="w-full xl:w-auto flex flex-col sm:flex-row xl:flex-row xl:flex-nowrap gap-2 md:gap-3">
+                        <div className="w-full sm:w-auto sm:flex-1 xl:flex-none xl:w-36">
+                            <CustomSelect
+                                value={jobStatusFilter}
+                                onChange={setJobStatusFilter}
+                                placeholder="Job Status"
+                                options={jobStatusOptions}
+                                className="w-full"
+                            />
+                        </div>
                         <div className="w-full sm:w-auto sm:flex-1 xl:flex-none xl:w-40">
                             <CustomSelect
                                 value={jobTypeFilter}
@@ -505,15 +514,7 @@ export default function JobsTable({ onViewJob }) {
                             />
                         </div>
 
-                        <div className="w-full sm:w-auto sm:flex-1 xl:flex-none xl:w-36">
-                            <CustomSelect
-                                value={jobStatusFilter}
-                                onChange={setJobStatusFilter}
-                                placeholder="Job Status"
-                                options={jobStatusOptions}
-                                className="w-full"
-                            />
-                        </div>
+
 
                         <div className="w-full sm:w-auto sm:flex-1 xl:flex-none xl:w-40">
                             <CustomSelect
