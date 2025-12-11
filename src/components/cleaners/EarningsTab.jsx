@@ -1,5 +1,9 @@
+import { useMemo, useState } from "react";
 import CustomMenu from "../common/CustomMenu";
-import { DollarSign } from "lucide-react";
+import ActionModal from "../common/ActionModal";
+import ReleaseFundsModal from "../common/ReleaseFundsModal";
+import { DollarSign, CheckCircle2, Upload } from "lucide-react";
+import camelIllustration from "../../assets/image/camel.svg";
 
 // Sample pending payouts data
 const pendingPayoutsData = [
@@ -23,6 +27,27 @@ export default function EarningsTab({ cleaner }) {
     // Use cleaner data or fallback to defaults
     const totalEarnings = cleaner?.earnings || 12420;
     const pendingPayouts = pendingPayoutsData; // In real app, this would come from cleaner data
+    const [successModalOpen, setSuccessModalOpen] = useState(false);
+    const [activePayout, setActivePayout] = useState(null);
+    const [releaseModalOpen, setReleaseModalOpen] = useState(false);
+
+    const mappedPayout = useMemo(() => {
+        if (!activePayout) return null;
+        return {
+            jobId: activePayout.id ? `PAY-${activePayout.id}` : "Payout",
+            cleaner: {
+                name: cleaner?.name || "Cleaner",
+                avatar: cleaner?.avatar,
+            },
+            payment: {
+                amountPaid: activePayout.amount ?? 0,
+                platformFees: activePayout.platformFees ?? 0,
+                gst: activePayout.gst ?? 0,
+                escrow: activePayout.escrow ?? activePayout.amount ?? 0,
+                releaseDate: activePayout.date || activePayout.releaseDate,
+            },
+        };
+    }, [activePayout, cleaner]);
 
     return (
         <div className="space-y-6">
@@ -71,19 +96,22 @@ export default function EarningsTab({ cleaner }) {
                                     align="right"
                                     items={[
                                         {
-                                            id: "view",
-                                            label: "View Details",
+                                            id: "approve",
+                                            label: "Approve Payout",
+                                            icon: (
+                                                <CheckCircle2 className="w-5 h-5 text-[#1F6FEB]" />
+                                            ),
                                             onClick: () => {
-                                                // TODO: Handle view details
-                                                console.log("View payout details", payout.id);
+                                                setActivePayout(payout);
+                                                setReleaseModalOpen(true);
                                             },
                                         },
                                         {
-                                            id: "process",
-                                            label: "Process Payout",
+                                            id: "export",
+                                            label: "Export Payout Report",
+                                            icon: <Upload className="w-5 h-5 text-[#6B7280]" />,
                                             onClick: () => {
-                                                // TODO: Handle process payout
-                                                console.log("Process payout", payout.id);
+                                                console.log("Export payout report", payout.id);
                                             },
                                         },
                                     ]}
@@ -101,6 +129,49 @@ export default function EarningsTab({ cleaner }) {
                     )}
                 </div>
             </div>
+
+            {/* Release / Approve modal (reuses ReleaseFundsModal) */}
+            <ReleaseFundsModal
+                isOpen={releaseModalOpen}
+                onClose={() => setReleaseModalOpen(false)}
+                onConfirm={() => {
+                    setReleaseModalOpen(false);
+                    setSuccessModalOpen(true);
+                }}
+                jobDetails={mappedPayout}
+            />
+
+            {/* Success modal */}
+            <ActionModal
+                isOpen={successModalOpen}
+                onClose={() => setSuccessModalOpen(false)}
+                illustration={
+                    <div className="flex flex-col items-center">
+                        <img
+                            src={camelIllustration}
+                            alt="Payout success"
+                            className="w-40 sm:w-48 h-auto object-contain"
+                        />
+                    </div>
+                }
+                title={
+                    <div className="space-y-2 text-center">
+                        <p className="text-sm sm:text-base font-semibold text-[#111827]">
+                            Payout Approved
+                        </p>
+                        <p className="text-lg sm:text-xl font-semibold text-[#111827]">
+                            {activePayout?.type || "Payout"} – {activePayout?.subType || ""}
+                        </p>
+                        <p className="text-sm sm:text-base text-[#6B7280]">
+                            AU${activePayout?.amount ?? 0} will reach the cleaner within 24 hours.
+                        </p>
+                    </div>
+                }
+                description={null}
+                hideSecondary
+                hideFooter
+                primaryLabel=""
+            />
         </div>
     );
 }

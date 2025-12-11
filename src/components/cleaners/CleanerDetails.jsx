@@ -20,12 +20,14 @@ import DocumentsTab from "./DocumentsTab";
 import JobHistoryTab from "./JobHistoryTab";
 import EarningsTab from "./EarningsTab";
 import FeedbackTab from "./FeedbackTab";
+import JobDetails from "../jobs/JobDetails";
 
 export default function CleanerDetails({ cleaner, onBackToList }) {
   if (!cleaner) return null;
 
   const [activeAction, setActiveAction] = useState(null); // "approve" | "reject" | "suspend" | null
   const [activeTab, setActiveTab] = useState("overview");
+  const [selectedJob, setSelectedJob] = useState(null);
 
   const tier = cleaner.badge || "Silver";
   const tierLabel = `${tier.charAt(0).toUpperCase()}${tier.slice(1).toLowerCase()} Tier`;
@@ -46,6 +48,15 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
     { id: "earnings", label: "Earnings & Payouts" },
     { id: "feedback", label: "Feedback & Ratings" },
   ];
+
+  if (selectedJob) {
+    return (
+      <JobDetails
+        job={selectedJob}
+        onBackToList={() => setSelectedJob(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto">
@@ -162,7 +173,48 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
       <div className="mt-4">
         {activeTab === "overview" && <OverviewTab cleaner={cleaner} onViewJobHistory={() => setActiveTab("jobHistory")} />}
         {activeTab === "documents" && <DocumentsTab cleaner={cleaner} />}
-        {activeTab === "jobHistory" && <JobHistoryTab cleaner={cleaner} />}
+        {activeTab === "jobHistory" && (
+          <JobHistoryTab
+            cleaner={cleaner}
+            onViewJob={(job) => {
+              const amount = job.amount || 0;
+              const platformFees = Math.round(amount * 0.15 * 100) / 100;
+              const gst = Math.round(amount * 0.1 * 100) / 100;
+              const escrow = Math.max(amount - (platformFees + gst), 0);
+
+              const mappedJob = {
+                ...job,
+                jobType: job.jobType || "Cleaning",
+                jobStatus: job.status || job.jobStatus || "Completed",
+                paymentStatus: job.paymentStatus || job.status || "Held",
+                date: job.date || job.joined,
+                amountPaid: amount,
+                customer: {
+                  name: job.customer?.name,
+                  email: job.customer?.email,
+                  avatar: job.customer?.avatar,
+                },
+                cleaner: {
+                  name: cleaner.name,
+                  avatar: cleaner.avatar,
+                  role: cleaner.role,
+                  jobsCompleted: cleaner.jobs,
+                  rating: cleaner.rating,
+                  tier: cleaner.badge,
+                },
+                payment: {
+                  amountPaid: amount,
+                  platformFees,
+                  gst,
+                  escrow,
+                  escrowReleased: job.date || job.joined,
+                  escrowStatus: job.paymentStatus || job.status || "Held",
+                },
+              };
+              setSelectedJob(mappedJob);
+            }}
+          />
+        )}
         {activeTab === "earnings" && <EarningsTab cleaner={cleaner} />}
         {activeTab === "feedback" && <FeedbackTab cleaner={cleaner} />}
       </div>

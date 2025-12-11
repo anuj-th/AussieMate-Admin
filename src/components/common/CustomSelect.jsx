@@ -49,11 +49,13 @@ const CustomSelect = ({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`w-full flex items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-1.5 text-sm focus:border-[#2563EB] focus:outline-none cursor-pointer gap-2 ${buttonClassName}`}
+        className={`w-full flex items-center justify-between rounded-lg px-4 py-1.5 text-sm focus:border-[#2563EB] focus:outline-none cursor-pointer gap-2 ${
+          value ? "bg-[#EFF6FF] border border-[#1B84FF33]" : "bg-white border border-gray-300"
+        } ${buttonClassName}`}
       >
         <span
           className={`${
-            value ? 'text-[#111827]' : 'text-gray-400'
+            value ? 'text-[#1F6FEB] font-medium' : 'text-gray-400'
           } whitespace-nowrap truncate`}
         >
           {selectedOption ? selectedOption.label : placeholder}
@@ -81,15 +83,15 @@ const CustomSelect = ({
                   onClick={() => handleSelect(option.value)}
                   className={`w-full flex items-center justify-between ${itemPadding || (optionClassName ? 'px-3 py-2' : 'px-4 py-3')} rounded-lg text-xs transition-colors cursor-pointer mb-1 last:mb-0 ${
                     isSelected
-                      ? 'bg-[#EBF2FD] text-[#2563EB] font-semibold'
-                      : 'text-[#111827] hover:bg-[#F9FAFB]'
+                      ? 'bg-[#EFF6FF] border border-[#1B84FF33] text-[#2563EB] font-semibold'
+                      : 'text-[#111827] hover:bg-[#F9FAFB] border border-transparent'
                   }`}
                 >
                   <span className="whitespace-nowrap">
                     {option.label}
                   </span>
                   {isSelected && (
-                    <Check className="h-4 w-4 text-[#2563EB] flex-shrink-0 ml-2" />
+                    <Check className="h-4 w-4 text-[#1F6FEB] flex-shrink-0 ml-2" />
                   )}
                 </button>
               );

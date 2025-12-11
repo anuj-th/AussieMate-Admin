@@ -10,6 +10,7 @@ import {
     Clock,
     FileText,
     Upload,
+    CheckCircle2,
 } from "lucide-react";
 import Checkbox from "../common/Checkbox";
 import SearchInput from "../common/SearchInput";
@@ -17,6 +18,8 @@ import CustomSelect from "../common/CustomSelect";
 import CustomMenu from "../common/CustomMenu";
 import InvoiceModal from "../common/InvoiceModal";
 import PaginationRanges from "../common/PaginationRanges";
+import ReleaseFundsModal from "../common/ReleaseFundsModal";
+import ActionModal from "../common/ActionModal";
 import tableSortIcon from "../../assets/icon/tableSort.svg";
 
 const defaultPayments = [
@@ -86,6 +89,9 @@ export default function PaymentsTab({ customer }) {
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState("asc");
     const [selectedInvoice, setSelectedInvoice] = useState(null);
+    const [releaseModalOpen, setReleaseModalOpen] = useState(false);
+    const [successModalOpen, setSuccessModalOpen] = useState(false);
+    const [activePayment, setActivePayment] = useState(null);
     const tableRef = useRef(null);
 
     const statusOptions = ["Escrowed", "Released"];
@@ -135,6 +141,24 @@ export default function PaymentsTab({ customer }) {
         "Visa **** 1234";
 
     const paymentModeOptions = ["Online", "Cash"];
+
+    const mappedPayment = useMemo(() => {
+        if (!activePayment) return null;
+        return {
+            jobId: activePayment.jobId || `PAY-${activePayment.id}`,
+            cleaner: {
+                name: activePayment.cleaner?.name || activePayment.service || "Cleaner",
+                avatar: activePayment.cleaner?.avatar,
+            },
+            payment: {
+                amountPaid: activePayment.amount ?? 0,
+                platformFees: activePayment.platformFees ?? 0,
+                gst: activePayment.gst ?? 0,
+                escrow: activePayment.escrow ?? activePayment.amount ?? 0,
+                releaseDate: activePayment.date,
+            },
+        };
+    }, [activePayment]);
 
     const filteredPayments = useMemo(() => {
         return payments.filter((payment) => {
@@ -262,18 +286,45 @@ export default function PaymentsTab({ customer }) {
         );
     };
 
-    const handleReleaseFunds = (paymentId) => {
-        setPayments((prevPayments) =>
-            prevPayments.map((payment) =>
-                payment.id === paymentId
-                    ? { ...payment, status: "Released" }
-                    : payment
-            )
-        );
+    const handleApprovePayout = (payment) => {
+        setActivePayment(payment);
+        setReleaseModalOpen(true);
     };
 
     const handleViewInvoice = (payment) => {
         setSelectedInvoice(payment);
+    };
+
+    const handleExportPayoutReport = (payment) => {
+        if (!payment) return;
+        const headers = [
+            "Job ID",
+            "Service",
+            "Amount",
+            "Status",
+            "Date",
+            "Payment Mode",
+            "Payment Method",
+        ];
+
+        const row = [
+            payment.jobId || `PAY-${payment.id}`,
+            payment.service || "",
+            `AU$${formatCurrency(payment.amount || 0)}`,
+            payment.status || "",
+            formatDate(payment.date),
+            payment.paymentMode || "",
+            payment.paymentMethod || "",
+        ];
+
+        const csv = [headers.join(","), row.join(",")].join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${payment.jobId || `payout-${payment.id}`}-report.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
     };
 
     const closeInvoiceModal = () => {
@@ -400,10 +451,12 @@ export default function PaymentsTab({ customer }) {
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
                                 <th className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                    <Checkbox
-                                        checked={selectAll}
-                                        onChange={(e) => handleSelectAll(e.target.checked)}
-                                    />
+                                    <div className="flex items-center justify-center">
+                                        <Checkbox
+                                            checked={selectAll}
+                                            onChange={(e) => handleSelectAll(e.target.checked)}
+                                        />
+                                    </div>
                                 </th>
                                 <th className="min-w-[140px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                     <div
@@ -459,10 +512,12 @@ export default function PaymentsTab({ customer }) {
                             {paginatedPayments.map((payment) => (
                                 <tr key={payment.id} className="border-b border-gray-200 hover:bg-gray-50">
                                     <td className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                                        <Checkbox
-                                            checked={selectedRows.includes(payment.id)}
-                                            onChange={(e) => handleSelectRow(payment.id, e.target.checked)}
-                                        />
+                                        <div className="flex items-center justify-center">
+                                            <Checkbox
+                                                checked={selectedRows.includes(payment.id)}
+                                                onChange={(e) => handleSelectRow(payment.id, e.target.checked)}
+                                            />
+                                        </div>
                                     </td>
                                     <td className="min-w-[140px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
                                         <div className="flex items-center gap-1.5">
@@ -489,21 +544,16 @@ export default function PaymentsTab({ customer }) {
                                             align="right"
                                             items={[
                                                 {
-                                                    id: "release",
-                                                    label: "Release Funds",
-                                                    icon: <Clock size={18} className="text-[#9CA3AF]" />,
-                                                    onClick: () => {
-                                                        handleReleaseFunds(payment.id);
-                                                    },
-                                                    disabled: payment.status === "Released",
+                                                    id: "approve",
+                                                    label: "Approve Payout",
+                                                    icon: <CheckCircle2 size={18} className="text-[#1F6FEB]" />,
+                                                    onClick: () => handleApprovePayout(payment),
                                                 },
                                                 {
-                                                    id: "invoice",
-                                                    label: "View Invoice",
-                                                    icon: <FileText size={18} className="text-[#9CA3AF]" />,
-                                                    onClick: () => {
-                                                        handleViewInvoice(payment);
-                                                    },
+                                                    id: "export",
+                                                    label: "Export Payout Report",
+                                                    icon: <Upload size={18} className="text-[#6B7280]" />,
+                                                    onClick: () => handleExportPayoutReport(payment),
                                                 },
                                             ]}
                                             trigger={
@@ -536,6 +586,38 @@ export default function PaymentsTab({ customer }) {
                 isOpen={!!selectedInvoice}
                 onClose={closeInvoiceModal}
                 invoice={selectedInvoice}
+            />
+
+            {/* Release modal */}
+            <ReleaseFundsModal
+                isOpen={releaseModalOpen}
+                onClose={() => setReleaseModalOpen(false)}
+                onConfirm={() => {
+                    setReleaseModalOpen(false);
+                    setSuccessModalOpen(true);
+                }}
+                jobDetails={mappedPayment}
+            />
+
+            {/* Success modal */}
+            <ActionModal
+                isOpen={successModalOpen}
+                onClose={() => setSuccessModalOpen(false)}
+                illustration={null}
+                title={
+                    <div className="space-y-2 text-center">
+                        <p className="text-lg sm:text-xl font-semibold text-[#111827]">
+                            Payout Approved
+                        </p>
+                        <p className="text-sm sm:text-base text-[#6B7280]">
+                            AU${activePayment?.amount ?? 0} will reach the cleaner within 24 hours.
+                        </p>
+                    </div>
+                }
+                description={null}
+                hideSecondary
+                hideFooter
+                primaryLabel=""
             />
         </div>
     );

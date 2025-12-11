@@ -88,7 +88,7 @@ const PaginationRanges = ({
           <button
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className="px-2.5 py-1.5 rounded border border-[#E4E6EF] text-gray-500 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            className="px-2.5 py-1.5 rounded border border-[#E4E6EF] text-gray-500 hover:bg-gray-100 disabled:opacity-50 text-sm cursor-pointer disabled:cursor-not-allowed"
             aria-label="Previous page"
           >
             ←
@@ -101,7 +101,7 @@ const PaginationRanges = ({
           <button
             onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
-            className="px-2.5 py-1.5 rounded border border-[#E4E6EF] text-gray-500 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            className="px-2.5 py-1.5 rounded border border-[#E4E6EF] text-gray-500 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm cursor-pointer"
             aria-label="Next page"
           >
             →
@@ -114,7 +114,7 @@ const PaginationRanges = ({
           <button
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className="px-2 py-1.5 rounded border border-[#E4E6EF] text-gray-500 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            className="px-2 py-1.5 rounded border border-[#E4E6EF] text-gray-500 hover:bg-gray-100 text-sm cursor-pointer disabled:cursor-not-allowed"
             aria-label="Previous page"
           >
             ←
@@ -152,7 +152,7 @@ const PaginationRanges = ({
           <button
             onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
-            className="px-2 py-1.5 rounded border border-[#E4E6EF] text-gray-500 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            className="px-2 py-1.5 rounded border border-[#E4E6EF] text-gray-500 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm cursor-pointer"
             aria-label="Next page"
           >
             →

@@ -13,12 +13,14 @@ import OverviewTab from "./OverviewTab";
 import JobsHistoryTab from "./JobsHistoryTab";
 import PaymentsTab from "./PaymentsTab";
 import FeedbackTab from "./FeedbackTab";
+import JobDetails from "../jobs/JobDetails";
 
 export default function CustomerDetails({ customer, onBackToList }) {
   if (!customer) return null;
 
   const [activeAction, setActiveAction] = useState(null); // "suspend" | null
   const [activeTab, setActiveTab] = useState("overview");
+  const [selectedJob, setSelectedJob] = useState(null);
 
   const closeModal = () => setActiveAction(null);
 
@@ -45,6 +47,15 @@ export default function CustomerDetails({ customer, onBackToList }) {
     if (!phone) return "234 435 546";
     return phone.replace(/\+61\s?/, "").replace(/\s/g, " ");
   };
+
+  if (selectedJob) {
+    return (
+      <JobDetails
+        job={selectedJob}
+        onBackToList={() => setSelectedJob(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto">
@@ -155,7 +166,44 @@ export default function CustomerDetails({ customer, onBackToList }) {
       {/* Tab Content */}
       <div className="mt-4">
         {activeTab === "overview" && <OverviewTab customer={customer} onViewJobs={() => setActiveTab("jobsHistory")} />}
-        {activeTab === "jobsHistory" && <JobsHistoryTab customer={customer} />}
+        {activeTab === "jobsHistory" && (
+          <JobsHistoryTab
+            customer={customer}
+            onViewJob={(job) => {
+              const amount = job.amount || 0;
+              const platformFees = Math.round(amount * 0.15 * 100) / 100;
+              const gst = Math.round(amount * 0.1 * 100) / 100;
+              const escrow = Math.max(amount - (platformFees + gst), 0);
+
+              const mappedJob = {
+                ...job,
+                jobType: job.jobType || "Cleaning",
+                jobStatus: job.status || job.jobStatus || "Completed",
+                paymentStatus: job.paymentStatus || job.status || "Held",
+                date: job.date,
+                amountPaid: amount,
+                customer: {
+                  name: customer.name,
+                  email: customer.email,
+                  avatar: customer.avatar,
+                },
+                cleaner: {
+                  name: job.cleaner?.name,
+                  avatar: job.cleaner?.avatar,
+                },
+                payment: {
+                  amountPaid: amount,
+                  platformFees,
+                  gst,
+                  escrow,
+                  escrowReleased: job.date,
+                  escrowStatus: job.paymentStatus || job.status || "Held",
+                },
+              };
+              setSelectedJob(mappedJob);
+            }}
+          />
+        )}
         {activeTab === "payments" && <PaymentsTab customer={customer} />}
         {activeTab === "feedback" && <FeedbackTab customer={customer} />}
       </div>

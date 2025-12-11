@@ -363,10 +363,12 @@ export default function PaymentsTable({ onViewTransaction }) {
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <Checkbox
-                  checked={selectAll}
-                  onChange={(e) => handleSelectAll(e.target.checked)}
-                />
+                <div className="flex items-center justify-center">
+                  <Checkbox
+                    checked={selectAll}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                  />
+                </div>
               </th>
               <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                 <div className="flex items-center gap-1.5 md:gap-2">
@@ -476,12 +478,14 @@ export default function PaymentsTable({ onViewTransaction }) {
                   className="border-b border-gray-200 hover:bg-gray-50"
                 >
                   <td className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                    <Checkbox
-                      checked={selectedRows.includes(transaction.id)}
-                      onChange={(e) =>
-                        handleSelectRow(transaction.id, e.target.checked)
-                      }
-                    />
+                    <div className="flex items-center justify-center">
+                      <Checkbox
+                        checked={selectedRows.includes(transaction.id)}
+                        onChange={(e) =>
+                          handleSelectRow(transaction.id, e.target.checked)
+                        }
+                      />
+                    </div>
                   </td>
                   <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-primary font-medium border-r border-gray-200 text-xs md:text-sm">
                     {transaction.jobId}

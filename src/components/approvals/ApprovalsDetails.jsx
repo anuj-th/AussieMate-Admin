@@ -73,10 +73,10 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
   const closeModal = () => setActiveAction(null);
 
   return (
-    <div className="space-y-6 w-6xl mx-auto">
+    <div className="space-y-6 w-full max-w-6xl mx-auto ">
       {/* Profile header */}
       <div
-        className="px-6 md:px-10 pt-10 pb-6 relative overflow-hidden bg-white rounded-[20px] border border-[#EEF0F5] shadow-sm"
+        className="px-4 sm:px-6 md:px-10 pt-8 md:pt-10 pb-6 relative overflow-hidden rounded-2xl"
         style={{
           backgroundImage: `url(${approvalsBg})`,
           backgroundSize: 'cover',
@@ -85,7 +85,7 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
         }}
       >
         {/* Top-right actions menu */}
-        <div className="absolute top-4 right-4">
+        <div className="w-full flex justify-end mb-4">
           <CustomMenu
             align="right"
             items={[
@@ -172,7 +172,7 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
           {documents.map((doc) => (
             <div
               key={doc.id}
-              className="px-4 md:px-6 py-3 md:py-4 flex flex-col md:flex-row md:items-center gap-2 md:gap-4 font-medium"
+              className="px-4 md:px-6 py-3 md:py-4 flex flex-col md:flex-row md:items-center gap-3 md:gap-4 font-medium min-w-0"
             >
               {/* Label */}
               <div className="w-full md:w-1/5 flex items-center gap-2 text-sm text-primary ">
@@ -183,7 +183,7 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
               </div>
 
               {/* Value + status/actions */}
-              <div className="flex-1 flex items-center gap-2 md:gap-3">
+              <div className="flex-1 flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
                 {/* ABN row with checkbox + value */}
                 {doc.type === "abn" && (
                   <div className="flex w-full items-center gap-3">
@@ -222,7 +222,7 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
                 {doc.type === "file" && (
                   <button
                     type="button"
-                    className="inline-flex items-center gap-2 text-xs font-medium cursor-pointer"
+                    className="inline-flex items-center gap-2 text-xs font-medium cursor-pointer w-full md:w-auto"
                   >
                     <FileText
                       size={18}
@@ -234,14 +234,14 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
 
                 {/* Image preview */}
                 {doc.type === "image" && (
-                  <div className="w-32 h-20 border border-[#E5E7EB] rounded-md overflow-hidden bg-[#F9FAFB] flex items-center justify-center text-[10px] text-[#9CA3AF]">
+                  <div className="w-full md:w-32 h-20 border border-[#E5E7EB] rounded-md overflow-hidden bg-[#F9FAFB] flex items-center justify-center text-[10px] text-[#9CA3AF]">
                     Preview
                   </div>
                 )}
 
                 {/* Status / actions (skip for ABN row) */}
                 {doc.type !== "abn" && (
-                  <div className="ml-auto flex items-center gap-3 text-sm">
+                  <div className="flex items-center gap-3 text-sm md:ml-auto justify-start md:justify-end">
                     {doc.status === "Verified" && (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#EAFFF1] text-[#17C653] border border-[#17C65333] ">
                         <CheckCircle2 size={14} />

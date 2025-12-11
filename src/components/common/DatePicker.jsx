@@ -221,11 +221,13 @@ export default function DatePicker({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between rounded-lg border border-[#D0D5DD] bg-white px-3.5 py-1.5 text-xs md:text-sm  focus:border-[#2563EB] cursor-pointer gap-2"
+        className={`w-full flex items-center justify-between rounded-lg px-3.5 py-1.5 text-xs md:text-sm focus:border-[#2563EB] cursor-pointer gap-2 ${
+          value ? "bg-[#EFF6FF] border border-[#1B84FF33]" : "bg-white border border-[#D0D5DD]"
+        }`}
       >
         <div className="flex items-center gap-2">
           <CalendarIcon size={16} className="text-gray-400" />
-          <span className={`${value ? "text-[#111827]" : "text-gray-400"} flex items-center gap-1 whitespace-nowrap`}>
+          <span className={`${value ? "text-[#1F6FEB] font-medium" : "text-gray-400"} flex items-center gap-1 whitespace-nowrap`}>
             {displayLabel()}
           </span>
         </div>
@@ -249,13 +251,13 @@ export default function DatePicker({
                   onClick={() => handlePresetSelect(preset)}
                   className={`w-full flex items-center justify-between px-4 py-2 text-sm transition-colors cursor-pointer ${
                     isSelected
-                      ? "bg-[#EBF2FD] text-[#2563EB] font-medium"
-                      : "text-[#111827] hover:bg-gray-50"
+                      ? "bg-[#EFF6FF] border border-[#1B84FF33] text-[#1F6FEB] font-medium"
+                      : "text-[#111827] hover:bg-gray-50 border border-transparent"
                   }`}
                 >
                   <span>{preset}</span>
                   {isSelected && (
-                    <span className="text-[#2563EB] text-base leading-none">
+                    <span className="text-[#1F6FEB] text-base leading-none">
                       ✓
                     </span>
                   )}
@@ -403,9 +405,9 @@ export default function DatePicker({
                                   : isDisabled
                                   ? "text-gray-300 cursor-not-allowed opacity-50"
                                   : isSelected
-                                  ? "bg-[#2563EB] text-white font-semibold"
+                                  ? "bg-[#EFF6FF] border border-[#1B84FF33] text-[#1F6FEB] font-semibold"
                                   : isInRange
-                                  ? "bg-[#EBF2FD] text-[#2563EB]"
+                                  ? "bg-[#EBF2FD] text-[#1F6FEB]"
                                   : "text-gray-700 hover:bg-gray-100"
                               }`}
                             >

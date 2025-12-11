@@ -75,7 +75,7 @@ const defaultJobHistory = [
   },
 ];
 
-export default function JobsHistoryTab({ customer }) {
+export default function JobsHistoryTab({ customer, onViewJob }) {
   const [jobs, setJobs] = useState(customer?.jobHistory || defaultJobHistory);
   const [selectedRows, setSelectedRows] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
@@ -294,10 +294,12 @@ export default function JobsHistoryTab({ customer }) {
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <Checkbox
-                  checked={selectAll}
-                  onChange={(e) => handleSelectAll(e.target.checked)}
-                />
+                <div className="flex items-center justify-center">
+                  <Checkbox
+                    checked={selectAll}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                  />
+                </div>
               </th>
               <th className="min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                 <div
@@ -355,10 +357,12 @@ export default function JobsHistoryTab({ customer }) {
                 className="border-b border-gray-200 hover:bg-gray-50"
               >
                 <td className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                  <Checkbox
-                    checked={selectedRows.includes(job.id)}
-                    onChange={(e) => handleSelectRow(job.id, e.target.checked)}
-                  />
+                  <div className="flex items-center justify-center">
+                    <Checkbox
+                      checked={selectedRows.includes(job.id)}
+                      onChange={(e) => handleSelectRow(job.id, e.target.checked)}
+                    />
+                  </div>
                 </td>
                 <td className="min-w-[120px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
                   <p className="text-sm font-medium text-primary">{job.jobId}</p>
@@ -390,7 +394,7 @@ export default function JobsHistoryTab({ customer }) {
                   <button
                     type="button"
                     className="p-2 inline-flex items-center justify-center cursor-pointer"
-                    onClick={() => console.log("View job", job)}
+                    onClick={() => onViewJob && onViewJob(job)}
                   >
                     <Eye size={18} className="text-[#78829D]" />
                   </button>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import AppRoutes from "../routes/AppRoutes";
 import Header from "./Header";
@@ -6,6 +7,17 @@ import { Menu } from "lucide-react";
 
 export default function AppLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const navigate = useNavigate();
+
+  const searchIndex = [
+    { path: "/", keywords: ["dashboard", "home"] },
+    { path: "/approvals", keywords: ["approvals", "approval"] },
+    { path: "/jobs", keywords: ["jobs", "job"] },
+    { path: "/cleaners", keywords: ["cleaners", "cleaner"] },
+    { path: "/customers", keywords: ["customers", "customer"] },
+    { path: "/payments", keywords: ["payments", "escrow", "payment"] },
+    { path: "/settings", keywords: ["settings", "profile", "account"] },
+  ];
 
   // Close sidebar on mobile by default, open on desktop
   useEffect(() => {
@@ -26,6 +38,19 @@ export default function AppLayout() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const handleGlobalSearch = (value) => {
+    const term = value.trim().toLowerCase();
+    if (!term) return;
+
+    const match = searchIndex.find(({ keywords }) =>
+      keywords.some((keyword) => keyword.includes(term) || term.includes(keyword))
+    );
+
+    if (match) {
+      navigate(match.path);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-[#F9FAFB]">
       {/* Fixed Sidebar */}
@@ -35,14 +60,18 @@ export default function AppLayout() {
       {!isSidebarOpen && (
         <button
           onClick={toggleSidebar}
-          className="fixed top-4 left-4 z-50 bg-white border border-gray-200 rounded-lg p-2 shadow-sm hover:bg-gray-50 transition-all duration-300"
+          className="fixed top-4 left-4 z-50 p-2 bg-white cursor-pointer"
         >
           <Menu size={20} className="text-gray-600" />
         </button>
       )}
 
       {/* Fixed Header */}
-      <Header sidebarOpen={isSidebarOpen} />
+      <Header
+        sidebarOpen={isSidebarOpen}
+        onSearchChange={handleGlobalSearch}
+        searchPlaceholder="Search pages (e.g. Jobs, Payments)"
+      />
 
       {/* Main content area */}
       <div 

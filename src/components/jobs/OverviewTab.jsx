@@ -1,15 +1,72 @@
-import { Mail, Phone, Star, MoreVertical } from "lucide-react";
+import { useState } from "react";
+import { Mail, Phone, Star, MoreVertical, FileText, RefreshCcw } from "lucide-react";
 import silverTierIcon from "../../assets/icon/silver.svg";
+import camelIllustration from "../../assets/image/camel.svg";
+import CustomMenu from "../common/CustomMenu";
+import ReleaseFundsModal from "../common/ReleaseFundsModal";
+import ActionModal from "../common/ActionModal";
 
 export default function OverviewTab({ jobDetails, getStatusColor }) {
+    const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false);
+    const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+    const [escrowStatus, setEscrowStatus] = useState(
+        jobDetails?.payment?.escrowStatus || "Pending"
+    );
+
+    // Use local state if available, otherwise fallback to prop
+    const currentEscrowStatus = escrowStatus || jobDetails?.payment?.escrowStatus || "Pending";
+    const isEscrowReleased = currentEscrowStatus?.toLowerCase() === "released";
+
+    const handleInvoiceDownload = () => {
+        const pdf = buildInvoicePdf(jobDetails);
+        const blob = new Blob([pdf], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${jobDetails?.jobId || "invoice"}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const paymentMenuItems = isEscrowReleased
+        ? [
+            {
+                id: "invoice",
+                label: "Generate Invoice (PDF)",
+                icon: <FileText size={22} className="text-[#8CA4C3]" />,
+                onClick: handleInvoiceDownload,
+            },
+        ]
+        : [
+            {
+                id: "release-funds",
+                label: "Release Funds",
+                icon: <RefreshCcw size={22} className="text-[#1F6FEB]" />,
+                onClick: () => setIsReleaseModalOpen(true),
+            },
+            {
+                id: "invoice",
+                label: "Generate Invoice (PDF)",
+                icon: <FileText size={22} className="text-[#8CA4C3]" />,
+                onClick: handleInvoiceDownload,
+            },
+        ];
+
     return (
         <div className="bg-white rounded-xl border border-[#EEF0F5] shadow-sm w-full">
 
             <div className="flex items-center justify-between min-h-[56px] px-4 sm:px-5 md:px-6 lg:px-7.5 py-4 sm:py-5 border-b border-[#F1F1F4]">
                 <h2 className="font-semibold text-sm sm:text-base text-primary">Job Overview</h2>
-                <button className="p-1 hover:bg-gray-100 rounded-lg flex-shrink-0">
-                    <MoreVertical size={20} className="text-primary" />
-                </button>
+                <CustomMenu
+                    align="right"
+                    trigger={
+                        <button className="p-1 flex-shrink-0 cursor-pointer">
+                            <MoreVertical size={20} className="text-primary" />
+                        </button>
+                    }
+                    items={paymentMenuItems}
+                    className="min-w-[260px]"
+                />
 
             </div>
 
@@ -130,16 +187,140 @@ export default function OverviewTab({ jobDetails, getStatusColor }) {
                                 </div>
                                 <span
                                     className={`inline-flex items-center px-3 py-1 rounded-[6px] text-[10px] sm:text-xs font-medium border whitespace-nowrap ${getStatusColor(
-                                        jobDetails.payment.escrowStatus
+                                        currentEscrowStatus
                                     )}`}>
-                                    {jobDetails.payment.escrowStatus}
+                                    {currentEscrowStatus}
                                 </span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <ReleaseFundsModal
+                isOpen={isReleaseModalOpen}
+                onClose={() => setIsReleaseModalOpen(false)}
+                jobDetails={jobDetails}
+                onConfirm={() => {
+                    setEscrowStatus("Released");
+                    setIsReleaseModalOpen(false);
+                    setIsSuccessModalOpen(true);
+                }}
+            />
+
+            {/* Success Modal */}
+            <ActionModal
+                isOpen={isSuccessModalOpen}
+                onClose={() => setIsSuccessModalOpen(false)}
+                illustration={
+                    <div className="flex flex-col items-center">
+                        <img
+                            src={camelIllustration}
+                            alt="Release success"
+                            className="w-40 sm:w-48 h-auto object-contain"
+                        />
+                    </div>
+                }
+                title={
+                    <div className="space-y-2">
+                        <p className="text-lg sm:text-xl font-semibold text-[#111827]">
+                            {jobDetails?.jobId || "AM10432"}
+                        </p>
+                        <p className="text-base sm:text-lg font-semibold text-[#111827]">
+                            Funds successfully released to Cleaner
+                        </p>
+                        <p className="text-base sm:text-lg font-semibold text-[#111827]">
+                            {jobDetails?.cleaner?.name || "Jason Tatum"}.
+                        </p>
+                        <p className="text-sm sm:text-base text-[#6B7280] font-normal mt-2">
+                            AU${jobDetails?.payment?.escrow || 267.2} will reach within 24 hours.
+                        </p>
+                    </div>
+                }
+                description={null}
+                primaryLabel=""
+                primaryVariant="success"
+                onPrimary={() => {
+                    setEscrowStatus("Released");
+                    setIsSuccessModalOpen(false);
+                }}
+                hideSecondary={true}
+                hideFooter={true}
+            />
         </div>
     );
+}
+
+// Minimal PDF builder (no external deps) for quick invoice export
+function buildInvoicePdf(job) {
+    const jobId = job?.jobId || job?.id || "—";
+    const customer = job?.customer || {};
+    const cleaner = job?.cleaner || {};
+    const payment = job?.payment || {};
+
+    const lines = [
+        `Invoice`,
+        `Job ID: ${jobId}`,
+        `Customer: ${customer.name || "—"} (${customer.email || customer.phone || "-"})`,
+        `Cleaner: ${cleaner.name || "—"}`,
+        `Amount Paid: AU$${payment.amountPaid ?? payment.amount ?? "0"}`,
+        `Platform Fees: AU$${payment.platformFees ?? "0"}`,
+        `GST: AU$${payment.gst ?? "0"}`,
+        `Escrow Release: AU$${payment.escrow ?? "0"}`,
+        `Release Date: ${payment.releaseDate || payment.escrowReleased || "—"}`,
+    ];
+
+    const escapeText = (txt) =>
+        String(txt)
+            .replace(/\\/g, "\\\\")
+            .replace(/\(/g, "\\(")
+            .replace(/\)/g, "\\)")
+            .replace(/\r?\n/g, " ");
+
+    let content = "BT\n/F1 12 Tf\n50 780 Td\n";
+    lines.forEach((line, idx) => {
+        content += `(${escapeText(line)}) Tj\n0 -18 Td\n`;
+    });
+    content += "ET";
+
+    const contentLength = content.length;
+
+    const objects = [];
+    const addObject = (body) => {
+        const offset = objects.reduce((sum, obj) => sum + obj.length, header.length);
+        objects.push({ offset, body });
+    };
+
+    const header = "%PDF-1.4\n";
+
+    addObject("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+    addObject("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n");
+    addObject(
+        "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 4 0 R >> >> >>\nendobj\n"
+    );
+    addObject("4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n");
+    addObject(`5 0 obj\n<< /Length ${contentLength} >>\nstream\n${content}\nendstream\nendobj\n`);
+
+    // Recompute offsets now that we know bodies
+    let offset = header.length;
+    const offsets = [0]; // object 0 is free
+    const bodyStrings = objects.map((obj, idx) => {
+        const body = obj.body;
+        offsets.push(offset);
+        offset += body.length;
+        return body;
+    });
+
+    let pdf = header + bodyStrings.join("");
+
+    const xrefStart = pdf.length;
+    let xref = `xref\n0 ${offsets.length}\n`;
+    offsets.forEach((off) => {
+        xref += `${off.toString().padStart(10, "0")} 00000 n \n`;
+    });
+
+    const trailer = `trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+
+    pdf += xref + trailer;
+    return pdf;
 }
 

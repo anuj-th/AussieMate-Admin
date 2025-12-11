@@ -291,10 +291,12 @@ export default function ApprovalsTable({ onViewCleaner }) {
                     <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
                             <th className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <Checkbox
-                                    checked={selectAll}
-                                    onChange={(e) => handleSelectAll(e.target.checked)}
-                                />
+                                <div className="flex items-center justify-center">
+                                    <Checkbox
+                                        checked={selectAll}
+                                        onChange={(e) => handleSelectAll(e.target.checked)}
+                                    />
+                                </div>
                             </th>
                             <th className="min-w-[200px] md:min-w-[250px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div className="flex items-center gap-1.5 md:gap-2">
@@ -335,12 +337,14 @@ export default function ApprovalsTable({ onViewCleaner }) {
                                 className="border-b border-gray-200"
                             >
                                 <td className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                                    <Checkbox
-                                        checked={selectedRows.includes(cleaner.id)}
-                                        onChange={(e) =>
-                                            handleSelectRow(cleaner.id, e.target.checked)
-                                        }
-                                    />
+                                    <div className="flex items-center justify-center">
+                                        <Checkbox
+                                            checked={selectedRows.includes(cleaner.id)}
+                                            onChange={(e) =>
+                                                handleSelectRow(cleaner.id, e.target.checked)
+                                            }
+                                        />
+                                    </div>
                                 </td>
                                 <td className="min-w-[200px] md:min-w-[250px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
                                     <div className="flex items-center gap-2 md:gap-3">

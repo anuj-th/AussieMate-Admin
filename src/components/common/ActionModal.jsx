@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import React, { useEffect } from "react";
+import Button from "./Button";
 
 /**
  * Reusable centered action modal.
@@ -42,6 +43,7 @@ export default function ActionModal({
   onSecondary,
   hideSecondary = false,
   footerContent,
+  hideFooter = false,
   className = "",
 }) {
   // Close on ESC
@@ -58,8 +60,12 @@ export default function ActionModal({
 
   if (!isOpen) return null;
 
-  const primaryClasses =
-    VARIANT_CLASSES[primaryVariant] || VARIANT_CLASSES.primary;
+  const mappedVariant =
+    primaryVariant === "danger"
+      ? "danger"
+      : primaryVariant === "success"
+      ? "success"
+      : "primary";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3 sm:px-4">
@@ -107,33 +113,36 @@ export default function ActionModal({
           )}
 
           {/* Footer */}
-          <div className="mt-8 sm:mt-10">
-            {footerContent ? (
-              footerContent
-            ) : (
-              <div className="flex flex-col sm:flex-row sm:justify-center gap-3 sm:gap-4">
-                {!hideSecondary && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onSecondary?.();
-                      if (!onSecondary) onClose?.();
-                    }}
-                    className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200"
+          {!hideFooter && (
+            <div className="mt-8 sm:mt-10">
+              {footerContent ? (
+                footerContent
+              ) : (
+                <div className="flex flex-col sm:flex-row sm:justify-center gap-3 sm:gap-4">
+                  {!hideSecondary && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        onSecondary?.();
+                        if (!onSecondary) onClose?.();
+                      }}
+                    >
+                      {secondaryLabel}
+                    </Button>
+                  )}
+                  <Button
+                    variant={mappedVariant}
+                    size="md"
+                    onClick={onPrimary}
+                    className="px-5 sm:px-6 py-2"
                   >
-                    {secondaryLabel}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={onPrimary}
-                  className={`px-5 sm:px-6 py-2 rounded-lg font-medium focus:outline-none focus:ring-2 ${primaryClasses}`}
-                >
-                  {primaryLabel}
-                </button>
-              </div>
-            )}
-          </div>
+                    {primaryLabel}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

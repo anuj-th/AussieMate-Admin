@@ -1,7 +1,10 @@
 import { useMemo, useState, useRef, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
-import { Bell, User2 } from "lucide-react";
+import { Bell, CircleUserRound, User2 } from "lucide-react";
 import SearchInput from "../components/common/SearchInput";
+import Button from "../components/common/Button";
+import NotificationsPanel from "./NotificationsPanel";
+import profile from "../assets/icon/profile.svg";
 
 const ROUTE_TITLES = {
   "/": "Dashboard",
@@ -31,8 +34,11 @@ export default function Header({
 }) {
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
+  const notifRef = useRef(null);
+  const notifButtonRef = useRef(null);
 
   const breadcrumbs = useMemo(() => {
     const { pathname } = location;
@@ -56,13 +62,24 @@ export default function Header({
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
-      if (
+      const clickedOutsideDropdown =
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target) &&
         buttonRef.current &&
-        !buttonRef.current.contains(event.target)
-      ) {
+        !buttonRef.current.contains(event.target);
+
+      const clickedOutsideNotif =
+        notifRef.current &&
+        !notifRef.current.contains(event.target) &&
+        notifButtonRef.current &&
+        !notifButtonRef.current.contains(event.target);
+
+      if (clickedOutsideDropdown) {
         setIsDropdownOpen(false);
+      }
+
+      if (clickedOutsideNotif) {
+        setIsNotifOpen(false);
       }
     }
 
@@ -77,6 +94,12 @@ export default function Header({
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
+    if (isNotifOpen) setIsNotifOpen(false);
+  };
+
+  const toggleNotifications = () => {
+    setIsNotifOpen(!isNotifOpen);
+    if (isDropdownOpen) setIsDropdownOpen(false);
   };
 
   return (
@@ -87,7 +110,7 @@ export default function Header({
           : 'left-0'
         }`}
     >
-      <div>
+      <div className={`${!sidebarOpen ? "pl-10" : ""}`}>
         <nav className="flex items-center gap-1 mb-1 text-[14px]">
           {breadcrumbs.map((crumb, index) => {
             const isLast = index === breadcrumbs.length - 1;
@@ -114,34 +137,45 @@ export default function Header({
         </nav>
       </div>
 
-      <div className="flex items-center gap-4">
-        <SearchInput
-          placeholder={searchPlaceholder}
-          onChange={onSearchChange}
-        />
+      <div className="flex items-center gap-3">
+        <div className="hidden md:block">
+          <SearchInput
+            placeholder={searchPlaceholder}
+            onChange={onSearchChange}
+          />
+        </div>
 
-        <button
-          type="button"
-          className="relative inline-flex items-center justify-center w-9 h-9 rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-        >
-          <Bell size={16} />
-          <span className="absolute -top-0.5 -right-0.5 inline-flex h-3 w-3 rounded-full bg-blue-500 border-2 border-white" />
-        </button>
+        <div className="relative">
+          <button
+            ref={notifButtonRef}
+            type="button"
+            onClick={toggleNotifications}
+            className="relative inline-flex items-center justify-center w-9 h-9 text-gray-600 cursor-pointer"
+          >
+            <Bell size={20} />
+            <span className="absolute -top-[-5px] -right-[-8px] inline-flex h-[10px] w-[10px] rounded-full bg-blue-500 border-2 border-white" />
+          </button>
+
+          <NotificationsPanel
+            isOpen={isNotifOpen}
+            panelRef={notifRef}
+          />
+        </div>
 
         <div className="relative">
           <button
             ref={buttonRef}
             type="button"
             onClick={toggleDropdown}
-            className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+            className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#F9F9F9] border-2 border-[#F2F2F2] text-gray-700 cursor-pointer"
           >
-            <User2 size={18} />
+            <img src={profile} alt="Profile" className="h-5 w-5" />
           </button>
 
           {/* Backdrop Overlay */}
           {isDropdownOpen && (
             <div
-              className="fixed inset-0 bg-black/10 z-50"
+              className="fixed inset-0 "
               onClick={() => setIsDropdownOpen(false)}
             />
           )}
@@ -150,12 +184,12 @@ export default function Header({
           {isDropdownOpen && (
             <div
               ref={dropdownRef}
-              className="absolute right-0 mt-2 w-64 bg-white rounded-[16px] shadow-lg border border-gray-200 z-50 overflow-hidden"
+              className="absolute right-0 mt-2 w-64 bg-white rounded-[16px] shadow-lg border border-gray-200 z-60 overflow-hidden"
             >
               {/* User Info Section */}
               <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200">
                 <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                  <User2 size={20} className="text-gray-600" />
+                <img src={profile} alt="Profile" className="w-5 h-5 object-cover" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-[#1C1C1C]">John Doe</p>
@@ -172,29 +206,31 @@ export default function Header({
                 className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
               >
                 <div className="w-10 h-10 rounded-full bg-white  flex items-center justify-center">
-                  <User2 size={18} className="text-gray-600" />
+                <CircleUserRound size={20} className="text-gray-600"/>
                 </div>
                 <span className="text-sm font-medium text-[#1C1C1C]">My Profile</span>
               </Link>
 
               {/* Logout Button */}
-              <div className="p-4 border-t border-gray-200">
-                <button
-                  type="button"
+              <div className="p-3 border-t border-gray-200">
+                <Button
+                  fullWidth
+                  variant="outline"
+                  size="sm"
                   onClick={() => {
                     setIsDropdownOpen(false);
                     // Add your logout logic here
                     console.log("Logout clicked");
                   }}
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-xs font-medium text-[#1C1C1C] hover:bg-gray-50 transition-colors text-center"
                 >
                   Log out
-                </button>
+                </Button>
               </div>
             </div>
           )}
         </div>
       </div>
+
     </header>
   );
 }

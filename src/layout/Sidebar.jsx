@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { LogOut, ChevronLeft, ChevronRight } from "lucide-react";
 import logo from '../assets/icon/logoo.svg';
@@ -15,8 +16,12 @@ import dollarIcon from '../assets/icon/dollar.svg';
 import dollarLightIcon from '../assets/icon/dollarLight.svg';
 import settingsIcon from '../assets/icon/settings.svg';
 import settingsLightIcon from '../assets/icon/settingsLight.svg';
+import ActionModal from "../components/common/ActionModal";
+import rejectKyc from "../assets/image/rejectKyc.svg";
 
 export default function Sidebar({ isOpen, toggleSidebar }) {
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
   const menu = [
     {
       name: "Dashboard",
@@ -97,7 +102,7 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
                 </div>
                 <button
                   onClick={toggleSidebar}
-                  className="text-gray-600 hover:text-gray-800 cursor-pointer lg:block hidden"
+                  className="text-gray-600 hover:text-gray-800 cursor-pointer block"
                 >
                   {isOpen ? (
                     <ChevronRight size={18} />
@@ -146,12 +151,32 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
           </div>
 
           {/* LOGOUT */}
-          <button className="flex items-center gap-3 text-gray-600 hover:bg-gray-100 px-3 py-2 rounded-lg cursor-pointer">
-            <LogOut size={18} />
-            Logout
-          </button>
+          <div className="p-4">
+            <button
+              onClick={() => setIsLogoutModalOpen(true)}
+              className="flex items-center gap-3 text-gray-600 hover:bg-gray-100 px-3 py-2 rounded-lg cursor-pointer w-full"
+            >
+              <LogOut size={18} />
+              Logout
+            </button>
+          </div>
         </div>
       </div>
+
+      <ActionModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        illustration={<img src={rejectKyc} alt="Logout illustration" className="max-h-40" />}
+        title="Logout Account"
+        description="Are you sure you want to logout your account?"
+        primaryLabel="Logout"
+        onPrimary={() => {
+          setIsLogoutModalOpen(false);
+          // TODO: add real logout logic
+          console.log("Logged out");
+        }}
+        hideSecondary
+      />
     </>
   );
 }

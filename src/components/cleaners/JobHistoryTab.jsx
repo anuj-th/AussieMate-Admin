@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { ChevronUp, ChevronDown, Upload } from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { ChevronUp, ChevronDown, Upload, Eye } from "lucide-react";
 import Checkbox from "../common/Checkbox";
 import SearchInput from "../common/SearchInput";
 import CustomSelect from "../common/CustomSelect";
@@ -152,7 +152,7 @@ const defaultJobHistory = [
     },
 ];
 
-export default function JobHistoryTab({ cleaner }) {
+export default function JobHistoryTab({ cleaner, onViewJob }) {
     const [jobs, setJobs] = useState(defaultJobHistory);
     const [selectedRows, setSelectedRows] = useState([]);
     const [selectAll, setSelectAll] = useState(false);
@@ -162,6 +162,7 @@ export default function JobHistoryTab({ cleaner }) {
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState("asc");
+    const tableRef = useRef(null);
 
     const statusOptions = ["In Progress", "Completed", "Rejected"];
 
@@ -282,8 +283,29 @@ export default function JobHistoryTab({ cleaner }) {
     };
 
     const handleExportHistory = () => {
-        // TODO: Implement export functionality
-        console.log("Exporting job history...");
+        if (!tableRef.current) return;
+        const printWindow = window.open("", "", "width=1200,height=800");
+        if (!printWindow) return;
+
+        const styles = `
+      <style>
+        body { font-family: Arial, sans-serif; margin: 16px; color: #111827; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px 12px; border: 1px solid #e5e7eb; text-align: left; font-size: 13px; }
+        th { background: #f9fafb; font-weight: 600; }
+        .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-weight: 600; font-size: 12px; border: 1px solid #e5e7eb; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+      </style>
+    `;
+
+        const tableHtml = tableRef.current.innerHTML;
+        printWindow.document.write(
+            `<html><head><title>Job History</title>${styles}</head><body>${tableHtml}</body></html>`
+        );
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
     };
 
     // Reset to page 1 when filters change
@@ -330,15 +352,17 @@ export default function JobHistoryTab({ cleaner }) {
             </div>
 
             {/* Table Section */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" ref={tableRef}>
                 <table className="w-full border-collapse min-w-[800px]">
                     <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
                             <th className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <Checkbox
-                                    checked={selectAll}
-                                    onChange={(e) => handleSelectAll(e.target.checked)}
-                                />
+                                <div className="flex items-center justify-center">
+                                    <Checkbox
+                                        checked={selectAll}
+                                        onChange={(e) => handleSelectAll(e.target.checked)}
+                                    />
+                                </div>
                             </th>
                             <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div
@@ -404,7 +428,7 @@ export default function JobHistoryTab({ cleaner }) {
                                     {getSortIcon("amount")}
                                 </div>
                             </th>
-                            <th className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-3 text-left">
+                            <th className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
                                 <div
                                     className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                                     onClick={() => handleSort("status")}
@@ -420,6 +444,7 @@ export default function JobHistoryTab({ cleaner }) {
                                     {getSortIcon("status")}
                                 </div>
                             </th>
+                            <th className="w-14 md:w-16 px-2 md:px-4 py-2 md:py-3 text-center"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -431,12 +456,14 @@ export default function JobHistoryTab({ cleaner }) {
                                     className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
                                 >
                                     <td className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                                        <Checkbox
-                                            checked={selectedRows.includes(job.id)}
-                                            onChange={(e) =>
-                                                handleSelectRow(job.id, e.target.checked)
-                                            }
-                                        />
+                                        <div className="flex items-center justify-center">
+                                            <Checkbox
+                                                checked={selectedRows.includes(job.id)}
+                                                onChange={(e) =>
+                                                    handleSelectRow(job.id, e.target.checked)
+                                                }
+                                            />
+                                        </div>
                                     </td>
                                     <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
                                         <span className="font-medium text-primary text-xs md:text-sm">
@@ -454,7 +481,7 @@ export default function JobHistoryTab({ cleaner }) {
                                     <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-primary font-medium border-r border-gray-200 text-xs md:text-sm">
                                         AU${job.amount.toLocaleString()}
                                     </td>
-                                    <td className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-4">
+                                    <td className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
                                         <span
                                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs md:text-xs font-medium ${statusColors.bg} ${statusColors.border} ${statusColors.text}`}
                                         >
@@ -463,6 +490,15 @@ export default function JobHistoryTab({ cleaner }) {
                                             />
                                             {job.status}
                                         </span>
+                                    </td>
+                                    <td className="w-14 md:w-16 px-2 md:px-4 py-2 md:py-4 text-center">
+                                        <button
+                                            type="button"
+                                            className="p-2 inline-flex items-center justify-center cursor-pointer"
+                                            onClick={() => onViewJob && onViewJob(job)}
+                                        >
+                                            <Eye size={18} className="text-[#78829D]" />
+                                        </button>
                                     </td>
                                 </tr>
                             );

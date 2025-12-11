@@ -129,7 +129,7 @@ export default function  CustomMenu({
                     type="button"
                     onClick={() => handleItemClick(item)}
                      disabled={item.disabled}
-                     className={`flex w-full items-center gap-1 px-4 py-2 text-left text-sm ${dividerClasses} ${
+                     className={`flex w-full items-center gap-1 px-4 py-2 text-left text-sm cursor-pointer ${dividerClasses} ${
                       item.disabled
                         ? "opacity-50 cursor-not-allowed"
                         : "hover:bg-[#F3F4F6] rounded-lg"
