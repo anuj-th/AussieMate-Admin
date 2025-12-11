@@ -6,6 +6,7 @@ import CustomSelect from "../common/CustomSelect";
 import DatePicker from "../common/DatePicker";
 import PaginationRanges from "../common/PaginationRanges";
 import tableSortIcon from "../../assets/icon/tableSort.svg";
+import PageHeader from "../../layout/PageHeader";
 
 const defaultJobs = [
     {
@@ -482,306 +483,314 @@ export default function JobsTable({ onViewJob }) {
     ]);
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            {/* Filters Section */}
-            <div className="p-3 md:p-4 border-b border-gray-200">
-                <div className="flex flex-col xl:flex-row gap-3 md:gap-4 items-stretch xl:items-center justify-between">
-                    {/* Search */}
-                    <SearchInput
-                        placeholder="Search by Job ID, Customer Name, Cleaner Name"
-                        onChange={setSearchQuery}
-                        className="md:w-[300px]"
-                    />
+        <>
 
-                    {/* Filters */}
-                    <div className="w-full xl:w-auto flex flex-col sm:flex-row xl:flex-row xl:flex-nowrap gap-2 md:gap-3">
-                        <div className="w-full sm:w-auto sm:flex-1 xl:flex-none xl:w-36">
-                            <CustomSelect
-                                value={jobStatusFilter}
-                                onChange={setJobStatusFilter}
-                                placeholder="Job Status"
-                                options={jobStatusOptions}
-                                className="w-full"
-                            />
-                        </div>
-                        <div className="w-full sm:w-auto sm:flex-1 xl:flex-none xl:w-40">
-                            <CustomSelect
-                                value={jobTypeFilter}
-                                onChange={setJobTypeFilter}
-                                placeholder="Job Type"
-                                options={jobTypeOptions}
-                                className="w-full"
-                            />
-                        </div>
+            <PageHeader
+                title="Jobs"
+                showBackArrow={false}
+            />
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+
+                {/* Filters Section */}
+                <div className="p-3 md:p-4 border-b border-gray-200">
+                    <div className="flex flex-col xl:flex-row gap-3 md:gap-4 items-stretch xl:items-center justify-between">
+                        {/* Search */}
+                        <SearchInput
+                            placeholder="Search by Job ID, Customer Name, Cleaner Name"
+                            onChange={setSearchQuery}
+                            className="md:w-[300px]"
+                        />
+
+                        {/* Filters */}
+                        <div className="w-full xl:w-auto flex flex-col sm:flex-row xl:flex-row xl:flex-nowrap gap-2 md:gap-3">
+                            <div className="w-full sm:w-auto sm:flex-1 xl:flex-none xl:w-36">
+                                <CustomSelect
+                                    value={jobStatusFilter}
+                                    onChange={setJobStatusFilter}
+                                    placeholder="Job Status"
+                                    options={jobStatusOptions}
+                                    className="w-full"
+                                />
+                            </div>
+                            <div className="w-full sm:w-auto sm:flex-1 xl:flex-none xl:w-40">
+                                <CustomSelect
+                                    value={jobTypeFilter}
+                                    onChange={setJobTypeFilter}
+                                    placeholder="Job Type"
+                                    options={jobTypeOptions}
+                                    className="w-full"
+                                />
+                            </div>
 
 
 
-                        <div className="w-full sm:w-auto sm:flex-1 xl:flex-none xl:w-40">
-                            <CustomSelect
-                                value={paymentStatusFilter}
-                                onChange={setPaymentStatusFilter}
-                                placeholder="Payment Status"
-                                options={paymentStatusOptions}
-                                className="w-full"
-                            />
-                        </div>
+                            <div className="w-full sm:w-auto sm:flex-1 xl:flex-none xl:w-40">
+                                <CustomSelect
+                                    value={paymentStatusFilter}
+                                    onChange={setPaymentStatusFilter}
+                                    placeholder="Payment Status"
+                                    options={paymentStatusOptions}
+                                    className="w-full"
+                                />
+                            </div>
 
-                        <div className="w-full sm:w-auto sm:flex-1 xl:flex-none xl:w-40">
-                            <DatePicker
-                                label="Date Range"
-                                value={dateFilter}
-                                onChange={setDateFilter}
-                            />
+                            <div className="w-full sm:w-auto sm:flex-1 xl:flex-none xl:w-40">
+                                <DatePicker
+                                    label="Date Range"
+                                    value={dateFilter}
+                                    onChange={setDateFilter}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Table Section */}
-            <div className="overflow-x-auto">
-                <table className="w-full border-collapse min-w-[1200px]">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <div className="flex items-center justify-center">
-                                    <Checkbox
-                                        checked={selectAll}
-                                        onChange={(e) => handleSelectAll(e.target.checked)}
-                                    />
-                                </div>
-                            </th>
-                            <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-[10px] md:text-xs">
-                                        Job ID
-                                    </span>
-                                    <img
-                                        src={tableSortIcon}
-                                        alt="sort"
-                                        className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                    />
-                                </div>
-                            </th>
-                            <th className="min-w-[120px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-[10px] md:text-xs">
-                                        Job Type
-                                    </span>
-                                    <img
-                                        src={tableSortIcon}
-                                        alt="sort"
-                                        className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                    />
-                                </div>
-                            </th>
-                            <th className="min-w-[180px] md:min-w-[220px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-[10px] md:text-xs">
-                                        Customer
-                                    </span>
-                                    <img
-                                        src={tableSortIcon}
-                                        alt="sort"
-                                        className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                    />
-                                </div>
-                            </th>
-                            <th className="min-w-[150px] md:min-w-[180px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-[10px] md:text-xs">
-                                        Cleaner
-                                    </span>
-                                    <img
-                                        src={tableSortIcon}
-                                        alt="sort"
-                                        className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                    />
-                                </div>
-                            </th>
-                            <th className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-[10px] md:text-xs">
-                                        Job Status
-                                    </span>
-                                    <img
-                                        src={tableSortIcon}
-                                        alt="sort"
-                                        className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                    />
-                                </div>
-                            </th>
-                            <th className="min-w-[130px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-[10px] md:text-xs">
-                                        Payment Status
-                                    </span>
-                                    <img
-                                        src={tableSortIcon}
-                                        alt="sort"
-                                        className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                    />
-                                </div>
-                            </th>
-                            <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-[10px] md:text-xs">
-                                        Date
-                                    </span>
-                                    <img
-                                        src={tableSortIcon}
-                                        alt="sort"
-                                        className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                    />
-                                </div>
-                            </th>
-                            <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-[10px] md:text-xs">
-                                        Amount Paid
-                                    </span>
-                                    <img
-                                        src={tableSortIcon}
-                                        alt="sort"
-                                        className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                    />
-                                </div>
-                            </th>
-                            <th className="w-16 md:w-20 px-2 md:px-4 py-2 md:py-3 text-center">
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {paginatedJobs.map((job) => {
-                            const jobStatusColors = getJobStatusColor(job.jobStatus);
-                            const paymentStatusColors = getPaymentStatusColor(
-                                job.paymentStatus
-                            );
-                            return (
-                                <tr
-                                    key={job.id}
-                                    className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
-                                >
-                                    <td className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                                        <div className="flex items-center justify-center">
-                                            <Checkbox
-                                                checked={selectedRows.includes(job.id)}
-                                                onChange={(e) =>
-                                                    handleSelectRow(job.id, e.target.checked)
-                                                }
-                                            />
-                                        </div>
-                                    </td>
-                                    <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                                        <span className="font-medium text-primary text-xs md:text-sm">
-                                            {job.jobId}
+                {/* Table Section */}
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse min-w-[1200px]">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
+                                    <div className="flex items-center justify-center">
+                                        <Checkbox
+                                            checked={selectAll}
+                                            onChange={(e) => handleSelectAll(e.target.checked)}
+                                        />
+                                    </div>
+                                </th>
+                                <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
+                                    <div className="flex items-center gap-1.5 md:gap-2">
+                                        <span className="font-medium text-gray-700 text-[10px] md:text-xs">
+                                            Job ID
                                         </span>
-                                    </td>
-                                    <td className="min-w-[120px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                                        <span className="text-primary font-medium text-xs md:text-sm">
-                                            {job.jobType}
+                                        <img
+                                            src={tableSortIcon}
+                                            alt="sort"
+                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
+                                        />
+                                    </div>
+                                </th>
+                                <th className="min-w-[120px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
+                                    <div className="flex items-center gap-1.5 md:gap-2">
+                                        <span className="font-medium text-gray-700 text-[10px] md:text-xs">
+                                            Job Type
                                         </span>
-                                    </td>
-                                    <td className="min-w-[180px] md:min-w-[220px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                                        <div className="flex items-center gap-2 md:gap-3">
-                                            {job.customer.avatar ? (
-                                                <img
-                                                    src={job.customer.avatar}
-                                                    alt={job.customer.name}
-                                                    className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover flex-shrink-0"
+                                        <img
+                                            src={tableSortIcon}
+                                            alt="sort"
+                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
+                                        />
+                                    </div>
+                                </th>
+                                <th className="min-w-[180px] md:min-w-[220px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
+                                    <div className="flex items-center gap-1.5 md:gap-2">
+                                        <span className="font-medium text-gray-700 text-[10px] md:text-xs">
+                                            Customer
+                                        </span>
+                                        <img
+                                            src={tableSortIcon}
+                                            alt="sort"
+                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
+                                        />
+                                    </div>
+                                </th>
+                                <th className="min-w-[150px] md:min-w-[180px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
+                                    <div className="flex items-center gap-1.5 md:gap-2">
+                                        <span className="font-medium text-gray-700 text-[10px] md:text-xs">
+                                            Cleaner
+                                        </span>
+                                        <img
+                                            src={tableSortIcon}
+                                            alt="sort"
+                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
+                                        />
+                                    </div>
+                                </th>
+                                <th className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
+                                    <div className="flex items-center gap-1.5 md:gap-2">
+                                        <span className="font-medium text-gray-700 text-[10px] md:text-xs">
+                                            Job Status
+                                        </span>
+                                        <img
+                                            src={tableSortIcon}
+                                            alt="sort"
+                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
+                                        />
+                                    </div>
+                                </th>
+                                <th className="min-w-[130px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
+                                    <div className="flex items-center gap-1.5 md:gap-2">
+                                        <span className="font-medium text-gray-700 text-[10px] md:text-xs">
+                                            Payment Status
+                                        </span>
+                                        <img
+                                            src={tableSortIcon}
+                                            alt="sort"
+                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
+                                        />
+                                    </div>
+                                </th>
+                                <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
+                                    <div className="flex items-center gap-1.5 md:gap-2">
+                                        <span className="font-medium text-gray-700 text-[10px] md:text-xs">
+                                            Date
+                                        </span>
+                                        <img
+                                            src={tableSortIcon}
+                                            alt="sort"
+                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
+                                        />
+                                    </div>
+                                </th>
+                                <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
+                                    <div className="flex items-center gap-1.5 md:gap-2">
+                                        <span className="font-medium text-gray-700 text-[10px] md:text-xs">
+                                            Amount Paid
+                                        </span>
+                                        <img
+                                            src={tableSortIcon}
+                                            alt="sort"
+                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
+                                        />
+                                    </div>
+                                </th>
+                                <th className="w-16 md:w-20 px-2 md:px-4 py-2 md:py-3 text-center">
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {paginatedJobs.map((job) => {
+                                const jobStatusColors = getJobStatusColor(job.jobStatus);
+                                const paymentStatusColors = getPaymentStatusColor(
+                                    job.paymentStatus
+                                );
+                                return (
+                                    <tr
+                                        key={job.id}
+                                        className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                                    >
+                                        <td className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
+                                            <div className="flex items-center justify-center">
+                                                <Checkbox
+                                                    checked={selectedRows.includes(job.id)}
+                                                    onChange={(e) =>
+                                                        handleSelectRow(job.id, e.target.checked)
+                                                    }
                                                 />
-                                            ) : (
-                                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                                    <User2 size={16} className="text-gray-400" />
-                                                </div>
-                                            )}
-                                            <div className="min-w-0">
-                                                <p className="font-medium text-primary text-xs md:text-sm truncate">
-                                                    {job.customer.name}
-                                                </p>
-                                                <p className="text-xs md:text-sm text-primary-light truncate">
-                                                    {job.customer.email}
-                                                </p>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="min-w-[150px] md:min-w-[180px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                                        <div className="flex items-center gap-2 md:gap-3">
-                                            {job.cleaner.avatar ? (
-                                                <img
-                                                    src={job.cleaner.avatar}
-                                                    alt={job.cleaner.name}
-                                                    className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover flex-shrink-0"
+                                        </td>
+                                        <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
+                                            <span className="font-medium text-primary text-xs md:text-sm">
+                                                {job.jobId}
+                                            </span>
+                                        </td>
+                                        <td className="min-w-[120px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
+                                            <span className="text-primary font-medium text-xs md:text-sm">
+                                                {job.jobType}
+                                            </span>
+                                        </td>
+                                        <td className="min-w-[180px] md:min-w-[220px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
+                                            <div className="flex items-center gap-2 md:gap-3">
+                                                {job.customer.avatar ? (
+                                                    <img
+                                                        src={job.customer.avatar}
+                                                        alt={job.customer.name}
+                                                        className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover flex-shrink-0"
+                                                    />
+                                                ) : (
+                                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                                        <User2 size={16} className="text-gray-400" />
+                                                    </div>
+                                                )}
+                                                <div className="min-w-0">
+                                                    <p className="font-medium text-primary text-xs md:text-sm truncate">
+                                                        {job.customer.name}
+                                                    </p>
+                                                    <p className="text-xs md:text-sm text-primary-light truncate">
+                                                        {job.customer.email}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="min-w-[150px] md:min-w-[180px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
+                                            <div className="flex items-center gap-2 md:gap-3">
+                                                {job.cleaner.avatar ? (
+                                                    <img
+                                                        src={job.cleaner.avatar}
+                                                        alt={job.cleaner.name}
+                                                        className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover flex-shrink-0"
+                                                    />
+                                                ) : (
+                                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                                        <User2 size={16} className="text-gray-400" />
+                                                    </div>
+                                                )}
+                                                <div className="min-w-0">
+                                                    <p className="font-medium text-primary text-xs md:text-sm truncate">
+                                                        {job.cleaner.name}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
+                                            <span
+                                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs md:text-sm font-medium ${jobStatusColors.bg} ${jobStatusColors.border} ${jobStatusColors.text}`}
+                                            >
+                                                <span
+                                                    className={`w-1.5 h-1.5 rounded-full ${jobStatusColors.dot}`}
                                                 />
+                                                {job.jobStatus}
+                                            </span>
+                                        </td>
+                                        <td className="min-w-[130px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
+                                            <span
+                                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs md:text-sm font-medium ${paymentStatusColors.bg} ${paymentStatusColors.border} ${paymentStatusColors.text}`}
+                                            >
+                                                <span
+                                                    className={`w-1.5 h-1.5 rounded-full ${paymentStatusColors.dot}`}
+                                                />
+                                                {job.paymentStatus}
+                                            </span>
+                                        </td>
+                                        <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-primary font-medium border-r border-gray-200 text-xs md:text-sm">
+                                            {job.date}
+                                        </td>
+                                        <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-primary font-medium border-r border-gray-200 text-xs md:text-sm">
+                                            {job.amountPaid !== null ? (
+                                                <span>AU${job.amountPaid.toLocaleString()}</span>
                                             ) : (
-                                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                                    <User2 size={16} className="text-gray-400" />
-                                                </div>
+                                                <span className="text-gray-400">-</span>
                                             )}
-                                            <div className="min-w-0">
-                                                <p className="font-medium text-primary text-xs md:text-sm truncate">
-                                                    {job.cleaner.name}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                                        <span
-                                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs md:text-sm font-medium ${jobStatusColors.bg} ${jobStatusColors.border} ${jobStatusColors.text}`}
-                                        >
-                                            <span
-                                                className={`w-1.5 h-1.5 rounded-full ${jobStatusColors.dot}`}
-                                            />
-                                            {job.jobStatus}
-                                        </span>
-                                    </td>
-                                    <td className="min-w-[130px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                                        <span
-                                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs md:text-sm font-medium ${paymentStatusColors.bg} ${paymentStatusColors.border} ${paymentStatusColors.text}`}
-                                        >
-                                            <span
-                                                className={`w-1.5 h-1.5 rounded-full ${paymentStatusColors.dot}`}
-                                            />
-                                            {job.paymentStatus}
-                                        </span>
-                                    </td>
-                                    <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-primary font-medium border-r border-gray-200 text-xs md:text-sm">
-                                        {job.date}
-                                    </td>
-                                    <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-primary font-medium border-r border-gray-200 text-xs md:text-sm">
-                                        {job.amountPaid !== null ? (
-                                            <span>AU${job.amountPaid.toLocaleString()}</span>
-                                        ) : (
-                                            <span className="text-gray-400">-</span>
-                                        )}
-                                    </td>
-                                    <td className="w-16 md:w-20 px-2 md:px-4 py-2 md:py-4 text-center">
-                                        <button
-                                            type="button"
-                                            onClick={() => onViewJob && onViewJob(job)}
-                                            className="rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors mx-auto"
-                                        >
-                                            <Eye
-                                                size={20}
-                                                className="text-[#78829D] cursor-pointer"
-                                            />
-                                        </button>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
+                                        </td>
+                                        <td className="w-16 md:w-20 px-2 md:px-4 py-2 md:py-4 text-center">
+                                            <button
+                                                type="button"
+                                                onClick={() => onViewJob && onViewJob(job)}
+                                                className="rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors mx-auto"
+                                            >
+                                                <Eye
+                                                    size={20}
+                                                    className="text-[#78829D] cursor-pointer"
+                                                />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
 
-            {/* Pagination Section */}
-            <PaginationRanges
-                currentPage={currentPage}
-                rowsPerPage={itemsPerPage}
-                totalItems={filteredJobs.length}
-                onPageChange={setCurrentPage}
-                onRowsPerPageChange={setItemsPerPage}
-            />
-        </div>
+                {/* Pagination Section */}
+                <PaginationRanges
+                    currentPage={currentPage}
+                    rowsPerPage={itemsPerPage}
+                    totalItems={filteredJobs.length}
+                    onPageChange={setCurrentPage}
+                    onRowsPerPageChange={setItemsPerPage}
+                />
+            </div>
+        </>
     );
 }
 

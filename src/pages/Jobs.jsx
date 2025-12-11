@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import JobsTable from "../components/jobs/JobsTable";
 import JobDetails from "../components/jobs/JobDetails";
-import PageHeader from "../layout/PageHeader";
 
 export default function Jobs() {
   const [selectedJob, setSelectedJob] = useState(null);
@@ -38,15 +37,6 @@ export default function Jobs() {
 
   return (
     <div className="w-full overflow-x-hidden">
-      <div className="mx-auto w-6xl">
-        <PageHeader
-          title={selectedJob ? selectedJob.jobId : "Jobs"}
-          subtitle={selectedJob ? (selectedJob.jobTitle || selectedJob.jobType) : ""}
-          role={selectedJob?.cleaner?.role}
-          showBackArrow={!!selectedJob}
-          onBack={selectedJob ? handleBack : undefined}
-        />
-      </div>
 
       {selectedJob ? (
         <JobDetails job={selectedJob} onBackToList={handleBack} />

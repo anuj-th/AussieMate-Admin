@@ -59,7 +59,7 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
   }
 
   return (
-    <div className="space-y-6 w-full max-w-7xl mx-auto">
+    <div className="space-y-6 w-full max-w-6xl mx-auto ">
       {/* Profile header */}
       <div
         className="px-4 md:px-6 lg:px-10 pt-8 md:pt-10 pb-6 relative overflow-hidden bg-white rounded-[20px] border border-[#EEF0F5] "

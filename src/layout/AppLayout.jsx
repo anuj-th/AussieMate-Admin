@@ -10,7 +10,7 @@ export default function AppLayout() {
   const navigate = useNavigate();
 
   const searchIndex = [
-    { path: "/", keywords: ["dashboard", "home"] },
+    { path: "/dashboard", keywords: ["dashboard", "home"] },
     { path: "/approvals", keywords: ["approvals", "approval"] },
     { path: "/jobs", keywords: ["jobs", "job"] },
     { path: "/cleaners", keywords: ["cleaners", "cleaner"] },

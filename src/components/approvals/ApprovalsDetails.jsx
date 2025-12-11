@@ -76,7 +76,7 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
     <div className="space-y-6 w-full max-w-6xl mx-auto ">
       {/* Profile header */}
       <div
-        className="px-4 sm:px-6 md:px-10 pt-8 md:pt-10 pb-6 relative overflow-hidden rounded-2xl"
+        className="pt-8 md:pt-10 pb-6 relative overflow-hidden rounded-2xl"
         style={{
           backgroundImage: `url(${approvalsBg})`,
           backgroundSize: 'cover',

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { clearAuth } from "../utils/auth";
 import logo from '../assets/icon/logoo.svg';
 import dashIcon from '../assets/icon/dash.svg';
 import dashLightIcon from '../assets/icon/dashLight.svg';
@@ -21,11 +22,12 @@ import rejectKyc from "../assets/image/rejectKyc.svg";
 
 export default function Sidebar({ isOpen, toggleSidebar }) {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const menu = [
     {
       name: "Dashboard",
-      path: "/",
+      path: "/dashboard",
       icon: dashIcon,
       iconLight: dashLightIcon
     },
@@ -172,8 +174,8 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
         primaryLabel="Logout"
         onPrimary={() => {
           setIsLogoutModalOpen(false);
-          // TODO: add real logout logic
-          console.log("Logged out");
+          clearAuth();
+          navigate('/login');
         }}
         hideSecondary
       />

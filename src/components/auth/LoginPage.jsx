@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import logo from '../../assets/icon/logo.svg';
 import Button from '../common/Button';
+import { useAuth } from '../../api/hooks/useAuth';
+import { isAuthenticated } from '../../utils/auth';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +13,9 @@ const LoginPage = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [message, setMessage] = useState(null);
+  const navigate = useNavigate();
+  const { login, loading, error } = useAuth();
 
   const handleInputChange = (e) => {
     setFormData({
@@ -18,10 +24,42 @@ const LoginPage = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    // UI only - no actual login logic
+    setMessage(null);
+    try {
+      const data = await login({
+        email: formData.email,
+        password: formData.password,
+        remember: rememberMe,
+      });
+      
+      // Check if token was actually saved to storage (more reliable than checking response)
+      const authenticated = isAuthenticated();
+      
+      if (!authenticated) {
+        console.error('Login succeeded but token was not saved. Response:', data);
+        setMessage('Login successful but authentication token not received. Please check console for details.');
+        return;
+      }
+
+      // Optional: store user info if backend returns it
+      if (data?.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+      } else if (data?.data?.user) {
+        localStorage.setItem('user', JSON.stringify(data.data.user));
+      } else if (data?.result?.user) {
+        localStorage.setItem('user', JSON.stringify(data.result.user));
+      }
+      
+      setMessage('Login successful. Redirecting...');
+      
+      // Navigate immediately - token is already saved synchronously
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      // error state is set inside the hook; nothing else to do here
+      console.error('Login error:', err);
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -54,6 +92,17 @@ const LoginPage = () => {
             <p className="text-sm md:text-base text-gray-500 font-medium text-center mb-6">
               Fill below details to get into it.
             </p>
+
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+                {error}
+              </div>
+            )}
+            {message && (
+              <div className="text-sm text-green-600 bg-green-50 border border-green-200 rounded-md px-3 py-2">
+                {message}
+              </div>
+            )}
 
             {/* Email Field */}
             <div>
@@ -123,8 +172,9 @@ const LoginPage = () => {
               fullWidth
               size="md"
               className="rounded-[10px]"
+              disabled={loading}
             >
-              Sign In
+              {loading ? 'Signing In...' : 'Sign In'}
             </Button>
           </form>
           </div>

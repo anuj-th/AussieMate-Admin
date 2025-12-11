@@ -4,6 +4,7 @@ import JobInfoTab from "./JobInfoTab";
 import TimelineTab from "./TimelineTab";
 import FeedbackTab from "./FeedbackTab";
 import AttachmentsTab from "./AttachmentsTab";
+import PageHeader from "../../layout/PageHeader";
 
 export default function JobDetails({ job, onBackToList }) {
     if (!job) return null;
@@ -198,6 +199,12 @@ export default function JobDetails({ job, onBackToList }) {
 
     return (
         <div className="space-y-6 mx-auto w-full max-w-6xl overflow-x-hidden pb-10">
+            <PageHeader
+          title={selectedJob ? selectedJob.jobId : "Jobs"}
+          subtitle={selectedJob ? (selectedJob.jobTitle || selectedJob.jobType) : ""}
+          role={selectedJob?.cleaner?.role}
+          showBackArrow={!!selectedJob}
+          onBack={selectedJob ? handleBack : undefined}/>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
 

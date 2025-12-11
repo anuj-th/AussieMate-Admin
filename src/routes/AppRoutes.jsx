@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import Dashboard from "../pages/Dashboard";
 import Approvals from "../pages/Approvals";
@@ -11,7 +11,8 @@ import Settings from "../pages/Settings";
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Dashboard />} />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/approvals" element={<Approvals />} />
       <Route path="/jobs" element={<Jobs />} />
       <Route path="/jobs/:jobId" element={<Jobs />} />
