@@ -1,308 +1,78 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useImperativeHandle, forwardRef } from "react";
 import { Eye, User2 } from "lucide-react";
 import Checkbox from "../common/Checkbox";
 import SearchInput from "../common/SearchInput";
 import CustomSelect from "../common/CustomSelect";
 import DatePicker from "../common/DatePicker";
 import PaginationRanges from "../common/PaginationRanges";
-import tableSortIcon from "../../assets/icon/tableSort.svg";
 import PageHeader from "../../layout/PageHeader";
+import { fetchJobs } from "../../api/services/jobService";
+import Loader from "../common/Loader";
+import StatusBadge from "../common/StatusBadge";
 
-const defaultJobs = [
-    {
-        id: 1,
-        jobId: "AM10432",
-        jobType: "Cleaning",
-        customer: {
-            name: "Selina K",
-            email: "selina.k@example.com",
-            avatar: "https://i.pravatar.cc/150?img=1",
-        },
-        cleaner: {
-            name: "Lori Mosciski",
-            avatar: "https://i.pravatar.cc/150?img=11",
-        },
-        jobStatus: "Completed",
-        paymentStatus: "Released",
-        date: "20-09-2025",
-        amountPaid: 320,
-    },
-    {
-        id: 2,
-        jobId: "AM10433",
-        jobType: "Handyman",
-        customer: {
-            name: "George L",
-            email: "george.l@example.com",
-            avatar: "https://i.pravatar.cc/150?img=2",
-        },
-        cleaner: {
-            name: "Randolph Hirthe",
-            avatar: "https://i.pravatar.cc/150?img=12",
-        },
-        jobStatus: "Ongoing",
-        paymentStatus: "Held",
-        date: "20-09-2025",
-        amountPaid: 220,
-    },
-    {
-        id: 3,
-        jobId: "AM10434",
-        jobType: "Support Service Provider",
-        customer: {
-            name: "Naomi P",
-            email: "naomi.p@example.com",
-            avatar: "https://i.pravatar.cc/150?img=3",
-        },
-        cleaner: {
-            name: "Constance Harris",
-            avatar: "https://i.pravatar.cc/150?img=13",
-        },
-        jobStatus: "Ongoing",
-        paymentStatus: "Held",
-        date: "20-09-2025",
-        amountPaid: 150,
-    },
-    {
-        id: 4,
-        jobId: "AM10435",
-        jobType: "Housekeeping",
-        customer: {
-            name: "Guy Brakus",
-            email: "guy.b@example.com",
-            avatar: "https://i.pravatar.cc/150?img=4",
-        },
-        cleaner: {
-            name: "Guy Brakus",
-            avatar: "https://i.pravatar.cc/150?img=14",
-        },
-        jobStatus: "Upcoming",
-        paymentStatus: "Held",
-        date: "20-09-2025",
-        amountPaid: 280,
-    },
-    {
-        id: 5,
-        jobId: "AM10432",
-        jobType: "Pet Sitter",
-        customer: {
-            name: "Andre Abshire",
-            email: "andre.a@example.com",
-            avatar: "https://i.pravatar.cc/150?img=5",
-        },
-        cleaner: {
-            name: "Andre Abshire",
-            avatar: "https://i.pravatar.cc/150?img=15",
-        },
-        jobStatus: "Completed",
-        paymentStatus: "Held",
-        date: "20-09-2025",
-        amountPaid: 180,
-    },
-    {
-        id: 6,
-        jobId: "AM10433",
-        jobType: "Pet Sitter",
-        customer: {
-            name: "Laura Cruickshank III",
-            email: "laura.c@example.com",
-            avatar: "https://i.pravatar.cc/150?img=6",
-        },
-        cleaner: {
-            name: "Laura Cruickshank III",
-            avatar: "https://i.pravatar.cc/150?img=16",
-        },
-        jobStatus: "Completed",
-        paymentStatus: "Released",
-        date: "20-09-2025",
-        amountPaid: 200,
-    },
-    {
-        id: 7,
-        jobId: "AM10434",
-        jobType: "Handyman",
-        customer: {
-            name: "Arnold Koch",
-            email: "arnold.k@example.com",
-            avatar: "https://i.pravatar.cc/150?img=7",
-        },
-        cleaner: {
-            name: "Arnold Koch",
-            avatar: "https://i.pravatar.cc/150?img=17",
-        },
-        jobStatus: "Completed",
-        paymentStatus: "Released",
-        date: "20-09-2025",
-        amountPaid: 250,
-    },
-    {
-        id: 8,
-        jobId: "AM10435",
-        jobType: "Handyman",
-        customer: {
-            name: "Mr. Gretchen Schumm",
-            email: "gretchen.s@example.com",
-            avatar: "https://i.pravatar.cc/150?img=8",
-        },
-        cleaner: {
-            name: "Mr. Gretchen Schumm",
-            avatar: "https://i.pravatar.cc/150?img=18",
-        },
-        jobStatus: "Cancelled",
-        paymentStatus: "Cancelled",
-        date: "20-09-2025",
-        amountPaid: null,
-    },
-    {
-        id: 9,
-        jobId: "AM10435",
-        jobType: "Support Service Provider",
-        customer: {
-            name: "Mindy Crona",
-            email: "mindy.c@example.com",
-            avatar: "https://i.pravatar.cc/150?img=9",
-        },
-        cleaner: {
-            name: "Mindy Crona",
-            avatar: "https://i.pravatar.cc/150?img=19",
-        },
-        jobStatus: "Upcoming",
-        paymentStatus: "Held",
-        date: "20-09-2025",
-        amountPaid: 320,
-    },
-    {
-        id: 10,
-        jobId: "AM10435",
-        jobType: "Housekeeping",
-        customer: {
-            name: "Dr. Joshua Morar",
-            email: "joshua.m@example.com",
-            avatar: "https://i.pravatar.cc/150?img=10",
-        },
-        cleaner: {
-            name: "Dr. Joshua Morar",
-            avatar: "https://i.pravatar.cc/150?img=20",
-        },
-        jobStatus: "Upcoming",
-        paymentStatus: "Held",
-        date: "20-09-2025",
-        amountPaid: 190,
-    },
-    {
-        id: 11,
-        jobId: "AM10435",
-        jobType: "Pet Sitter",
-        customer: {
-            name: "Selina K",
-            email: "selina.k@example.com",
-            avatar: "https://i.pravatar.cc/150?img=1",
-        },
-        cleaner: {
-            name: "Lori Mosciski",
-            avatar: "https://i.pravatar.cc/150?img=11",
-        },
-        jobStatus: "Cancelled",
-        paymentStatus: "Cancelled",
-        date: "20-09-2025",
-        amountPaid: null,
-    },
-    {
-        id: 12,
-        jobId: "AM10436",
-        jobType: "Cleaning",
-        customer: {
-            name: "George L",
-            email: "george.l@example.com",
-            avatar: "https://i.pravatar.cc/150?img=2",
-        },
-        cleaner: {
-            name: "Randolph Hirthe",
-            avatar: "https://i.pravatar.cc/150?img=12",
-        },
-        jobStatus: "Completed",
-        paymentStatus: "Released",
-        date: "21-09-2025",
-        amountPaid: 350,
-    },
-    {
-        id: 13,
-        jobId: "AM10437",
-        jobType: "Handyman",
-        customer: {
-            name: "Naomi P",
-            email: "naomi.p@example.com",
-            avatar: "https://i.pravatar.cc/150?img=3",
-        },
-        cleaner: {
-            name: "Constance Harris",
-            avatar: "https://i.pravatar.cc/150?img=13",
-        },
-        jobStatus: "Ongoing",
-        paymentStatus: "Held",
-        date: "21-09-2025",
-        amountPaid: 280,
-    },
-    {
-        id: 14,
-        jobId: "AM10438",
-        jobType: "Pet Sitter",
-        customer: {
-            name: "Guy Brakus",
-            email: "guy.b@example.com",
-            avatar: "https://i.pravatar.cc/150?img=4",
-        },
-        cleaner: {
-            name: "Guy Brakus",
-            avatar: "https://i.pravatar.cc/150?img=14",
-        },
-        jobStatus: "Completed",
-        paymentStatus: "Released",
-        date: "21-09-2025",
-        amountPaid: 160,
-    },
-    {
-        id: 15,
-        jobId: "AM10439",
-        jobType: "Housekeeping",
-        customer: {
-            name: "Andre Abshire",
-            email: "andre.a@example.com",
-            avatar: "https://i.pravatar.cc/150?img=5",
-        },
-        cleaner: {
-            name: "Andre Abshire",
-            avatar: "https://i.pravatar.cc/150?img=15",
-        },
-        jobStatus: "Upcoming",
-        paymentStatus: "Held",
-        date: "22-09-2025",
-        amountPaid: 300,
-    },
-];
-
-export default function JobsTable({ onViewJob }) {
-    const [jobs, setJobs] = useState(defaultJobs);
+const JobsTable = forwardRef(({ onViewJob }, ref) => {
+    const [jobs, setJobs] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [selectedRows, setSelectedRows] = useState([]);
     const [selectAll, setSelectAll] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [searchInputValue, setSearchInputValue] = useState(""); // Local state for search input
     const [jobTypeFilter, setJobTypeFilter] = useState("");
     const [jobStatusFilter, setJobStatusFilter] = useState("");
     const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
     const [dateFilter, setDateFilter] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+    // Pagination info from API
+    const [paginationInfo, setPaginationInfo] = useState({
+        currentPage: 1,
+        totalPages: 1,
+        totalJobs: 0,
+        limit: 10,
+        hasNextPage: false,
+        hasPrevPage: false
+    });
 
     const jobTypeOptions = [
         "Cleaning",
         "Handyman",
         "Support Service Provider",
+        "Commercial Cleaning",
         "Housekeeping",
         "Pet Sitter",
     ];
 
     const jobStatusOptions = ["Completed", "Ongoing", "Upcoming", "Cancelled"];
     const paymentStatusOptions = ["Released", "Held", "Cancelled"];
+
+    // Get job type variations for filtering
+    // Returns an array of job type values that should match the selected filter
+    const getJobTypeVariations = (selectedJobType) => {
+        if (!selectedJobType) return [];
+        
+        // When "Support Service Provider" is selected, also match "Support Services" and "NDIS"
+        if (selectedJobType === "Support Service Provider") {
+            return ["Support Service Provider", "Support Services", "NDIS", "ndis"];
+        }
+        
+        // For other job types, return the exact match
+        return [selectedJobType];
+    };
+
+    // Map UI job status to API status
+    // Maps frontend display statuses to backend API statuses
+    const mapJobStatusToAPI = (uiStatus) => {
+        if (!uiStatus) return '';
+        // Map UI labels to backend jobStatus values
+        const statusMap = {
+            Completed: 'completed',
+            Ongoing: 'in_progress', // Primary backend status for ongoing
+            Upcoming: 'posted', // Primary backend status for upcoming
+            Cancelled: 'cancelled',
+        };
+        return statusMap[uiStatus] || '';
+    };
 
     // Helper function to parse date string (DD-MM-YYYY) to Date object
     const parseDateString = (dateStr) => {
@@ -320,63 +90,473 @@ export default function JobsTable({ onViewJob }) {
         return `${day}-${month}-${year}`;
     };
 
-    // Filter jobs based on search and filters
-    const filteredJobs = useMemo(() => {
-        return jobs.filter((job) => {
-            const matchesSearch =
-                !searchQuery ||
-                job.jobId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                job.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                job.cleaner.name.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesJobType = !jobTypeFilter || job.jobType === jobTypeFilter;
-            const matchesJobStatus = !jobStatusFilter || job.jobStatus === jobStatusFilter;
-            const matchesPaymentStatus =
-                !paymentStatusFilter || job.paymentStatus === paymentStatusFilter;
+    // Helper function to format date from API (ISO string or timestamp) to DD-MM-YYYY
+    const formatDateFromAPI = (dateStr) => {
+        if (!dateStr) return "N/A";
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return "N/A";
+            return formatDate(date);
+        } catch {
+            return "N/A";
+        }
+    };
 
-            // Date filtering logic
-            let matchesDate = true;
-            if (dateFilter) {
-                const jobDate = parseDateString(job.date);
-                if (dateFilter.start && dateFilter.end) {
-                    // Date range filtering
-                    const startDate = new Date(dateFilter.start);
-                    const endDate = new Date(dateFilter.end);
-                    startDate.setHours(0, 0, 0, 0);
-                    endDate.setHours(23, 59, 59, 999);
-                    matchesDate = jobDate >= startDate && jobDate <= endDate;
-                } else if (dateFilter.start) {
-                    // Single date filtering
-                    const filterDate = new Date(dateFilter.start);
-                    filterDate.setHours(0, 0, 0, 0);
-                    const jobDateStart = new Date(jobDate);
-                    jobDateStart.setHours(0, 0, 0, 0);
-                    matchesDate = jobDateStart.getTime() === filterDate.getTime();
+    // Derive payment status from job status
+    // Payment status is dependent on job status:
+    // - Upcoming → Held
+    // - Completed → Released
+    // - Cancelled → Cancelled
+    // - Ongoing → Held (default for ongoing jobs)
+    const derivePaymentStatus = (jobStatus) => {
+        if (!jobStatus) return "Held";
+        
+        const status = jobStatus.trim();
+        
+        if (status === "Upcoming") {
+            return "Held";
+        } else if (status === "Completed") {
+            return "Released";
+        } else if (status === "Cancelled") {
+            return "Cancelled";
+        } else if (status === "Ongoing") {
+            return "Held";
+        }
+        
+        // Default to Held for any other status
+        return "Held";
+    };
+
+    // Normalize job status to match expected format
+    // Maps backend statuses to frontend display statuses
+    const normalizeJobStatus = (status) => {
+        if (!status) return "Upcoming";
+        const statusLower = status.toLowerCase().trim();
+        
+        // Backend: posted, quoted, accepted → Frontend: Upcoming
+        if (statusLower === "posted" || statusLower === "quoted" || statusLower === "accepted" || statusLower === "accept") {
+            return "Upcoming";
+        }
+        
+        // Backend: in_progress, started, pending_customer_confirmation → Frontend: Ongoing
+        if (statusLower === "in_progress" || statusLower === "in-progress" || 
+            statusLower === "started" || 
+            statusLower === "pending_customer_confirmation" || statusLower === "pending-customer-confirmation") {
+            return "Ongoing";
+        }
+        
+        // Backend: completed → Frontend: Completed
+        if (statusLower === "completed" || statusLower === "complete" || statusLower === "done" || statusLower === "finished") {
+            return "Completed";
+        }
+        
+        // Backend: cancelled → Frontend: Cancelled
+        if (statusLower === "cancelled" || statusLower === "canceled" || statusLower === "cancel") {
+            return "Cancelled";
+        }
+        
+        // Legacy/alternative mappings
+        if (statusLower === "ongoing" || statusLower === "active" || statusLower === "progress") {
+            return "Ongoing";
+        }
+        if (statusLower === "upcoming" || statusLower === "scheduled" || statusLower === "pending" || statusLower === "booked") {
+            return "Upcoming";
+        }
+        
+        // Return capitalized version if it matches one of our statuses
+        const capitalized = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+        if (["Completed", "Ongoing", "Upcoming", "Cancelled"].includes(capitalized)) {
+            return capitalized;
+        }
+        
+        return "Upcoming"; // Default
+    };
+
+    // Map API response to UI structure
+    const mapJobFromAPI = (job) => {
+        // Extract customer data from customerId object
+        const customerId = job.customerId || job.customer || {};
+        const customerFirstName = customerId.firstName || "";
+        const customerLastName = customerId.lastName || "";
+        const customerName = `${customerFirstName} ${customerLastName}`.trim() || 
+                           customerId.name || 
+                           job.customerName || 
+                           "Unknown Customer";
+        const customerEmail = customerId.email || job.customerEmail || "";
+        const customerAvatar = customerId.profilePhoto?.url || 
+                              customerId.avatar || 
+                              job.customer?.profilePhoto?.url ||
+                              job.customer?.avatar ||
+                              `https://ui-avatars.com/api/?name=${encodeURIComponent(customerName)}&background=random`;
+
+        // Extract cleaner data from acceptedQuoteId.cleanerId object
+        const cleanerId = job.acceptedQuoteId?.cleanerId || 
+                         job.cleanerId || 
+                         job.cleaner || {};
+        const cleanerFirstName = cleanerId.firstName || "";
+        const cleanerLastName = cleanerId.lastName || "";
+        const cleanerName = `${cleanerFirstName} ${cleanerLastName}`.trim() || 
+                           cleanerId.name || 
+                           job.cleanerName || 
+                           "Unassigned";
+        const cleanerAvatar = cleanerId.profilePhoto?.url || 
+                             cleanerId.avatar || 
+                             job.cleaner?.profilePhoto?.url ||
+                             job.cleaner?.avatar ||
+                             `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanerName)}&background=random`;
+
+        // Extract job type from serviceTypeDisplay or other fields
+        const jobType = job.serviceTypeDisplay || 
+                       job.jobType || 
+                       job.serviceType || 
+                       "Cleaning";
+
+        // Extract amount from acceptedQuoteId.price
+        const amountPaid = job.amountPaid || 
+                          job.acceptedQuoteId?.price || 
+                          job.payment?.amount || 
+                          job.totalAmount || 
+                          null;
+
+        return {
+            id: job._id || job.id,
+            jobId: job.jobId || job.jobNumber || `AM${job._id?.slice(-6) || job.id}`,
+            jobType: jobType,
+            customer: {
+                name: customerName,
+                email: customerEmail,
+                avatar: customerAvatar,
+            },
+            cleaner: {
+                name: cleanerName,
+                avatar: cleanerAvatar,
+            },
+            jobStatus: normalizeJobStatus(job.jobStatus || job.status || "Upcoming"),
+            paymentStatus: job.paymentStatus || 
+                          job.payment?.escrowStatus || 
+                          job.payment?.paymentStatus ||
+                          derivePaymentStatus(normalizeJobStatus(job.jobStatus || job.status || "Upcoming")),
+            date: formatDateFromAPI(job.date || job.createdAt || job.scheduledDate),
+            amountPaid: amountPaid,
+            // Keep original data for details view
+            originalData: job,
+        };
+    };
+
+    // Expose functions via ref
+    useImperativeHandle(ref, () => ({
+        updateJobPaymentStatus: (jobId, paymentStatus) => {
+            setJobs(prevJobs => 
+                prevJobs.map(job => {
+                    const jobIdMatch = job.jobId === jobId || job._id === jobId || job.id === jobId;
+                    if (jobIdMatch) {
+                        return {
+                            ...job,
+                            paymentStatus: paymentStatus,
+                            originalData: {
+                                ...job.originalData,
+                                paymentStatus: paymentStatus,
+                                payment: {
+                                    ...job.originalData?.payment,
+                                    escrowStatus: paymentStatus
+                                }
+                            }
+                        };
+                    }
+                    return job;
+                })
+            );
+        },
+        refreshJobs: () => {
+            // Trigger a re-fetch by updating a dependency
+            setCurrentPage(prev => prev);
+        }
+    }));
+
+    // Fetch jobs data from API
+    useEffect(() => {
+        const loadJobs = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const isDateFilterActive = !!(dateFilter?.start && dateFilter?.end);
+                
+                // Map frontend job status to API status
+                const apiJobStatus = mapJobStatusToAPI(jobStatusFilter);
+                
+                // For statuses that map to multiple backend values (Ongoing, Upcoming), 
+                // we need client-side filtering to catch all matching records
+                // For all status filters, we'll do client-side filtering to ensure accuracy
+                // Don't send status filter to API - fetch all and filter client-side
+                const needsClientSideStatusFilter = !!jobStatusFilter; // Always filter client-side when status is selected
+                
+                // For job type, we'll also do client-side filtering to ensure accuracy
+                const needsClientSideJobTypeFilter = !!jobTypeFilter; // Always filter client-side when job type is selected
+                
+                // For payment status, we need client-side filtering since it's derived from job status
+                const needsClientSidePaymentStatusFilter = !!paymentStatusFilter; // Always filter client-side when payment status is selected
+                
+                // For date filtering, client-side status filtering, job type filtering, or payment status filtering, we need to fetch all and filter client-side
+                const needsClientSideFilter = isDateFilterActive || needsClientSideStatusFilter || needsClientSideJobTypeFilter || needsClientSidePaymentStatusFilter;
+                
+                // Use empty string for status when doing client-side status filtering
+                const statusForAPI = needsClientSideStatusFilter ? '' : apiJobStatus;
+                
+                // Use empty string for job type when doing client-side job type filtering
+                const jobTypeForAPI = needsClientSideJobTypeFilter ? '' : jobTypeFilter;
+                
+                // Use empty string for payment status when doing client-side payment status filtering
+                const paymentStatusForAPI = needsClientSidePaymentStatusFilter ? '' : paymentStatusFilter;
+                
+                let response;
+                if (needsClientSideFilter) {
+                    // Fetch all pages when doing client-side filtering
+                    let allData = [];
+                    let currentPageNum = 1;
+                    let hasMore = true;
+                    const pageLimit = 100;
+                    
+                    while (hasMore) {
+                        const pageResponse = await fetchJobs({
+                            page: currentPageNum,
+                            limit: pageLimit,
+                            search: searchQuery,
+                            jobType: jobTypeForAPI,
+                            jobStatus: statusForAPI,
+                            paymentStatus: paymentStatusForAPI,
+                        });
+                        
+                        let pageData = [];
+                        if (pageResponse?.data?.jobs && Array.isArray(pageResponse.data.jobs)) {
+                            pageData = pageResponse.data.jobs;
+                        } else if (Array.isArray(pageResponse)) {
+                            pageData = pageResponse;
+                        } else if (Array.isArray(pageResponse.data)) {
+                            pageData = pageResponse.data;
+                        } else if (Array.isArray(pageResponse.jobs)) {
+                            pageData = pageResponse.jobs;
+                        }
+                        
+                        allData = [...allData, ...pageData];
+                        
+                        if (pageResponse?.data?.pagination) {
+                            hasMore = pageResponse.data.pagination.hasNextPage === true;
+                            currentPageNum++;
+                        } else {
+                            hasMore = pageData.length === pageLimit && pageData.length > 0;
+                            currentPageNum++;
+                        }
+                        
+                        if (pageData.length === 0 || currentPageNum > 100) {
+                            hasMore = false;
+                        }
+                    }
+                    
+                    response = {
+                        data: {
+                            jobs: allData,
+                            pagination: {
+                                currentPage: 1,
+                                totalPages: 1,
+                                totalJobs: allData.length,
+                                limit: pageLimit,
+                                hasNextPage: false,
+                                hasPrevPage: false
+                            }
+                        }
+                    };
+                } else {
+                    // Normal paginated fetch
+                    response = await fetchJobs({
+                        page: currentPage,
+                        limit: itemsPerPage,
+                        search: searchQuery,
+                        jobType: jobTypeForAPI,
+                        jobStatus: statusForAPI,
+                        paymentStatus: paymentStatusForAPI,
+                    });
                 }
-            }
-
-            return (
-                matchesSearch &&
-                matchesJobType &&
-                matchesJobStatus &&
-                matchesPaymentStatus &&
-                matchesDate
+                
+                // Extract jobs array
+                let data = [];
+                if (response?.data?.jobs && Array.isArray(response.data.jobs)) {
+                    data = response.data.jobs;
+                    if (response.data.pagination) {
+                        setPaginationInfo(response.data.pagination);
+                    }
+                } else if (Array.isArray(response)) {
+                    data = response;
+                } else if (Array.isArray(response.data)) {
+                    data = response.data;
+                } else if (Array.isArray(response.jobs)) {
+                    data = response.jobs;
+                }
+                
+                if (!Array.isArray(data)) {
+                    console.error('API response is not an array. Response:', response);
+                    setError('Invalid data format received from server. Expected array of jobs.');
+                    setJobs([]);
+                    return;
+                }
+                
+                // Map API response to UI structure
+                let mappedJobs = data.map(mapJobFromAPI);
+                
+                // Apply client-side status filtering for all status filters to ensure accuracy
+                if (jobStatusFilter) {
+                    mappedJobs = mappedJobs.filter((job) => {
+                        // Filter by the normalized frontend status
+                        return job.jobStatus === jobStatusFilter;
+                    });
+                }
+                
+                // Apply client-side job type filtering to ensure accuracy
+                if (jobTypeFilter) {
+                    const jobTypeVariations = getJobTypeVariations(jobTypeFilter);
+                    mappedJobs = mappedJobs.filter((job) => {
+                        // Filter by job type - check if it matches any of the variations (case-insensitive)
+                        const jobTypeLower = job.jobType?.toLowerCase();
+                        return jobTypeVariations.some(variation => 
+                            variation.toLowerCase() === jobTypeLower
             );
         });
-    }, [
-        jobs,
-        searchQuery,
-        jobTypeFilter,
-        jobStatusFilter,
-        paymentStatusFilter,
-        dateFilter,
-    ]);
+                }
+                
+                // Apply client-side payment status filtering to ensure accuracy
+                // Since payment status is derived from job status, we must filter client-side
+                if (paymentStatusFilter) {
+                    mappedJobs = mappedJobs.filter((job) => {
+                        // Filter by the derived payment status
+                        return job.paymentStatus === paymentStatusFilter;
+                    });
+                }
+                
+                // Check if API returned more jobs than the limit (indicating API didn't paginate correctly)
+                // If API returns all jobs on every page, we need to paginate client-side
+                const apiReturnedMoreThanLimit = mappedJobs.length > itemsPerPage;
+                const needsClientSidePagination = needsClientSideFilter || apiReturnedMoreThanLimit;
+                
+                // Apply client-side date filtering if needed
+                if (isDateFilterActive) {
+                    const startTime = new Date(dateFilter.start).setHours(0, 0, 0, 0);
+                    const endTime = new Date(dateFilter.end).setHours(23, 59, 59, 999);
+                    mappedJobs = mappedJobs.filter((job) => {
+                        const jobDate = parseDateString(job.date);
+                        if (!jobDate) return false;
+                        const time = jobDate.setHours(0, 0, 0, 0);
+                        return time >= startTime && time <= endTime;
+                    });
+                }
+                
+                // If API returned all jobs instead of paginated results, store all and paginate client-side
+                if (apiReturnedMoreThanLimit && !needsClientSideFilter) {
+                    // Store all jobs - we'll paginate client-side
+                    setJobs(mappedJobs);
+                    
+                    // Calculate pagination from total jobs
+                    const total = mappedJobs.length;
+                    const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
+                    const validCurrentPage = Math.min(currentPage, totalPages);
+                    
+                    setPaginationInfo({
+                        currentPage: validCurrentPage,
+                        totalPages,
+                        totalJobs: total,
+                        limit: itemsPerPage,
+                        hasNextPage: validCurrentPage < totalPages,
+                        hasPrevPage: validCurrentPage > 1
+                    });
+                    
+                    if (currentPage > totalPages) {
+                        setCurrentPage(1);
+                    }
+                } else if (needsClientSideFilter) {
+                    // Client-side filtering (date or status)
+                    const total = mappedJobs.length;
+                    const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
+                    const validCurrentPage = Math.min(currentPage, totalPages);
+                    
+                    setPaginationInfo({
+                        currentPage: validCurrentPage,
+                        totalPages,
+                        totalJobs: total,
+                        limit: itemsPerPage,
+                        hasNextPage: validCurrentPage < totalPages,
+                        hasPrevPage: validCurrentPage > 1
+                    });
+                    
+                    if (currentPage > totalPages) {
+                        setCurrentPage(1);
+                    }
+                    
+                    setJobs(mappedJobs);
+                } else {
+                    // API pagination is working correctly - use jobs as-is
+                    setJobs(mappedJobs);
+                    
+                    if (response?.data?.pagination) {
+                        const apiPagination = response.data.pagination;
+                        setPaginationInfo({
+                            currentPage: apiPagination.currentPage || currentPage,
+                            totalPages: apiPagination.totalPages || Math.max(1, Math.ceil(mappedJobs.length / itemsPerPage)),
+                            totalJobs: apiPagination.totalJobs || apiPagination.total || mappedJobs.length,
+                            limit: apiPagination.limit || itemsPerPage,
+                            hasNextPage: apiPagination.hasNextPage !== undefined ? apiPagination.hasNextPage : currentPage < (apiPagination.totalPages || 1),
+                            hasPrevPage: apiPagination.hasPrevPage !== undefined ? apiPagination.hasPrevPage : currentPage > 1
+                        });
+                    } else {
+                        // Fallback pagination - assume API returned only current page's data
+                        const total = mappedJobs.length; // This might be wrong if API returns all
+                        const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
+                        setPaginationInfo({
+                            currentPage,
+                            totalPages,
+                            totalJobs: total,
+                            limit: itemsPerPage,
+                            hasNextPage: currentPage < totalPages,
+                            hasPrevPage: currentPage > 1
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching jobs:', err);
+                const errorMessage = 
+                    err?.response?.data?.message || 
+                    err?.response?.data?.error || 
+                    err?.message || 
+                    'Failed to load jobs data';
+                setError(errorMessage);
+                setJobs([]);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    // Paginate filtered jobs
+        loadJobs();
+    }, [currentPage, itemsPerPage, searchQuery, jobTypeFilter, jobStatusFilter, paymentStatusFilter, dateFilter]);
+
+    // Determine if we need client-side pagination
+    // This happens when:
+    // 1. Date filter is active (client-side filtering)
+    // 2. Status filter is active (client-side filtering for all statuses)
+    // 3. Job type filter is active (client-side filtering)
+    // 4. Payment status filter is active (client-side filtering - derived from job status)
+    // 5. API returned more jobs than the limit (API didn't paginate correctly)
+    const isDateFilterActive = !!(dateFilter?.start && dateFilter?.end);
+    const needsClientSideStatusFilter = !!jobStatusFilter; // All status filters use client-side filtering
+    const needsClientSideJobTypeFilter = !!jobTypeFilter; // All job type filters use client-side filtering
+    const needsClientSidePaymentStatusFilter = !!paymentStatusFilter; // Payment status is derived, so always filter client-side
+    const needsClientSidePagination = isDateFilterActive || needsClientSideStatusFilter || needsClientSideJobTypeFilter || needsClientSidePaymentStatusFilter || jobs.length > itemsPerPage;
+    
     const paginatedJobs = useMemo(() => {
+        if (needsClientSidePagination) {
+            // Client-side pagination - slice the jobs array
         const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        return filteredJobs.slice(startIndex, endIndex);
-    }, [filteredJobs, currentPage, itemsPerPage]);
+            return jobs.slice(startIndex, startIndex + itemsPerPage);
+        }
+        // Server-side pagination - jobs are already paginated from API
+        return jobs;
+    }, [jobs, currentPage, itemsPerPage, needsClientSidePagination]);
 
     const handleSelectAll = (checked) => {
         setSelectAll(checked);
@@ -397,78 +577,6 @@ export default function JobsTable({ onViewJob }) {
         }
     };
 
-    const getJobStatusColor = (status) => {
-        switch (status) {
-            case "Completed":
-                return {
-                    dot: "bg-[#17C653]",
-                    text: "text-[#17C653]",
-                    bg: "bg-[#EAFFF1]",
-                    border: "border-[#17C65333]",
-                };
-            case "Ongoing":
-                return {
-                    dot: "bg-[#F6B100]",
-                    text: "text-[#F6B100]",
-                    bg: "bg-[#FFF8DD]",
-                    border: "border-[#F6B10033]",
-                };
-            case "Upcoming":
-                return {
-                    dot: "bg-[#2563EB]",
-                    text: "text-[#2563EB]",
-                    bg: "bg-[#EBF2FD]",
-                    border: "border-[#2563EB33]",
-                };
-            case "Cancelled":
-                return {
-                    dot: "bg-[#EF4444]",
-                    text: "text-[#EF4444]",
-                    bg: "bg-[#FFE5E9]",
-                    border: "border-[#EF444433]",
-                };
-            default:
-                return {
-                    dot: "bg-gray-400",
-                    text: "text-gray-400",
-                    bg: "bg-gray-100",
-                    border: "border-gray-300",
-                };
-        }
-    };
-
-    const getPaymentStatusColor = (status) => {
-        switch (status) {
-            case "Released":
-                return {
-                    dot: "bg-[#17C653]",
-                    text: "text-[#17C653]",
-                    bg: "bg-[#EAFFF1]",
-                    border: "border-[#17C65333]",
-                };
-            case "Held":
-                return {
-                    dot: "bg-[#F6B100]",
-                    text: "text-[#F6B100]",
-                    bg: "bg-[#FFF8DD]",
-                    border: "border-[#F6B10033]",
-                };
-            case "Cancelled":
-                return {
-                    dot: "bg-[#EF4444]",
-                    text: "text-[#EF4444]",
-                    bg: "bg-[#FFE5E9]",
-                    border: "border-[#EF444433]",
-                };
-            default:
-                return {
-                    dot: "bg-gray-400",
-                    text: "text-gray-400",
-                    bg: "bg-gray-100",
-                    border: "border-gray-300",
-                };
-        }
-    };
 
     // Reset to page 1 when filters change
     useEffect(() => {
@@ -481,6 +589,51 @@ export default function JobsTable({ onViewJob }) {
         dateFilter,
         itemsPerPage,
     ]);
+
+    // Calculate total items for pagination
+    const totalItemsForPagination = useMemo(() => {
+        // If doing client-side pagination (date filter, status filter, or API returned all jobs), use jobs.length
+        if (needsClientSidePagination) {
+            return jobs.length;
+        }
+        // For server-side pagination, use paginationInfo.totalJobs from API
+        if (paginationInfo.totalJobs !== undefined && paginationInfo.totalJobs !== null) {
+            return paginationInfo.totalJobs;
+        }
+        // Fallback to jobs.length
+        return jobs.length;
+    }, [jobs.length, paginationInfo.totalJobs, needsClientSidePagination]);
+
+    if (loading) {
+    return (
+        <>
+                <PageHeader
+                    title="Jobs"
+                    showBackArrow={false}
+                />
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8 flex items-center justify-center min-h-[400px]">
+                    <Loader />
+                </div>
+            </>
+        );
+    }
+
+    if (error) {
+        return (
+            <>
+                <PageHeader
+                    title="Jobs"
+                    showBackArrow={false}
+                />
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8">
+                    <div className="text-center text-red-600">
+                        <p className="font-medium">Error loading data</p>
+                        <p className="text-sm mt-2">{error}</p>
+                    </div>
+                </div>
+            </>
+        );
+    }
 
     return (
         <>
@@ -496,8 +649,16 @@ export default function JobsTable({ onViewJob }) {
                     <div className="flex flex-col xl:flex-row gap-3 md:gap-4 items-stretch xl:items-center justify-between">
                         {/* Search */}
                         <SearchInput
-                            placeholder="Search by Job ID, Customer Name, Cleaner Name"
-                            onChange={setSearchQuery}
+                            placeholder="Search by Job ID, Customer Name, Cleaner Name (Press Enter to search)"
+                            value={searchInputValue}
+                            onChange={setSearchInputValue}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    const trimmedValue = searchInputValue.trim();
+                                    setSearchQuery(trimmedValue);
+                                    setCurrentPage(1); // Reset to page 1 when searching
+                                }
+                            }}
                             className="md:w-[300px]"
                         />
 
@@ -521,8 +682,6 @@ export default function JobsTable({ onViewJob }) {
                                     className="w-full"
                                 />
                             </div>
-
-
 
                             <div className="w-full sm:w-auto sm:flex-1 xl:flex-none xl:w-40">
                                 <CustomSelect
@@ -559,100 +718,44 @@ export default function JobsTable({ onViewJob }) {
                                     </div>
                                 </th>
                                 <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                    <div className="flex items-center gap-1.5 md:gap-2">
-                                        <span className="font-medium text-gray-700 text-[10px] md:text-xs">
-                                            Job ID
-                                        </span>
-                                        <img
-                                            src={tableSortIcon}
-                                            alt="sort"
-                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                        />
-                                    </div>
+                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                        Job ID
+                                    </span>
                                 </th>
                                 <th className="min-w-[120px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                    <div className="flex items-center gap-1.5 md:gap-2">
-                                        <span className="font-medium text-gray-700 text-[10px] md:text-xs">
-                                            Job Type
-                                        </span>
-                                        <img
-                                            src={tableSortIcon}
-                                            alt="sort"
-                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                        />
-                                    </div>
+                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                        Job Type
+                                    </span>
                                 </th>
                                 <th className="min-w-[180px] md:min-w-[220px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                    <div className="flex items-center gap-1.5 md:gap-2">
-                                        <span className="font-medium text-gray-700 text-[10px] md:text-xs">
-                                            Customer
-                                        </span>
-                                        <img
-                                            src={tableSortIcon}
-                                            alt="sort"
-                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                        />
-                                    </div>
+                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                        Customer
+                                    </span>
                                 </th>
                                 <th className="min-w-[150px] md:min-w-[180px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                    <div className="flex items-center gap-1.5 md:gap-2">
-                                        <span className="font-medium text-gray-700 text-[10px] md:text-xs">
-                                            Cleaner
-                                        </span>
-                                        <img
-                                            src={tableSortIcon}
-                                            alt="sort"
-                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                        />
-                                    </div>
+                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                        Cleaner
+                                    </span>
                                 </th>
                                 <th className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                    <div className="flex items-center gap-1.5 md:gap-2">
-                                        <span className="font-medium text-gray-700 text-[10px] md:text-xs">
-                                            Job Status
-                                        </span>
-                                        <img
-                                            src={tableSortIcon}
-                                            alt="sort"
-                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                        />
-                                    </div>
+                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                        Job Status
+                                    </span>
                                 </th>
                                 <th className="min-w-[130px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                    <div className="flex items-center gap-1.5 md:gap-2">
-                                        <span className="font-medium text-gray-700 text-[10px] md:text-xs">
-                                            Payment Status
-                                        </span>
-                                        <img
-                                            src={tableSortIcon}
-                                            alt="sort"
-                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                        />
-                                    </div>
+                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                        Payment Status
+                                    </span>
                                 </th>
                                 <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                    <div className="flex items-center gap-1.5 md:gap-2">
-                                        <span className="font-medium text-gray-700 text-[10px] md:text-xs">
-                                            Date
-                                        </span>
-                                        <img
-                                            src={tableSortIcon}
-                                            alt="sort"
-                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                        />
-                                    </div>
+                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                        Date
+                                    </span>
                                 </th>
                                 <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                    <div className="flex items-center gap-1.5 md:gap-2">
-                                        <span className="font-medium text-gray-700 text-[10px] md:text-xs">
-                                            Amount Paid
-                                        </span>
-                                        <img
-                                            src={tableSortIcon}
-                                            alt="sort"
-                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                        />
-                                    </div>
+                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                        Amount Paid
+                                    </span>
                                 </th>
                                 <th className="w-16 md:w-20 px-2 md:px-4 py-2 md:py-3 text-center">
                                 </th>
@@ -660,10 +763,6 @@ export default function JobsTable({ onViewJob }) {
                         </thead>
                         <tbody>
                             {paginatedJobs.map((job) => {
-                                const jobStatusColors = getJobStatusColor(job.jobStatus);
-                                const paymentStatusColors = getPaymentStatusColor(
-                                    job.paymentStatus
-                                );
                                 return (
                                     <tr
                                         key={job.id}
@@ -733,24 +832,18 @@ export default function JobsTable({ onViewJob }) {
                                             </div>
                                         </td>
                                         <td className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                                            <span
-                                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs md:text-sm font-medium ${jobStatusColors.bg} ${jobStatusColors.border} ${jobStatusColors.text}`}
-                                            >
-                                                <span
-                                                    className={`w-1.5 h-1.5 rounded-full ${jobStatusColors.dot}`}
-                                                />
-                                                {job.jobStatus}
-                                            </span>
+                                            <StatusBadge 
+                                                status={job.jobStatus} 
+                                                statusType="jobStatus"
+                                                size="sm"
+                                            />
                                         </td>
                                         <td className="min-w-[130px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                                            <span
-                                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs md:text-sm font-medium ${paymentStatusColors.bg} ${paymentStatusColors.border} ${paymentStatusColors.text}`}
-                                            >
-                                                <span
-                                                    className={`w-1.5 h-1.5 rounded-full ${paymentStatusColors.dot}`}
-                                                />
-                                                {job.paymentStatus}
-                                            </span>
+                                            <StatusBadge 
+                                                status={job.paymentStatus} 
+                                                statusType="paymentStatus"
+                                                size="sm"
+                                            />
                                         </td>
                                         <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-primary font-medium border-r border-gray-200 text-xs md:text-sm">
                                             {job.date}
@@ -785,12 +878,16 @@ export default function JobsTable({ onViewJob }) {
                 <PaginationRanges
                     currentPage={currentPage}
                     rowsPerPage={itemsPerPage}
-                    totalItems={filteredJobs.length}
+                    totalItems={totalItemsForPagination}
                     onPageChange={setCurrentPage}
                     onRowsPerPageChange={setItemsPerPage}
                 />
             </div>
         </>
     );
-}
+});
+
+JobsTable.displayName = 'JobsTable';
+
+export default JobsTable;
 

@@ -32,18 +32,21 @@ div, span, p, h1, h2, h3, h4, h5, h6, a, button, input, textarea, select, label 
 
 /* Swiper uniform height for feedback cards */
 .feedback-swiper {
-  padding: 12px 0 !important;
-  margin: -12px 0 !important;
-  height: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  height: 212px !important;
+  overflow: visible !important;
 }
 
 .feedback-swiper .swiper-wrapper {
   display: flex;
   align-items: stretch;
-  height: 100% !important;
+  height: 212px !important;
+  overflow: visible !important;
 }
 
 .feedback-swiper .swiper-slide {
-  height: 100% !important;
+  height: 212px !important;
   display: flex;
+  overflow: visible !important;
 }

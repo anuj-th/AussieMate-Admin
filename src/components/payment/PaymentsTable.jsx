@@ -5,7 +5,6 @@ import SearchInput from "../common/SearchInput";
 import CustomSelect from "../common/CustomSelect";
 import DatePicker from "../common/DatePicker";
 import PaginationRanges from "../common/PaginationRanges";
-import tableSortIcon from "../../assets/icon/tableSort.svg";
 
 const defaultTransactions = [
   {
@@ -371,100 +370,44 @@ export default function PaymentsTable({ onViewTransaction }) {
                 </div>
               </th>
               <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <div className="flex items-center gap-1.5 md:gap-2">
-                  <span className="font-medium text-gray-700 text-xs md:text-sm">
-                    Job ID
-                  </span>
-                  <img
-                    src={tableSortIcon}
-                    alt="sort"
-                    className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                  />
-                </div>
+                <span className="font-medium text-gray-700 text-xs md:text-sm">
+                  Job ID
+                </span>
               </th>
               <th className="min-w-[150px] md:min-w-[180px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <div className="flex items-center gap-1.5 md:gap-2">
-                  <span className="font-medium text-gray-700 text-xs md:text-sm">
-                    Transaction ID
-                  </span>
-                  <img
-                    src={tableSortIcon}
-                    alt="sort"
-                    className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                  />
-                </div>
+                <span className="font-medium text-gray-700 text-xs md:text-sm">
+                  Transaction ID
+                </span>
               </th>
               <th className="min-w-[180px] md:min-w-[220px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <div className="flex items-center gap-1.5 md:gap-2">
-                  <span className="font-medium text-gray-700 text-xs md:text-sm">
-                    Customer
-                  </span>
-                  <img
-                    src={tableSortIcon}
-                    alt="sort"
-                    className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                  />
-                </div>
+                <span className="font-medium text-gray-700 text-xs md:text-sm">
+                  Customer
+                </span>
               </th>
               <th className="min-w-[150px] md:min-w-[180px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <div className="flex items-center gap-1.5 md:gap-2">
-                  <span className="font-medium text-gray-700 text-xs md:text-sm">
-                    Cleaner
-                  </span>
-                  <img
-                    src={tableSortIcon}
-                    alt="sort"
-                    className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                  />
-                </div>
+                <span className="font-medium text-gray-700 text-xs md:text-sm">
+                  Cleaner
+                </span>
               </th>
               <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <div className="flex items-center gap-1.5 md:gap-2">
-                  <span className="font-medium text-gray-700 text-xs md:text-sm">
-                    Total Amount
-                  </span>
-                  <img
-                    src={tableSortIcon}
-                    alt="sort"
-                    className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                  />
-                </div>
+                <span className="font-medium text-gray-700 text-xs md:text-sm">
+                  Total Amount
+                </span>
               </th>
               <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <div className="flex items-center gap-1.5 md:gap-2">
-                  <span className="font-medium text-gray-700 text-xs md:text-sm">
-                    Payable Amount
-                  </span>
-                  <img
-                    src={tableSortIcon}
-                    alt="sort"
-                    className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                  />
-                </div>
+                <span className="font-medium text-gray-700 text-xs md:text-sm">
+                  Payable Amount
+                </span>
               </th>
               <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <div className="flex items-center gap-1.5 md:gap-2">
-                  <span className="font-medium text-gray-700 text-xs md:text-sm">
-                    Status
-                  </span>
-                  <img
-                    src={tableSortIcon}
-                    alt="sort"
-                    className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                  />
-                </div>
+                <span className="font-medium text-gray-700 text-xs md:text-sm">
+                  Status
+                </span>
               </th>
               <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <div className="flex items-center gap-1.5 md:gap-2">
-                  <span className="font-medium text-gray-700 text-xs md:text-sm">
-                    Date
-                  </span>
-                  <img
-                    src={tableSortIcon}
-                    alt="sort"
-                    className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                  />
-                </div>
+                <span className="font-medium text-gray-700 text-xs md:text-sm">
+                  Date
+                </span>
               </th>
               <th className="w-16 md:w-20 px-2 md:px-4 py-2 md:py-3 text-center"></th>
             </tr>

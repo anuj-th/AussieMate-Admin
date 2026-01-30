@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { Mail, Phone, Star, MoreVertical, FileText, RefreshCcw } from "lucide-react";
 import silverTierIcon from "../../assets/icon/silver.svg";
+import goldTierIcon from "../../assets/icon/gold.svg";
+import bronzeTierIcon from "../../assets/icon/bronze.svg";
 import camelIllustration from "../../assets/image/camel.svg";
 import CustomMenu from "../common/CustomMenu";
 import ReleaseFundsModal from "../common/ReleaseFundsModal";
 import ActionModal from "../common/ActionModal";
+import { updatePaymentStatus } from "../../api/services/jobService";
 
-export default function OverviewTab({ jobDetails, getStatusColor }) {
+export default function OverviewTab({ jobDetails, getStatusColor, onPaymentStatusUpdate }) {
     const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
     const [escrowStatus, setEscrowStatus] = useState(
@@ -16,6 +19,20 @@ export default function OverviewTab({ jobDetails, getStatusColor }) {
     // Use local state if available, otherwise fallback to prop
     const currentEscrowStatus = escrowStatus || jobDetails?.payment?.escrowStatus || "Pending";
     const isEscrowReleased = currentEscrowStatus?.toLowerCase() === "released";
+
+    // Get tier icon based on cleaner tier
+    const tier = (jobDetails?.cleaner?.tier || "none").toString().toLowerCase();
+    const tierIcon =
+        tier === "gold"
+            ? goldTierIcon
+            : tier === "bronze"
+                ? bronzeTierIcon
+                : tier === "none"
+                    ? null
+                    : silverTierIcon;
+    const tierLabel = tier === "none" 
+        ? "None Tier" 
+        : `${tier.charAt(0).toUpperCase()}${tier.slice(1)} Tier`;
 
     const handleInvoiceDownload = () => {
         const pdf = buildInvoicePdf(jobDetails);
@@ -78,21 +95,21 @@ export default function OverviewTab({ jobDetails, getStatusColor }) {
 
                         <div className="flex items-start gap-3">
                             <div className="w-12 h-12 rounded-full overflow-hidden">
-                                <img src={jobDetails.customer.avatar} alt={jobDetails.customer.name} className="w-full h-full object-cover" />
+                                <img src={jobDetails.customer?.avatar || "https://ui-avatars.com/api/?name=Customer&background=random"} alt={jobDetails.customer?.name || "Customer"} className="w-full h-full object-cover" />
                             </div>
 
                             <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-sm text-primary break-words">{jobDetails.customer.name}</p>
+                                <p className="font-semibold text-sm text-primary break-words">{jobDetails.customer?.name || "—"}</p>
 
                                 <div className=" mt-2 space-y-1">
                                     <div className="flex items-center gap-2 text-xs sm:text-sm text-primary-light">
                                         <Mail size={16} className="flex-shrink-0" />
-                                        <span className="break-all">{jobDetails.customer.email}</span>
+                                        <span className="break-all">{jobDetails.customer?.email || "—"}</span>
                                     </div>
 
                                     <div className="flex items-center gap-2 text-xs sm:text-sm text-primary-light">
                                         <Phone size={16} className="flex-shrink-0" />
-                                        <span className="break-all">{jobDetails.customer.phone}</span>
+                                        <span className="break-all">{jobDetails.customer?.phone || "—"}</span>
                                     </div>
                                 </div>
                             </div>
@@ -104,36 +121,46 @@ export default function OverviewTab({ jobDetails, getStatusColor }) {
 
                         <div className="flex items-start gap-3">
                             <div className="w-12 h-12 rounded-full overflow-hidden">
-                                <img src={jobDetails.cleaner.avatar} alt={jobDetails.cleaner.name} className="w-full h-full object-cover" />
+                                <img src={jobDetails.cleaner?.avatar || "https://ui-avatars.com/api/?name=Cleaner&background=random"} alt={jobDetails.cleaner?.name || "Cleaner"} className="w-full h-full object-cover" />
                             </div>
 
                             <div className="flex-1 space-y-2 min-w-0">
                                 <div className="flex items-center flex-wrap gap-1">
-                                    <p className="font-semibold text-sm text-primary break-words">{jobDetails.cleaner.name}</p>
-                                    <p className="text-xs sm:text-sm text-primary-light whitespace-nowrap">• {jobDetails.cleaner.role}</p>
+                                    <p className="font-semibold text-sm text-primary break-words">{jobDetails.cleaner?.name || "—"}</p>
+                                    {jobDetails.cleaner?.role && (
+                                        <p className="text-xs sm:text-sm text-primary-light whitespace-nowrap">• {jobDetails.cleaner.role}</p>
+                                    )}
                                 </div>
 
                                 <div className="flex flex-wrap justify-between items-center gap-2">
                                     <div className="flex items-center gap-2">
-                                        <div
-                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#FFF4E0]"
-                                            style={{ border: "0.6px solid #FFEDBA" }}
-                                        >
-                                            <Star size={14} className="text-[#FFB020] fill-[#FFB020]" />
-                                            <span className="text-[10px] sm:text-xs text-primary font-medium">
-                                                {jobDetails.cleaner.rating}
-                                            </span>
-                                        </div>
-                                        <span className="text-[10px] sm:text-xs text-primary-light">({jobDetails.cleaner.jobsCompleted} jobs)</span>
+                                        {(jobDetails.cleaner?.rating || jobDetails.cleaner?.rating === 0) && (
+                                            <div
+                                                className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#FFF4E0]"
+                                                style={{ border: "0.6px solid #FFEDBA" }}
+                                            >
+                                                <Star size={14} className="text-[#FFB020] fill-[#FFB020]" />
+                                                <span className="text-[10px] sm:text-xs text-primary font-medium">
+                                                    {jobDetails.cleaner.rating}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {jobDetails.cleaner?.jobsCompleted !== undefined && (
+                                            <span className="text-[10px] sm:text-xs text-primary-light">({jobDetails.cleaner.jobsCompleted} jobs)</span>
+                                        )}
                                     </div>
 
-                                    <div className="flex items-center gap-2 px-2 py-1 border-[0.5px] border-[#E9E9E9] rounded-full text-[10px] sm:text-xs font-medium bg-[linear-gradient(90deg,#FDFDFD_0%,#E9E9E9_100%)]">
-                                        <img src={silverTierIcon} alt="Silver Tier" className="w-4 h-4 sm:w-5 sm:h-5" />
-                                        <span className="text-primary-light">{jobDetails.cleaner.tier} Tier</span>
-                                    </div>
+                                    {tierIcon && (
+                                        <div className="flex items-center gap-2 px-2 py-1 border-[0.5px] border-[#E9E9E9] rounded-full text-[10px] sm:text-xs font-medium bg-[linear-gradient(90deg,#FDFDFD_0%,#E9E9E9_100%)]">
+                                            <img src={tierIcon} alt={tierLabel} className="w-4 h-4 sm:w-5 sm:h-5" />
+                                            <span className="text-primary-light">{tierLabel}</span>
+                                        </div>
+                                    )}
                                 </div>
 
-                                <p className="text-xs text-primary-light">{jobDetails.cleaner.distance}</p>
+                                {jobDetails.cleaner?.distance && (
+                                    <p className="text-xs text-primary-light">{jobDetails.cleaner.distance}</p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -200,10 +227,30 @@ export default function OverviewTab({ jobDetails, getStatusColor }) {
                 isOpen={isReleaseModalOpen}
                 onClose={() => setIsReleaseModalOpen(false)}
                 jobDetails={jobDetails}
-                onConfirm={() => {
-                    setEscrowStatus("Released");
-                    setIsReleaseModalOpen(false);
-                    setIsSuccessModalOpen(true);
+                onConfirm={async () => {
+                    try {
+                        // Use _id (MongoDB ID) instead of jobId (display ID like AM85307)
+                        const jobId = jobDetails?._id || jobDetails?.id || jobDetails?.jobId;
+                        if (jobId) {
+                            // Call API to update payment status
+                            await updatePaymentStatus(jobId, "Released");
+                            
+                            // Update local state
+                            setEscrowStatus("Released");
+                            
+                            // Notify parent component to update JobsTable
+                            if (onPaymentStatusUpdate) {
+                                onPaymentStatusUpdate(jobId, "Released");
+                            }
+                        }
+                        setIsReleaseModalOpen(false);
+                        setIsSuccessModalOpen(true);
+                    } catch (error) {
+                        console.error("Failed to update payment status", error);
+                        setIsReleaseModalOpen(false);
+                        // Show error message or keep modal open
+                        alert("Failed to update payment status. Please try again.");
+                    }
                 }}
             />
 

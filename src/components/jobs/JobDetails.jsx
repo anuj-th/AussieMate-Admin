@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Star, MoreVertical } from "lucide-react";
 import OverviewTab from "./OverviewTab";
 import JobInfoTab from "./JobInfoTab";
@@ -5,85 +6,253 @@ import TimelineTab from "./TimelineTab";
 import FeedbackTab from "./FeedbackTab";
 import AttachmentsTab from "./AttachmentsTab";
 import PageHeader from "../../layout/PageHeader";
+import { fetchJobById } from "../../api/services/jobService";
 
-export default function JobDetails({ job, onBackToList }) {
-    if (!job) return null;
+export default function JobDetails({ job, onBackToList, onPaymentStatusUpdate }) {
+    const [jobData, setJobData] = useState(job || null);
+
+    // Fetch full job details by ID when we have a lightweight job object
+    useEffect(() => {
+        const loadJobDetails = async () => {
+            if (!job) return;
+
+            // If job has originalData, use it first (it contains full API response)
+            if (job.originalData) {
+                setJobData(job.originalData);
+                return;
+            }
+
+            const id = job._id || job.id || job.jobId;
+            if (!id) return;
+
+            try {
+                const fullJob = await fetchJobById(id);
+                if (fullJob) {
+                    setJobData(fullJob);
+                }
+            } catch (error) {
+                console.warn("Failed to load full job details", error);
+            }
+        };
+
+        loadJobDetails();
+    }, [job]);
+
+    // Use originalData if available, otherwise use jobData or job
+    const sourceJob = jobData?.originalData || jobData || job?.originalData || job;
+    if (!sourceJob) return null;
 
     // Derive payment figures when only summary data is available from JobsTable
-    const amountPaid = job?.payment?.amountPaid ?? job?.amountPaid ?? 0;
+    // Prefer explicit payment data, fall back to accepted quote price
+    const acceptedQuote =
+        sourceJob.acceptedQuoteId ||
+        (Array.isArray(sourceJob.quotes)
+            ? sourceJob.quotes.find((q) => q.status === "accepted") || sourceJob.quotes[0]
+            : null);
+
+    const amountPaid =
+        sourceJob?.payment?.amountPaid ??
+        sourceJob?.amountPaid ??
+        acceptedQuote?.price ??
+        0;
     const platformFees =
-        job?.payment?.platformFees ?? Math.round(amountPaid * 0.15 * 100) / 100;
-    const gst = job?.payment?.gst ?? Math.round(amountPaid * 0.1 * 100) / 100;
+        sourceJob?.payment?.platformFees ?? Math.round(amountPaid * 0.15 * 100) / 100;
+    const gst = sourceJob?.payment?.gst ?? Math.round(amountPaid * 0.1 * 100) / 100;
     const escrow =
-        job?.payment?.escrow ?? Math.max(amountPaid - (platformFees + gst), 0);
-    const escrowReleased = job?.payment?.escrowReleased || job?.date || "20-09-2025";
+        sourceJob?.payment?.escrow ?? Math.max(amountPaid - (platformFees + gst), 0);
+    const escrowReleased = sourceJob?.payment?.escrowReleased || sourceJob?.date || "20-09-2025";
 
     const jobDetails = {
-        jobId: job?.jobId || "AM10432",
-        jobTitle: job?.jobTitle || job?.jobType || "Bond Cleaning",
-        jobType: job?.jobType || "Cleaning",
-        category: job?.category || job?.jobType || "Pet Sitter",
-        datePosted: job?.datePosted || job?.date || "19-09-2025",
-        postedBy: job?.postedBy || "AM10432",
-        status: job?.status || job?.jobStatus || "Completed",
+        _id: sourceJob?._id || sourceJob?.id,
+        jobId: sourceJob?.jobId || "AM10432",
+        jobTitle:
+            sourceJob?.jobTitle ||
+            sourceJob?.serviceTypeDisplay ||
+            sourceJob?.serviceType ||
+            sourceJob?.jobType ||
+            "Cleaning",
+        jobType: sourceJob?.jobType || sourceJob?.serviceTypeDisplay || "Cleaning",
+        category:
+            sourceJob?.category ||
+            sourceJob?.serviceTypeDisplay ||
+            sourceJob?.serviceType ||
+            sourceJob?.jobType ||
+            "Cleaning",
+        datePosted:
+            sourceJob?.datePosted ||
+            (sourceJob?.createdAt
+                ? new Date(sourceJob.createdAt).toLocaleDateString("en-AU", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                })
+                : sourceJob?.date || "19-09-2025"),
+        postedBy: sourceJob?.postedBy || sourceJob?.customer?.fullName || sourceJob?.customerId?.fullName || "—",
+        status: (() => {
+            const rawStatus = sourceJob?.status || sourceJob?.jobStatus || "Upcoming";
+            const statusLower = rawStatus.toLowerCase().trim();
+            
+            // Map backend statuses to frontend display statuses
+            if (statusLower === "posted" || statusLower === "quoted" || statusLower === "accepted" || statusLower === "accept") {
+                return "Upcoming";
+            }
+            if (statusLower === "in_progress" || statusLower === "in-progress" || statusLower === "started" || 
+                statusLower === "pending_customer_confirmation" || statusLower === "pending-customer-confirmation") {
+                return "Ongoing";
+            }
+            if (statusLower === "completed" || statusLower === "complete" || statusLower === "done" || statusLower === "finished") {
+                return "Completed";
+            }
+            if (statusLower === "cancelled" || statusLower === "canceled" || statusLower === "cancel") {
+                return "Cancelled";
+            }
+            
+            // Return capitalized version if it matches one of our statuses
+            const capitalized = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1).toLowerCase();
+            if (["Completed", "Ongoing", "Upcoming", "Cancelled"].includes(capitalized)) {
+                return capitalized;
+            }
+            
+            return "Upcoming"; // Default
+        })(),
         customer: {
-            name: job?.customer?.name || "Jason Tatum",
-            email: job?.customer?.email || "selina.k@email.com",
-            phone: job?.customer?.phone || "435 657 546",
-            avatar: job?.customer?.avatar || "https://i.pravatar.cc/150?img=1",
+            name:
+                sourceJob?.customer?.fullName ||
+                sourceJob?.customer?.name ||
+                `${sourceJob?.customer?.firstName || sourceJob?.customerId?.firstName || ""} ${sourceJob?.customer?.lastName || sourceJob?.customerId?.lastName || ""
+                    }`.trim() ||
+                job?.customer?.name ||
+                "Customer",
+            email: sourceJob?.customer?.email || sourceJob?.customerId?.email || job?.customer?.email || "—",
+            phone: sourceJob?.customer?.phone || sourceJob?.customerId?.phone || job?.customer?.phone || "—",
+            avatar:
+                sourceJob?.customer?.profilePhoto?.url ||
+                sourceJob?.customerId?.profilePhoto?.url ||
+                sourceJob?.customer?.avatar ||
+                sourceJob?.customerId?.avatar ||
+                job?.customer?.avatar ||
+                "https://ui-avatars.com/api/?name=Customer&background=random",
         },
         cleaner: {
-            name: job?.cleaner?.name || "Selina K.",
-            role: job?.cleaner?.role || "Professional Cleaner",
-            rating: job?.cleaner?.rating || 4.7,
-            jobsCompleted: job?.cleaner?.jobsCompleted || 84,
-            distance: job?.cleaner?.distance || "8 km distance radius",
-            tier: job?.cleaner?.tier || "Silver",
-            avatar: job?.cleaner?.avatar || "https://i.pravatar.cc/150?img=11",
+            name:
+                sourceJob?.acceptedCleaner?.fullName ||
+                sourceJob?.acceptedCleaner?.name ||
+                `${sourceJob?.acceptedCleaner?.firstName || sourceJob?.acceptedQuoteId?.cleanerId?.firstName || ""} ${sourceJob?.acceptedCleaner?.lastName || sourceJob?.acceptedQuoteId?.cleanerId?.lastName || ""
+                    }`.trim() ||
+                sourceJob?.cleaner?.name ||
+                job?.cleaner?.name ||
+                "Cleaner",
+            role:
+                sourceJob?.acceptedCleaner?.role ||
+                sourceJob?.acceptedQuoteId?.cleanerId?.role ||
+                sourceJob?.cleaner?.role ||
+                job?.cleaner?.role ||
+                "Professional Cleaner",
+            rating:
+                sourceJob?.acceptedCleaner?.averageRating ??
+                sourceJob?.acceptedQuoteId?.cleanerId?.averageRating ??
+                sourceJob?.cleaner?.rating ??
+                job?.cleaner?.rating ??
+                0,
+            jobsCompleted:
+                sourceJob?.acceptedCleaner?.completedJobs ??
+                sourceJob?.acceptedQuoteId?.cleanerId?.completedJobs ??
+                sourceJob?.cleaner?.jobsCompleted ??
+                job?.cleaner?.jobsCompleted ??
+                0,
+            distance:
+                sourceJob?.cleaner?.distance ||
+                job?.cleaner?.distance ||
+                (sourceJob?.acceptedCleaner?.searchRadius
+                    ? `${sourceJob.acceptedCleaner.searchRadius} km distance radius`
+                    : "—"),
+            tier:
+                sourceJob?.acceptedCleaner?.tier ||
+                sourceJob?.acceptedQuoteId?.cleanerId?.tier ||
+                sourceJob?.cleaner?.tier ||
+                job?.cleaner?.tier ||
+                "Silver",
+            avatar:
+                sourceJob?.acceptedCleaner?.profilePhoto?.url ||
+                sourceJob?.acceptedQuoteId?.cleanerId?.profilePhoto?.url ||
+                sourceJob?.acceptedCleaner?.avatar ||
+                sourceJob?.acceptedQuoteId?.cleanerId?.avatar ||
+                sourceJob?.cleaner?.avatar ||
+                job?.cleaner?.avatar ||
+                "https://ui-avatars.com/api/?name=Cleaner&background=random",
         },
         payment: {
-            mode: job?.payment?.mode || "Online",
+            mode: sourceJob?.payment?.mode || job?.payment?.mode || "Online",
             amountPaid,
             platformFees,
             gst,
             escrow,
             escrowReleased,
-            escrowStatus: job?.payment?.escrowStatus || job?.paymentStatus || "Released",
+            escrowStatus:
+                sourceJob?.payment?.escrowStatus ||
+                sourceJob?.paymentStatus ||
+                job?.paymentStatus ||
+                "Released",
         },
         jobInfo: {
-            category: job?.jobInfo?.category || "Pet Sitter",
-            petType: job?.jobInfo?.petType || "Dog",
-            breed: job?.jobInfo?.breed || "husky",
-            numberOfPets: job?.jobInfo?.numberOfPets || 2,
-            serviceType: job?.jobInfo?.serviceType || job?.jobType || "Walking",
+            category:
+                sourceJob?.jobInfo?.category ||
+                sourceJob?.serviceTypeDisplay ||
+                sourceJob?.serviceType ||
+                "Cleaning",
+            petType: sourceJob?.jobInfo?.petType || "",
+            breed: sourceJob?.jobInfo?.breed || "",
+            numberOfPets: sourceJob?.jobInfo?.numberOfPets || 0,
+            serviceType:
+                sourceJob?.jobInfo?.serviceType ||
+                sourceJob?.serviceTypeDisplay ||
+                sourceJob?.serviceType ||
+                sourceJob?.jobType ||
+                "Service",
             description:
-                job?.jobInfo?.description ||
-                job?.description ||
+                sourceJob?.jobInfo?.description ||
+                sourceJob?.instructions ||
+                sourceJob?.description ||
                 "Make sure you come prepared with all you need for this service",
-            images: job?.jobInfo?.images || [
-                "https://images.unsplash.com/photo-1552053831-71594a27632d?w=400",
-                "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400",
-                "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400",
-                "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400",
-            ],
+            images:
+                sourceJob?.jobInfo?.images ||
+                (Array.isArray(sourceJob?.photos) && sourceJob.photos.length > 0
+                    ? sourceJob.photos.map((photo) => photo.url || photo)
+                    : []),
         },
-        timeline: [
-            { event: "Job created by Selina K", time: "2025-09-19 08:40" },
-            { event: "6 bids received", time: "2025-09-19 08:45" },
-            { event: "Selina K selected", time: "2025-09-19 09:00" },
-            { event: "Payment AU$320 captured", time: "2025-09-19 09:05" },
-            { event: "Job marked complete by customer", time: "2025-09-20 13:12" },
-            { event: "Escrow AU$256 released to cleaner", time: "2025-09-20 13:12" },
-        ],
+        timeline:
+            Array.isArray(sourceJob?.activity) && sourceJob.activity.length > 0
+                ? sourceJob.activity.map((item) => ({
+                    event: item.title,
+                    time: item.timestamp
+                        ? new Date(item.timestamp).toLocaleString("en-AU", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                        })
+                        : "",
+                }))
+                : [
+                    { event: "Job created", time: "" },
+                ],
         feedback: {
-            rating: 5.0,
-            comment: "Excellent work, apartment spotless.",
-            reviewer: "Selina K.",
-            date: "2025-09-19",
+            rating: sourceJob?.review?.rating || 0,
+            comment: sourceJob?.review?.comment || "",
+            reviewer: sourceJob?.review?.reviewerName || sourceJob?.customer?.fullName || sourceJob?.customerId?.fullName || "",
+            date: sourceJob?.review?.createdAt
+                ? new Date(sourceJob.review.createdAt).toLocaleDateString("en-AU", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                })
+                : "",
+            avatar: sourceJob?.customer?.profilePhoto?.url || sourceJob?.customerId?.profilePhoto?.url || "",
         },
         attachments: {
-            before: "https://images.unsplash.com/photo-1556910096-6f5e72db6803?w=400",
-            after: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=400",
+            beforePhotos: Array.isArray(sourceJob?.attachments?.beforePhotos) ? sourceJob.attachments.beforePhotos : [],
+            afterPhotos: Array.isArray(sourceJob?.attachments?.afterPhotos) ? sourceJob.attachments.afterPhotos : [],
         },
     };
 
@@ -119,21 +288,21 @@ export default function JobDetails({ job, onBackToList }) {
     const highlightUserNames = (text) => {
         const cleanerName = jobDetails.cleaner.name;
         const customerName = jobDetails.customer.name;
-        
+
         // Remove trailing period if present for matching
         const cleanerNameClean = cleanerName.replace(/\.$/, "");
         const customerNameClean = customerName.replace(/\.$/, "");
-        
+
         // Create regex patterns for both full names and variations
         const names = [cleanerName, cleanerNameClean, customerName, customerNameClean].filter(Boolean);
-        
+
         // Sort by length (longest first) to match longer names first
         names.sort((a, b) => b.length - a.length);
-        
+
         let result = text;
         const parts = [];
         let lastIndex = 0;
-        
+
         // Find all matches with their positions
         const matches = [];
         names.forEach(name => {
@@ -147,10 +316,10 @@ export default function JobDetails({ job, onBackToList }) {
                 });
             }
         });
-        
+
         // Sort matches by start position
         matches.sort((a, b) => a.start - b.start);
-        
+
         // Merge overlapping matches
         const mergedMatches = [];
         matches.forEach(match => {
@@ -163,7 +332,7 @@ export default function JobDetails({ job, onBackToList }) {
                 mergedMatches.push({ ...match });
             }
         });
-        
+
         // Build the parts array
         mergedMatches.forEach(match => {
             // Add text before match
@@ -180,7 +349,7 @@ export default function JobDetails({ job, onBackToList }) {
             });
             lastIndex = match.end;
         });
-        
+
         // Add remaining text
         if (lastIndex < text.length) {
             parts.push({
@@ -188,81 +357,93 @@ export default function JobDetails({ job, onBackToList }) {
                 isName: false
             });
         }
-        
+
         // If no matches found, return original text
         if (parts.length === 0) {
             parts.push({ text, isName: false });
         }
-        
+
         return parts;
     };
 
+    const handleBack = () => {
+        if (onBackToList) {
+            onBackToList();
+        }
+    };
+
     return (
-        <div className="space-y-6 mx-auto w-full max-w-6xl overflow-x-hidden pb-10">
+        <>
             <PageHeader
-          title={selectedJob ? selectedJob.jobId : "Jobs"}
-          subtitle={selectedJob ? (selectedJob.jobTitle || selectedJob.jobType) : ""}
-          role={selectedJob?.cleaner?.role}
-          showBackArrow={!!selectedJob}
-          onBack={selectedJob ? handleBack : undefined}/>
+                title={job ? job.jobId : "Jobs"}
+                subtitle={job ? (job.jobTitle || job.jobType) : ""}
+                role={job?.cleaner?.role}
+                showBackArrow={!!job}
+                onBack={job ? handleBack : undefined} />
+            <div className="space-y-6 mx-auto w-full max-w-6xl pb-10">
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
 
-                {/* LEFT MAIN SECTION */}
-                <div className="lg:col-span-2 space-y-6 w-full ">
+                    {/* LEFT MAIN SECTION */}
+                    <div className="lg:col-span-2 space-y-6 w-full ">
 
-                    {/* Header Card */}
-                    <div className="w-full flex flex-col md:flex-row md:items-center md:justify-between rounded-[12px] 
+                        {/* Header Card */}
+                        <div className="w-full flex flex-col md:flex-row md:items-center md:justify-between rounded-[12px] 
                 p-4 sm:p-5 md:p-6 lg:p-[30px] border border-[#F1F1F4] bg-white shadow-sm gap-4 md:gap-0">
 
-                        {/* Left Section */}
-                        <div className="w-full">
-                            <p className="text-xs font-medium text-primary-light">Posted by</p>
+                            {/* Left Section */}
+                            <div className="w-full">
+                                <p className="text-xs font-medium text-primary-light">Posted by</p>
 
-                            <div className="flex flex-wrap items-center gap-3">
-                                <span className="font-semibold text-xl sm:text-2xl text-primary">
-                                    {jobDetails.jobId}
-                                </span>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <span className="font-semibold text-xl sm:text-2xl text-primary">
+                                        {jobDetails.jobId}
+                                    </span>
 
-                                <span
-                                    className={`inline-flex items-center px-3 py-1 rounded-[6px] text-[10px] sm:text-xs font-medium border 
+                                    <span
+                                        className={`inline-flex items-center px-3 py-1 rounded-[6px] text-[10px] sm:text-xs font-medium border 
                 ${getStatusColor(jobDetails.status)}`}>
-                                    {jobDetails.status}
-                                </span>
+                                        {jobDetails.status}
+                                    </span>
+                                </div>
+
+                                <p className="text-xs sm:text-sm font-medium text-primary-light">
+                                    {jobDetails.category}
+                                </p>
                             </div>
 
-                            <p className="text-xs sm:text-sm font-medium text-primary-light">
-                                {jobDetails.category}
-                            </p>
+                            {/* Right Section */}
+                            <div className="text-xs sm:text-sm font-medium text-primary-light md:text-right whitespace-nowrap">
+                                Date Posted: {jobDetails.datePosted}
+                            </div>
                         </div>
 
-                        {/* Right Section */}
-                        <div className="text-xs sm:text-sm font-medium text-primary-light md:text-right whitespace-nowrap">
-                            Date Posted: {jobDetails.datePosted}
-                        </div>
+                        {/* Job Overview */}
+                        <OverviewTab
+                            jobDetails={jobDetails}
+                            getStatusColor={getStatusColor}
+                            onPaymentStatusUpdate={onPaymentStatusUpdate}
+                        />
+
+                        {/* Job Info */}
+                        <JobInfoTab jobDetails={jobDetails} />
                     </div>
 
-                    {/* Job Overview */}
-                    <OverviewTab jobDetails={jobDetails} getStatusColor={getStatusColor} />
+                    {/* RIGHT SIDEBAR */}
+                    <div className="space-y-6 w-full">
 
-                    {/* Job Info */}
-                    <JobInfoTab jobDetails={jobDetails} />
-                </div>
+                        {/* Timeline */}
+                        <TimelineTab jobDetails={jobDetails} highlightUserNames={highlightUserNames} />
 
-                {/* RIGHT SIDEBAR */}
-                <div className="space-y-6 w-full">
+                        {/* Feedback */}
+                        <FeedbackTab jobDetails={jobDetails} renderStars={renderStars} />
 
-                    {/* Timeline */}
-                    <TimelineTab jobDetails={jobDetails} highlightUserNames={highlightUserNames} />
+                        {/* Attachments */}
+                        <AttachmentsTab jobDetails={jobDetails} />
 
-                    {/* Feedback */}
-                    <FeedbackTab jobDetails={jobDetails} renderStars={renderStars} />
-
-                    {/* Attachments */}
-                    <AttachmentsTab jobDetails={jobDetails} />
-
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }

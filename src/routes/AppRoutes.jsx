@@ -14,10 +14,13 @@ export default function AppRoutes() {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/approvals" element={<Approvals />} />
+      <Route path="/approvals/:cleanerId" element={<Approvals />} />
       <Route path="/jobs" element={<Jobs />} />
       <Route path="/jobs/:jobId" element={<Jobs />} />
       <Route path="/cleaners" element={<Cleaners />} />
+      <Route path="/cleaners/:cleanerId" element={<Cleaners />} />
       <Route path="/customers" element={<Customers />} />
+      <Route path="/customers/:customerId" element={<Customers />} />
       <Route path="/payments" element={<Payments />} />
       <Route path="/settings" element={<Settings />} />
     </Routes>

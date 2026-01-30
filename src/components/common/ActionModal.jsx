@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import Button from "./Button";
 
 /**
@@ -67,7 +68,7 @@ export default function ActionModal({
       ? "success"
       : "primary";
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3 sm:px-4">
       {/* Backdrop click closes */}
       <div
@@ -147,6 +148,10 @@ export default function ActionModal({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' 
+    ? createPortal(modalContent, document.body)
+    : null;
 }
 
 

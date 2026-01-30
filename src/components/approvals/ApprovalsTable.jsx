@@ -1,195 +1,542 @@
 import { useState, useEffect, useMemo } from "react";
-import { ChevronUp, ChevronDown, Eye } from "lucide-react";
+import { Eye } from "lucide-react";
 import Checkbox from "../common/Checkbox";
 import SearchInput from "../common/SearchInput";
 import CustomSelect from "../common/CustomSelect";
 import DatePicker from "../common/DatePicker";
 import PaginationRanges from "../common/PaginationRanges";
-import tableSortIcon from "../../assets/icon/tableSort.svg";
-
-const defaultCleaners = [
-    {
-        id: 1,
-        name: "Lori Mosciski",
-        role: "Professional Cleaner",
-        avatar: "https://i.pravatar.cc/150?img=1",
-        radius: "0-20 km",
-        joined: "12-07-2025",
-        status: "Pending",
-    },
-    {
-        id: 2,
-        name: "Randolph Hirthe",
-        role: "Student Cleaner",
-        avatar: "https://i.pravatar.cc/150?img=2",
-        radius: "0-10 km",
-        joined: "13-07-2025",
-        status: "Verified",
-    },
-    {
-        id: 3,
-        name: "Constance Harris",
-        role: "Support Service Provider",
-        avatar: "https://i.pravatar.cc/150?img=3",
-        radius: "0-30 km",
-        joined: "14-07-2025",
-        status: "Pending",
-    },
-    {
-        id: 4,
-        name: "Guy Brakus",
-        role: "Pet Sitter",
-        avatar: "https://i.pravatar.cc/150?img=4",
-        radius: "0-20 km",
-        joined: "17-07-2025",
-        status: "Verified",
-    },
-    {
-        id: 5,
-        name: "Andre Abshire",
-        role: "Professional Cleaner",
-        avatar: "https://i.pravatar.cc/150?img=5",
-        radius: "0-10 km",
-        joined: "18-07-2025",
-        status: "Pending",
-    },
-    {
-        id: 6,
-        name: "Laura Cruickshank III",
-        role: "Handyman",
-        avatar: "https://i.pravatar.cc/150?img=6",
-        radius: "0-30 km",
-        joined: "20-07-2025",
-        status: "Verified",
-    },
-    {
-        id: 7,
-        name: "Arnold Koch",
-        role: "Housekeeper",
-        avatar: "https://i.pravatar.cc/150?img=7",
-        radius: "0-20 km",
-        joined: "27-07-2025",
-        status: "Pending",
-    },
-    {
-        id: 8,
-        name: "Mr. Gretchen Schumm",
-        role: "Pet Sitter",
-        avatar: "https://i.pravatar.cc/150?img=8",
-        radius: "0-10 km",
-        joined: "28-07-2025",
-        status: "Verified",
-    },
-    {
-        id: 9,
-        name: "Mindy Crona",
-        role: "Support Service Provider",
-        avatar: "https://i.pravatar.cc/150?img=9",
-        radius: "0-30 km",
-        joined: "30-07-2025",
-        status: "Pending",
-    },
-    {
-        id: 10,
-        name: "Dr. Joshua Morar",
-        role: "Student Cleaner",
-        avatar: "https://i.pravatar.cc/150?img=10",
-        radius: "0-20 km",
-        joined: "01-08-2025",
-        status: "Verified",
-    },
-    {
-        id: 11,
-        name: "Dr. Joshua Morar",
-        role: "Student Cleaner",
-        avatar: "https://i.pravatar.cc/150?img=10",
-        radius: "0-20 km",
-        joined: "01-08-2025",
-        status: "Verified",
-    },
-    {
-        id: 12,
-        name: "Dr. Joshua Morar",
-        role: "Student Cleaner",
-        avatar: "https://i.pravatar.cc/150?img=10",
-        radius: "0-20 km",
-        joined: "01-08-2025",
-        status: "Verified",
-    },
-    {
-        id: 13,
-        name: "Dr. Joshua Morar",
-        role: "Student Cleaner",
-        avatar: "https://i.pravatar.cc/150?img=10",
-        radius: "0-20 km",
-        joined: "01-08-2025",
-        status: "Verified",
-    },
-];
+import { fetchCleanersKYC } from "../../api/services/cleanersService";
+import Loader from "../common/Loader";
 
 export default function ApprovalsTable({ onViewCleaner }) {
-    const [cleaners, setCleaners] = useState(defaultCleaners);
+    const [cleaners, setCleaners] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [selectedRows, setSelectedRows] = useState([]);
     const [selectAll, setSelectAll] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [searchInputValue, setSearchInputValue] = useState(""); // Local state for search input
     const [roleFilter, setRoleFilter] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
     const [dateJoined, setDateJoined] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [sortColumn, setSortColumn] = useState(null);
-    const [sortDirection, setSortDirection] = useState("asc");
+    // Track if we've loaded all data (when no pagination info available)
+    const [hasAllDataLoaded, setHasAllDataLoaded] = useState(false);
+    // Pagination info from API
+    const [paginationInfo, setPaginationInfo] = useState({
+        currentPage: 1,
+        totalPages: 1,
+        totalCleaners: 0,
+        limit: 10,
+        hasNextPage: false,
+        hasPrevPage: false
+    });
 
     const roleOptions = [
         "Professional Cleaner",
         "Student Cleaner",
-        "Support Service Provider",
+        "NDIS Assistant",
+        "Retail Auditor",
         "Pet Sitter",
-        "Handyman",
         "Housekeeper",
     ];
 
     // Status filter options (for dropdown)
     // Note: current data only uses "Pending" and "Verified".
     // "Approved", "Rejected", and "Expired" are included for future use.
-    const statusOptions = ["Pending", "Approved", "Rejected", "Expired", "Verified"];
+    const statusOptions = ["Pending", "Rejected", "Expired", "Verified"];
 
-    // Filter cleaners based on search and filters
-    const filteredCleaners = useMemo(() => {
-        return cleaners.filter((cleaner) => {
-            const matchesSearch = !searchQuery ||
-                cleaner.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                cleaner.role.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesRole = !roleFilter || cleaner.role === roleFilter;
-            const matchesStatus = !statusFilter || cleaner.status === statusFilter;
-            const matchesDate = !dateJoined || cleaner.joined === dateJoined;
+    const getUiStatus = (row) => {
+        // backend fields observed: approvalStatus, verificationStatus
+        const approval = row?.approvalStatus;
+        const verification = row?.verificationStatus;
+        if (verification === "verified") return "Verified";
+        if (approval === "approved") return "Approved";
+        if (approval === "rejected") return "Rejected";
+        if (approval === "expired") return "Expired";
+        return "Pending";
+    };
 
-            return matchesSearch && matchesRole && matchesStatus && matchesDate;
-        });
-    }, [cleaners, searchQuery, roleFilter, statusFilter, dateJoined]);
+    const getStatusClasses = (status) => {
+        switch (status) {
+            case "Verified":
+                return {
+                    pill: "bg-[#EAFFF1] border-[#17C65333] text-[#17C653]",
+                    dot: "bg-[#17C653]",
+                };
+            case "Approved":
+                return {
+                    pill: "bg-[#EAFFF1] border-[#17C65333] text-[#17C653]",
+                    dot: "bg-[#17C653]",
+                };
+            case "Rejected":
+                return {
+                    pill: "bg-[#FFE5E9] border-[#F1416C33] text-[#F1416C]",
+                    dot: "bg-[#F1416C]",
+                };
+            case "Expired":
+                return {
+                    pill: "bg-[#F3F4F6] border-[#E5E7EB] text-[#6B7280]",
+                    dot: "bg-[#6B7280]",
+                };
+            default:
+                return {
+                    pill: "bg-[#FFF8DD] border-[#F6B10033] text-[#F6B100]",
+                    dot: "bg-[#F6B100]",
+                };
+        }
+    };
 
-    // Sort filtered cleaners
-    const sortedCleaners = useMemo(() => {
-        return [...filteredCleaners].sort((a, b) => {
-            if (!sortColumn) return 0;
+    // Map UI status to API status
+    const mapStatusToAPI = (uiStatus) => {
+        if (!uiStatus) return '';
+        // Map UI labels to backend approvalStatus values
+        // Backend uses "no_documents" for pending states (partial also exists but we'll filter client-side)
+        const statusMap = {
+            Pending: 'no_documents', // Send primary pending status, filter 'partial' client-side
+            Verified: 'approved',
+            Approved: 'approved',
+            Rejected: 'rejected',
+            Expired: 'expired',
+        };
+        return statusMap[uiStatus] || '';
+    };
 
-            const aValue = a[sortColumn];
-            const bValue = b[sortColumn];
+    // Parse date string in dd/mm/yyyy format
+    const parseDateString = (dateStr) => {
+        if (!dateStr) return null;
+        const parts = dateStr.split('/');
+        if (parts.length !== 3) return null;
+        const [day, month, year] = parts.map(Number);
+        const parsed = new Date(year, month - 1, day);
+        return isNaN(parsed) ? null : parsed;
+    };
 
-            if (sortDirection === "asc") {
-                return aValue > bValue ? 1 : -1;
-            } else {
-                return aValue < bValue ? 1 : -1;
+    const isDateFilterActive = !!(dateJoined?.start && dateJoined?.end);
+
+    // Fetch cleaners data from API with pagination and filters
+    useEffect(() => {
+        const loadCleaners = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                // For Pending, don't send status filter (we'll filter client-side for both no_documents and partial)
+                const apiStatus = statusFilter === 'Pending' ? '' : mapStatusToAPI(statusFilter);
+
+                // For client-side filtering (any status filter or date), fetch all records
+                // This ensures pagination is consistent (page 1 fills first, then page 2, etc.)
+                const needsClientSideFilter = isDateFilterActive || !!statusFilter;
+
+                let response;
+                if (needsClientSideFilter) {
+                    // Fetch all pages when doing client-side filtering
+                    let allData = [];
+                    let currentPageNum = 1;
+                    let hasMore = true;
+                    const pageLimit = 1000; // Fetch 1000 per page
+
+                    while (hasMore) {
+                        const pageResponse = await fetchCleanersKYC({
+                            page: currentPageNum,
+                            limit: pageLimit,
+                            search: searchQuery,
+                            role: roleFilter,
+                            status: apiStatus
+                        });
+
+                        // Extract cleaners from response
+                        let pageData = [];
+                        if (pageResponse?.data?.cleaners && Array.isArray(pageResponse.data.cleaners)) {
+                            pageData = pageResponse.data.cleaners;
+                        } else if (Array.isArray(pageResponse)) {
+                            pageData = pageResponse;
+                        } else if (Array.isArray(pageResponse.data)) {
+                            pageData = pageResponse.data;
+                        } else if (Array.isArray(pageResponse.cleaners)) {
+                            pageData = pageResponse.cleaners;
+                        }
+
+                        allData = [...allData, ...pageData];
+
+                        // Check if there are more pages
+                        if (pageResponse?.data?.pagination) {
+                            hasMore = pageResponse.data.pagination.hasNextPage === true;
+                            currentPageNum++;
+                        } else {
+                            // If no pagination info, check if we got less than the limit (last page)
+                            // If we got fewer records than requested, we're on the last page
+                            hasMore = pageData.length === pageLimit && pageData.length > 0;
+                            currentPageNum++;
+                        }
+
+                        // Stop if we got no data (empty page)
+                        if (pageData.length === 0) {
+                            hasMore = false;
+                        }
+
+                        // Safety limit to prevent infinite loops
+                        if (currentPageNum > 100) {
+                            hasMore = false;
+                            break;
+                        }
+                    }
+
+                    // Create a mock response structure with all data
+                    response = {
+                        data: {
+                            cleaners: allData,
+                            pagination: {
+                                currentPage: 1,
+                                totalPages: 1,
+                                totalCleaners: allData.length,
+                                limit: pageLimit,
+                                hasNextPage: false,
+                                hasPrevPage: false
+                            }
+                        }
+                    };
+                } else {
+                    // Normal paginated fetch
+                    // If we already have all data loaded and no filters changed, skip fetching
+                    // Data is already in cleaners state, pagination will be handled client-side
+                    if (hasAllDataLoaded && !searchQuery && !roleFilter && !apiStatus) {
+                        // Skip API call, but we still need to process existing data for pagination
+                        // The data is already in cleaners, so we'll just update pagination info
+                        const total = cleaners.length;
+                        const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
+                        const validCurrentPage = Math.min(currentPage, totalPages);
+
+                        setPaginationInfo({
+                            currentPage: validCurrentPage,
+                            totalPages,
+                            totalCleaners: total,
+                            limit: itemsPerPage,
+                            hasNextPage: validCurrentPage < totalPages,
+                            hasPrevPage: validCurrentPage > 1
+                        });
+
+                        if (currentPage > totalPages) {
+                            setCurrentPage(1);
+                        }
+
+                        setLoading(false);
+                        return; // Exit early, data is already processed
+                    }
+
+                    // First, try to get pagination info by fetching page 1
+                    const firstPageResponse = await fetchCleanersKYC({
+                        page: 1,
+                        limit: itemsPerPage,
+                        search: searchQuery,
+                        role: roleFilter,
+                        status: apiStatus
+                    });
+
+                    // Check if response has pagination info
+                    let hasPaginationInfo = false;
+                    if (firstPageResponse?.data?.pagination || firstPageResponse?.pagination) {
+                        hasPaginationInfo = true;
+                    }
+
+                    // If no pagination info and no filters, fetch all pages to get complete dataset
+                    // Then we'll paginate client-side
+                    if (!hasPaginationInfo && !searchQuery && !roleFilter && !apiStatus) {
+                        setHasAllDataLoaded(true); // Mark that we're loading all data
+                        // Fetch all pages similar to client-side filtering
+                        let allData = [];
+                        let currentPageNum = 1;
+                        let hasMore = true;
+                        const pageLimit = 100; // Fetch 100 per page
+
+                        while (hasMore) {
+                            const pageResponse = await fetchCleanersKYC({
+                                page: currentPageNum,
+                                limit: pageLimit,
+                                search: searchQuery,
+                                role: roleFilter,
+                                status: apiStatus
+                            });
+
+                            // Extract cleaners from response
+                            let pageData = [];
+                            if (pageResponse?.data?.cleaners && Array.isArray(pageResponse.data.cleaners)) {
+                                pageData = pageResponse.data.cleaners;
+                            } else if (Array.isArray(pageResponse)) {
+                                pageData = pageResponse;
+                            } else if (Array.isArray(pageResponse.data)) {
+                                pageData = pageResponse.data;
+                            } else if (Array.isArray(pageResponse.cleaners)) {
+                                pageData = pageResponse.cleaners;
+                            }
+
+                            allData = [...allData, ...pageData];
+
+                            // Check if there are more pages
+                            if (pageResponse?.data?.pagination) {
+                                hasMore = pageResponse.data.pagination.hasNextPage === true;
+                                currentPageNum++;
+                            } else if (pageResponse?.pagination) {
+                                hasMore = pageResponse.pagination.hasNextPage === true;
+                                currentPageNum++;
+                            } else {
+                                // If we got fewer records than requested, we're on the last page
+                                hasMore = pageData.length === pageLimit && pageData.length > 0;
+                                currentPageNum++;
+                            }
+
+                            // Stop if we got no data (empty page)
+                            if (pageData.length === 0) {
+                                hasMore = false;
+                            }
+
+                            // Safety limit to prevent infinite loops
+                            if (currentPageNum > 100) {
+                                hasMore = false;
+                                break;
+                            }
+                        }
+
+                        // Create response structure with all data
+                        // Mark this as needing client-side pagination
+                        response = {
+                            data: {
+                                cleaners: allData,
+                                pagination: {
+                                    currentPage: currentPage,
+                                    totalPages: Math.max(1, Math.ceil(allData.length / itemsPerPage)),
+                                    totalCleaners: allData.length,
+                                    limit: itemsPerPage,
+                                    hasNextPage: currentPage < Math.ceil(allData.length / itemsPerPage),
+                                    hasPrevPage: currentPage > 1
+                                }
+                            },
+                            _needsClientSidePagination: true // Flag to indicate client-side pagination needed
+                        };
+                    } else {
+                        setHasAllDataLoaded(false); // Reset flag when using server-side pagination
+                        // Use the fetched response for current page
+                        if (currentPage === 1) {
+                            response = firstPageResponse;
+                        } else {
+                            response = await fetchCleanersKYC({
+                                page: currentPage,
+                                limit: itemsPerPage,
+                                search: searchQuery,
+                                role: roleFilter,
+                                status: apiStatus
+                            });
+                        }
+                    }
+                }
+
+                // Handle API response structure
+                // API can return: array directly, {success: true, data: [...], pagination: {...}}, or {data: {cleaners: [...], pagination: {...}}}
+                let data = [];
+                let paginationFromAPI = null;
+
+                if (!response) {
+                    console.warn('API returned null or undefined');
+                    setCleaners([]);
+                    return;
+                }
+
+                // Extract cleaners array and pagination info
+                if (response.data && response.data.cleaners && Array.isArray(response.data.cleaners)) {
+                    // Structure: {data: {cleaners: [...], pagination: {...}}}
+                    data = response.data.cleaners;
+                    paginationFromAPI = response.data.pagination;
+                } else if (response.data && Array.isArray(response.data) && response.pagination) {
+                    // Structure: {data: [...], pagination: {...}}
+                    data = response.data;
+                    paginationFromAPI = response.pagination;
+                } else if (Array.isArray(response)) {
+                    // Structure: array directly [...]
+                    data = response;
+                } else if (Array.isArray(response.data)) {
+                    // Structure: {data: [...]}
+                    data = response.data;
+                    paginationFromAPI = response.pagination;
+                } else if (Array.isArray(response.cleaners)) {
+                    // Structure: {cleaners: [...], pagination: {...}}
+                    data = response.cleaners;
+                    paginationFromAPI = response.pagination;
+                }
+
+                // Ensure data is an array before mapping
+                if (!Array.isArray(data)) {
+                    console.error('API response is not an array. Response:', response);
+                    setError('Invalid data format received from server. Expected array of cleaners.');
+                    setCleaners([]);
+                    return;
+                }
+
+                // If no pagination info from API and we're on page 1 with no filters,
+                // we might need to fetch all pages to get total count
+                // For now, we'll use the data length and assume there might be more pages
+                // if we got exactly the limit number of items
+                const hasMoreData = !paginationFromAPI && data.length === itemsPerPage && currentPage === 1;
+
+                // Map API response to UI structure
+                let mappedCleaners = data.map((cleaner) => {
+                    const status = getUiStatus(cleaner);
+
+                    // Format date: use joined if available, otherwise format joinedTimestamp
+                    let formattedDate = cleaner.joined;
+                    if (!formattedDate && cleaner.joinedTimestamp) {
+                        const date = new Date(cleaner.joinedTimestamp);
+                        formattedDate = date.toLocaleDateString('en-GB', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                        });
+                    }
+
+                    return {
+                        id: cleaner._id,
+                        name: cleaner.cleanerName || `${cleaner.firstName || ''} ${cleaner.lastName || ''}`.trim() || 'Unknown',
+                        role: cleaner.role || "Professional Cleaner",
+                        avatar: cleaner.profilePhoto?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cleaner.cleanerName || cleaner.firstName || 'User')}&background=random`,
+                        radius: cleaner.radius || "0-20 km",
+                        joined: formattedDate || "N/A",
+                        status: status,
+                        // Keep original data for details view
+                        originalData: cleaner,
+                    };
+                });
+
+                // Apply client-side filtering for Pending status (includes no_documents, partial, and pending_review)
+                if (statusFilter === 'Pending') {
+                    mappedCleaners = mappedCleaners.filter((cleaner) => {
+                        const approvalStatus = cleaner.originalData?.approvalStatus;
+                        // Include all pending statuses: no_documents, partial, and pending_review
+                        return approvalStatus === 'no_documents' ||
+                            approvalStatus === 'partial' ||
+                            approvalStatus === 'pending_review' ||
+                            !approvalStatus;
+                    });
+                }
+
+                // Apply client-side date range filtering (backend doesn't filter by date)
+                if (isDateFilterActive) {
+                    const startTime = new Date(dateJoined.start).setHours(0, 0, 0, 0);
+                    const endTime = new Date(dateJoined.end).setHours(23, 59, 59, 999);
+                    mappedCleaners = mappedCleaners.filter((cleaner) => {
+                        const ts = cleaner.originalData?.joinedTimestamp
+                            ? new Date(cleaner.originalData.joinedTimestamp)
+                            : parseDateString(cleaner.joined);
+                        if (!ts) return false;
+                        const time = ts.setHours(0, 0, 0, 0);
+                        return time >= startTime && time <= endTime;
+                    });
+                }
+
+                setCleaners(mappedCleaners);
+
+                // Check if we fetched all data for client-side pagination
+                const fetchedAllData = response?._needsClientSidePagination === true;
+
+                // Update pagination info
+                // If we did client-side filtering (any status filter or date filter) or fetched all data, recalculate pagination
+                if (isDateFilterActive || !!statusFilter || fetchedAllData) {
+                    const total = mappedCleaners.length;
+                    const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
+                    // Ensure currentPage doesn't exceed totalPages
+                    const validCurrentPage = Math.min(currentPage, totalPages);
+
+                    // Update pagination info with filtered data
+                    setPaginationInfo({
+                        currentPage: validCurrentPage,
+                        totalPages,
+                        totalCleaners: total,
+                        limit: itemsPerPage,
+                        hasNextPage: validCurrentPage < totalPages,
+                        hasPrevPage: validCurrentPage > 1
+                    });
+
+                    // Reset to page 1 if current page exceeds total pages
+                    if (currentPage > totalPages) {
+                        setCurrentPage(1);
+                    }
+                } else if (paginationFromAPI) {
+                    // Use pagination info from API response for server-side filtering
+                    const apiPagination = paginationFromAPI;
+                    const totalCleaners = apiPagination.totalCleaners || apiPagination.total || mappedCleaners.length;
+                    const totalPages = apiPagination.totalPages || Math.max(1, Math.ceil(totalCleaners / itemsPerPage));
+                    const validCurrentPage = apiPagination.currentPage || currentPage;
+
+                    // Reset to page 1 if current page exceeds total pages or if no data
+                    if (validCurrentPage > totalPages || totalCleaners === 0) {
+                        setCurrentPage(1);
+                    }
+
+                    setPaginationInfo({
+                        currentPage: validCurrentPage,
+                        totalPages,
+                        totalCleaners: totalCleaners,
+                        limit: apiPagination.limit || itemsPerPage,
+                        hasNextPage: apiPagination.hasNextPage !== undefined ? apiPagination.hasNextPage : validCurrentPage < totalPages,
+                        hasPrevPage: apiPagination.hasPrevPage !== undefined ? apiPagination.hasPrevPage : validCurrentPage > 1
+                    });
+                } else {
+                    // Fallback: If no pagination info and we got exactly the limit, 
+                    // assume there might be more pages. Otherwise, use current data length.
+                    // This is a best-guess scenario when API doesn't return pagination metadata
+                    const estimatedTotal = hasMoreData ? mappedCleaners.length + 1 : mappedCleaners.length;
+                    const totalPages = Math.max(1, Math.ceil(estimatedTotal / itemsPerPage));
+
+                    setPaginationInfo({
+                        currentPage,
+                        totalPages: hasMoreData ? Math.max(totalPages, 2) : totalPages, // At least 2 pages if we got full page
+                        totalCleaners: estimatedTotal,
+                        limit: itemsPerPage,
+                        hasNextPage: hasMoreData || currentPage < totalPages,
+                        hasPrevPage: currentPage > 1
+                    });
+                }
+            } catch (err) {
+                console.error('Error fetching cleaners KYC:', err);
+
+                // Handle different error structures
+                const errorMessage =
+                    err?.response?.data?.message ||
+                    err?.response?.data?.error ||
+                    err?.message ||
+                    'Failed to load cleaners data';
+
+                setError(errorMessage);
+            } finally {
+                setLoading(false);
             }
-        });
-    }, [filteredCleaners, sortColumn, sortDirection]);
+        };
 
-    // Paginate sorted cleaners
+        loadCleaners();
+    }, [currentPage, itemsPerPage, searchQuery, roleFilter, statusFilter, dateJoined]);
+
+    // Use cleaners directly since filtering/sorting/pagination is done on server
+    // For client-side filtering (date or Pending status) or when all data is fetched, paginate client-side
     const paginatedCleaners = useMemo(() => {
+        const needsClientSidePagination = isDateFilterActive || !!statusFilter || hasAllDataLoaded;
+
+        if (!needsClientSidePagination) return cleaners;
         const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        return sortedCleaners.slice(startIndex, endIndex);
-    }, [sortedCleaners, currentPage, itemsPerPage]);
+        return cleaners.slice(startIndex, startIndex + itemsPerPage);
+    }, [cleaners, currentPage, itemsPerPage, isDateFilterActive, statusFilter, hasAllDataLoaded]);
+
+    // Calculate total items for pagination - reactive to cleaners and paginationInfo changes
+    const totalItemsForPagination = useMemo(() => {
+        // For client-side filtering (Pending status or date) or when all data is loaded, use cleaners.length directly
+        if (!!statusFilter || isDateFilterActive || hasAllDataLoaded) {
+            return cleaners.length;
+        }
+        // For server-side filtering (other statuses, role, search), use paginationInfo.totalCleaners
+        // This ensures pagination reflects the actual filtered count from the API
+        if (paginationInfo.totalCleaners !== undefined && paginationInfo.totalCleaners !== null) {
+            return paginationInfo.totalCleaners;
+        }
+        // Fallback to cleaners.length if paginationInfo is not available
+        return cleaners.length;
+    }, [cleaners.length, paginationInfo.totalCleaners, statusFilter, isDateFilterActive, hasAllDataLoaded]);
 
     const handleSelectAll = (checked) => {
         setSelectAll(checked);
@@ -212,29 +559,30 @@ export default function ApprovalsTable({ onViewCleaner }) {
         }
     };
 
-    const handleSort = (column) => {
-        if (sortColumn === column) {
-            setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-        } else {
-            setSortColumn(column);
-            setSortDirection("asc");
-        }
-    };
-
-    const getSortIcon = (column) => {
-        if (sortColumn !== column) return null;
-        return sortDirection === "asc" ? (
-            <ChevronUp size={14} className="text-gray-400" />
-        ) : (
-            <ChevronDown size={14} className="text-gray-400" />
-        );
-    };
-
-
-    // Reset to page 1 when filters change
+    // Reset to page 1 when filters change and reset all-data flag
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, roleFilter, statusFilter, dateJoined, itemsPerPage]);
+        setHasAllDataLoaded(false); // Reset when filters change
+    }, [searchQuery, roleFilter, statusFilter, itemsPerPage, dateJoined]);
+
+    if (loading) {
+        return (
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8 flex items-center justify-center min-h-[400px]">
+                <Loader />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8">
+                <div className="text-center text-red-600">
+                    <p className="font-medium">Error loading data</p>
+                    <p className="text-sm mt-2">{error}</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
@@ -246,7 +594,15 @@ export default function ApprovalsTable({ onViewCleaner }) {
 
                     <SearchInput
                         placeholder="ABN / Name / Email"
-                        onChange={setSearchQuery}
+                        value={searchInputValue}
+                        onChange={setSearchInputValue}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                const trimmedValue = searchInputValue.trim();
+                                setSearchQuery(trimmedValue);
+                                setCurrentPage(1); // Reset to page 1 when searching
+                            }
+                        }}
                         className="w-full md:w-[200px]"
                     />
 
@@ -299,32 +655,20 @@ export default function ApprovalsTable({ onViewCleaner }) {
                                 </div>
                             </th>
                             <th className="min-w-[200px] md:min-w-[250px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
-                                        Cleaner Name & Role
-                                    </span>
-                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
-                                </div>
+                                <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    Cleaner Name & Role
+                                </span>
                             </th>
                             <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Radius</span>
-                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
-                                </div>
+                                <span className="font-medium text-gray-700 text-xs md:text-sm">Radius</span>
                             </th>
                             <th className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Joined</span>
-                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
-                                </div>
+                                <span className="font-medium text-gray-700 text-xs md:text-sm">Joined</span>
                             </th>
                             <th className="min-w-[130px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                <div className="flex items-center gap-1.5 md:gap-2">
-                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
-                                        Approval Status
-                                    </span>
-                                    <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
-                                </div>
+                                <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                    Approval Status
+                                </span>
                             </th>
                             <th className="w-16 md:w-20 px-2 md:px-4 py-2 md:py-3 text-center">
                             </th>
@@ -368,19 +712,17 @@ export default function ApprovalsTable({ onViewCleaner }) {
                                     {cleaner.joined}
                                 </td>
                                 <td className="min-w-[130px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                                    <span
-                                        className={`inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-2.5 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium border ${cleaner.status === "Verified"
-                                            ? "bg-[#EAFFF1] border-[#17C65333] text-[#17C653]"
-                                            : "bg-[#FFF8DD] border-[#F6B10033] text-[#F6B100]"
-                                            }`}
-                                    >
-                                        <span
-                                            className={`w-1 h-1 md:w-1.5 md:h-1.5 rounded-full ${cleaner.status === "Verified"
-                                                ? "bg-[#17C653]"
-                                                : "bg-[#F6B100]"
-                                                }`}
-                                        />                                      {cleaner.status}
-                                    </span>
+                                    {(() => {
+                                        const { pill, dot } = getStatusClasses(cleaner.status);
+                                        return (
+                                            <span
+                                                className={`inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-2.5 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium border ${pill}`}
+                                            >
+                                                <span className={`w-1 h-1 md:w-1.5 md:h-1.5 rounded-full ${dot}`} />
+                                                {cleaner.status}
+                                            </span>
+                                        );
+                                    })()}
                                 </td>
                                 <td className="w-16 md:w-20 px-2 md:px-4 py-2 md:py-4 text-center">
                                     <button
@@ -401,7 +743,7 @@ export default function ApprovalsTable({ onViewCleaner }) {
             <PaginationRanges
                 currentPage={currentPage}
                 rowsPerPage={itemsPerPage}
-                totalItems={filteredCleaners.length}
+                totalItems={totalItemsForPagination}
                 onPageChange={setCurrentPage}
                 onRowsPerPageChange={setItemsPerPage}
             />

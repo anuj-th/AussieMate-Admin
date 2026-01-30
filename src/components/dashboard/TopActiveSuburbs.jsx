@@ -1,25 +1,58 @@
+import { useEffect, useMemo, useState } from "react";
 import { Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import CustomSelect from "../common/CustomSelect";
-
-const defaultSuburbs = [
-  { id: 1, name: "Parramatta, NSW", jobs: 120, revenue: "12,400", rating: 4.7 },
-  { id: 2, name: "Bankstown, NSW", jobs: 95, revenue: "9,050", rating: 4.5 },
-  { id: 3, name: "Liverpool, NSW", jobs: 80, revenue: "7,600", rating: 4.6 },
-  { id: 4, name: "Chatswood, NSW", jobs: 70, revenue: "6,800", rating: 4.8 },
-  { id: 5, name: "Blacktown, NSW", jobs: 65, revenue: "6,250", rating: 4.4 },
-];
+import { fetchTopLocations } from "../../api/services/dashboardService";
 
 export default function TopActiveSuburbs({
   title = "Top Active Suburbs",
-  suburbs = defaultSuburbs,
   sortBy,
   onSortByChange,
-  category,
-  onCategoryChange,
 }) {
   const sortOptions = ["Jobs", "Revenue", "Rating", "State"];
-  const categoryOptions = ["Cleaning", "Housekeeping", "NDIS", "Retail", "Pet Sitting"];
+
+  const [rows, setRows] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const resp = await fetchTopLocations();
+        const list = resp?.data || resp || [];
+
+        const mapped = Array.isArray(list)
+          ? list.map((item, index) => ({
+              id: item.rank || item._id || index + 1,
+              name: item.city || "",
+              jobs: item.jobs || 0,
+              revenue: item.revenue ?? 0,
+              rating: Number(item.avgRating ?? 0),
+            }))
+          : [];
+
+        if (mapped.length) setRows(mapped);
+      } catch (e) {
+        console.warn("Failed to load top locations", e);
+      }
+    };
+
+    load();
+  }, []);
+
+  const displayedRows = useMemo(() => {
+    const data = [...rows];
+
+    if (sortBy === "Jobs") {
+      data.sort((a, b) => b.jobs - a.jobs);
+    } else if (sortBy === "Revenue") {
+      data.sort((a, b) => b.revenue - a.revenue);
+    } else if (sortBy === "Rating") {
+      data.sort((a, b) => b.rating - a.rating);
+    } else if (sortBy === "State") {
+      data.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    return data;
+  }, [rows, sortBy]);
 
   return (
     <div className="bg-white rounded-[16px] border border-[#EEF0F5] shadow-sm h-full flex flex-col">
@@ -36,13 +69,6 @@ export default function TopActiveSuburbs({
             placeholder="Sort By"
             options={sortOptions}
             className="w-28"
-          />
-          <CustomSelect
-            value={category}
-            onChange={onCategoryChange}
-            placeholder="Category"
-            options={categoryOptions}
-            className="w-32"
           />
         </div>
       </div>
@@ -66,7 +92,7 @@ export default function TopActiveSuburbs({
             </tr>
           </thead>
           <tbody>
-            {suburbs.map((row, idx) => (
+            {displayedRows.map((row, idx) => (
               <tr
                 key={row.id}
                 className="border-b border-[#EEF0F5] text-primary font-medium text-xs sm:text-sm"
@@ -76,7 +102,9 @@ export default function TopActiveSuburbs({
                   {row.name}
                 </td>
                 <td className="px-2 py-3 sm:py-4 text-right">{row.jobs}</td>
-                <td className="px-2 py-3 sm:py-4 text-right">{row.revenue}</td>
+                <td className="px-2 py-3 sm:py-4 text-right">
+                  {row.revenue.toLocaleString?.() ?? row.revenue}
+                </td>
                 <td className="px-2 py-3 sm:py-4 pr-4">
                   <div className="flex items-center justify-end gap-1 text-[11px] sm:text-[12px]">
                     <span className="text-[#FFB020] text-[9px] sm:text-[10px]">
@@ -102,5 +130,3 @@ export default function TopActiveSuburbs({
     </div>
   );
 }
-
-

@@ -1,20 +1,19 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { isAuthenticated } from '../../utils/auth';
+import { isAuthenticated, clearAuth } from '../../utils/auth';
 
 /**
  * ProtectedRoute component - redirects to login if user is not authenticated
  */
 export default function ProtectedRoute({ children }) {
-  const [authenticated, setAuthenticated] = useState(isAuthenticated());
   const location = useLocation();
+  
+  // Check authentication synchronously on every render
+  // This ensures we always check the latest token state
+  const authenticated = isAuthenticated();
 
-  useEffect(() => {
-    // Check authentication state when location changes
-    setAuthenticated(isAuthenticated());
-  }, [location]);
-
+  // Immediately redirect if not authenticated
   if (!authenticated) {
+    clearAuth();
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 

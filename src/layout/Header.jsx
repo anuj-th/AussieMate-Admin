@@ -1,10 +1,14 @@
 import { useMemo, useState, useRef, useEffect } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import { Bell, CircleUserRound, User2 } from "lucide-react";
 import SearchInput from "../components/common/SearchInput";
 import Button from "../components/common/Button";
 import NotificationsPanel from "./NotificationsPanel";
 import profile from "../assets/icon/profile.svg";
+import { useAuth, useAuthInit } from "../api/hooks/useAuth";
+import ActionModal from "../components/common/ActionModal";
+import rejectKyc from "../assets/image/rejectKyc.svg";
+import { useBreadcrumb } from "../context/BreadcrumbContext";
 
 const ROUTE_TITLES = {
   "/": "Dashboard",
@@ -25,6 +29,16 @@ function humanizeSegment(segment) {
     .join(" ");
 }
 
+function isIdSegment(segment) {
+  if (!segment) return false;
+  // Check if segment looks like an ID (long alphanumeric string, typically 20+ characters)
+  // MongoDB ObjectIds are 24 characters, but we'll check for 15+ to catch various ID formats
+  const isLongAlphanumeric = /^[a-zA-Z0-9]{15,}$/.test(segment);
+  // Also check if it's a UUID-like pattern (with or without hyphens)
+  const isUuidLike = /^[a-f0-9]{8}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{12}$/i.test(segment);
+  return isLongAlphanumeric || isUuidLike;
+}
+
 export default function Header({
   extraCrumbs = [],
   title,
@@ -33,28 +47,45 @@ export default function Header({
   sidebarOpen = true,
 }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
   const notifRef = useRef(null);
   const notifButtonRef = useRef(null);
+  const { user, refreshProfile, logout } = useAuth();
+  const { extraCrumbs: contextCrumbs, parentBreadcrumbOnClick } = useBreadcrumb();
+  useAuthInit(refreshProfile);
+
+  // Merge prop extraCrumbs with context extraCrumbs (context takes precedence)
+  const allExtraCrumbs = contextCrumbs.length > 0 ? contextCrumbs : extraCrumbs;
 
   const breadcrumbs = useMemo(() => {
     const { pathname } = location;
     if (pathname === "/") {
-      return [{ label: ROUTE_TITLES["/"], path: "/" }, ...extraCrumbs];
+      return [{ label: ROUTE_TITLES["/"], path: "/" }, ...allExtraCrumbs];
     }
 
     const segments = pathname.split("/").filter(Boolean);
-    const crumbs = segments.map((segment, index) => {
-      const path = "/" + segments.slice(0, index + 1).join("/");
+    // Filter out ID segments from breadcrumbs display
+    const filteredSegments = segments.filter(segment => !isIdSegment(segment));
+    
+    const crumbs = filteredSegments.map((segment, index) => {
+      // Build path using only filtered segments (without IDs)
+      const path = "/" + filteredSegments.slice(0, index + 1).join("/");
       const label = ROUTE_TITLES[path] || humanizeSegment(segment);
-      return { label, path };
+      const isLastUrlCrumb = index === filteredSegments.length - 1;
+      // If we have extraCrumbs and onClick handler, make the last URL breadcrumb clickable
+      const onClick = isLastUrlCrumb && allExtraCrumbs.length > 0 && parentBreadcrumbOnClick 
+        ? parentBreadcrumbOnClick 
+        : null;
+      return { label, path, onClick };
     });
 
-    return [...crumbs, ...extraCrumbs];
-  }, [location, extraCrumbs]);
+    return [...crumbs, ...allExtraCrumbs];
+  }, [location, allExtraCrumbs, parentBreadcrumbOnClick]);
 
   const currentTitle =
     title || (breadcrumbs.length ? breadcrumbs[breadcrumbs.length - 1].label : "");
@@ -114,15 +145,26 @@ export default function Header({
         <nav className="flex items-center gap-1 mb-1 text-[14px]">
           {breadcrumbs.map((crumb, index) => {
             const isLast = index === breadcrumbs.length - 1;
+            const hasOnClick = typeof crumb.onClick === 'function';
+            
             return (
               <span key={crumb.path || `${crumb.label}-${index}`}>
                 {!isLast ? (
-                  <Link
-                    to={crumb.path || "#"}
-                    className="text-[#7E7E87] font-normal hover:text-[#1C1C1C] transition-colors"
-                  >
-                    {crumb.label}
-                  </Link>
+                  hasOnClick ? (
+                    <button
+                      onClick={crumb.onClick}
+                      className="text-[#7E7E87] font-normal hover:text-[#1C1C1C] transition-colors cursor-pointer bg-transparent border-none p-0"
+                    >
+                      {crumb.label}
+                    </button>
+                  ) : (
+                    <Link
+                      to={crumb.path || "#"}
+                      className="text-[#7E7E87] font-normal hover:text-[#1C1C1C] transition-colors"
+                    >
+                      {crumb.label}
+                    </Link>
+                  )
                 ) : (
                   <span className="font-semibold text-[#1C1C1C]">
                     {crumb.label}
@@ -167,9 +209,17 @@ export default function Header({
             ref={buttonRef}
             type="button"
             onClick={toggleDropdown}
-            className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#F9F9F9] border-2 border-[#F2F2F2] text-gray-700 cursor-pointer"
+            className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#F9F9F9] border-2 border-[#F2F2F2] text-gray-700 cursor-pointer overflow-hidden"
           >
-            <img src={profile} alt="Profile" className="h-5 w-5" />
+            {user?.profilePhoto?.url ? (
+              <img
+                src={user.profilePhoto.url}
+                alt="Profile"
+                className="h-9 w-9 object-cover"
+              />
+            ) : (
+              <img src={profile} alt="Profile" className="h-5 w-5" />
+            )}
           </button>
 
           {/* Backdrop Overlay */}
@@ -188,15 +238,28 @@ export default function Header({
             >
               {/* User Info Section */}
               <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200">
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                <img src={profile} alt="Profile" className="w-5 h-5 object-cover" />
+                <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+                  {user?.profilePhoto?.url ? (
+                    <img src={user.profilePhoto.url} alt="Profile" className="w-10 h-10 object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <User2 className="w-5 h-5 text-gray-500" />
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-[#1C1C1C]">John Doe</p>
+                  <p className="text-sm font-medium text-[#1C1C1C]">
+                    {user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User' : 'User'}
+                  </p>
+                  {user?.email && (
+                    <p className="text-xs text-gray-500">{user.email}</p>
+                  )}
                 </div>
-                <span className="px-2.5 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md">
-                  Admin
-                </span>
+                {user?.role && (
+                  <span className="px-2.5 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md">
+                    {user.role}
+                  </span>
+                )}
               </div>
 
               {/* My Profile Link */}
@@ -219,8 +282,7 @@ export default function Header({
                   size="sm"
                   onClick={() => {
                     setIsDropdownOpen(false);
-                    // Add your logout logic here
-                    console.log("Logout clicked");
+                    setIsLogoutModalOpen(true);
                   }}
                 >
                   Log out
@@ -230,6 +292,21 @@ export default function Header({
           )}
         </div>
       </div>
+
+      <ActionModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        illustration={<img src={rejectKyc} alt="Logout illustration" className="max-h-40" />}
+        title="Logout Account"
+        description="Are you sure you want to logout your account?"
+        primaryLabel="Logout"
+        onPrimary={() => {
+          setIsLogoutModalOpen(false);
+          logout();
+          navigate('/login');
+        }}
+        hideSecondary
+      />
 
     </header>
   );

@@ -1,62 +1,25 @@
 import { Briefcase, Star, MapPin, Calendar } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
+const formatShortDate = (value) => {
+    if (!value) return "N/A";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "N/A";
+    return d.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+};
 
-
-const recentJobsData = [
-    {
-        id: 1,
-        type: "Pet Sitting",
-        subType: "Walking",
-        status: "Completed",
-        location: "860, Hutt Street, South Australia",
-        date: "23 Aug, 2025",
-        payment: 80,
-        releasedDate: "Released Aug 27",
-    },
-    {
-        id: 2,
-        type: "Pet Sitting",
-        subType: "Feeding",
-        status: "In Progress",
-        location: "795, Market Street, Fremantle Prison...",
-        date: "24 Aug, 2025",
-        payment: 120,
-        releasedDate: "Released Aug 27",
-    },
-    {
-        id: 3,
-        type: "Pet Sitting",
-        subType: "Boarding",
-        status: "Completed",
-        location: "375, Domain Road, Royal Botanic Gard...",
-        date: "25 Aug, 2025",
-        payment: 80,
-        releasedDate: "Released Aug 27",
-    },
-    {
-        id: 4,
-        type: "Pet Sitting",
-        subType: "Walking",
-        status: "Completed",
-        location: "720, Roe Stre",
-        date: "26 Aug, 2025",
-        payment: 80,
-        releasedDate: "Released Aug 27",
-    },
-];
-
-export default function OverviewTab({ cleaner, onViewJobHistory }) {
+export default function OverviewTab({ cleaner, jobsCompleted, averageRating, totalEarnings, jobs = [], onViewJobHistory }) {
     const handleViewJobs = () => {
         if (onViewJobHistory) {
             onViewJobHistory();
         }
     };
+
+    const recentJobs = Array.isArray(jobs) ? jobs.slice(0, 8) : [];
 
     return (
         <div className="space-y-6">
@@ -68,7 +31,7 @@ export default function OverviewTab({ cleaner, onViewJobHistory }) {
                     </div>
                     <div className="min-w-0">
                         <p className="text-lg font-semibold text-primary">
-                            {cleaner?.jobs || 128}
+                            {jobsCompleted ?? cleaner?.jobs ?? 0}
                         </p>
                         <p className="text-sm font-medium text-primary-light">Jobs completed</p>
                     </div>
@@ -79,7 +42,7 @@ export default function OverviewTab({ cleaner, onViewJobHistory }) {
                     </div>
                     <div className="min-w-0">
                         <p className="text-lg font-semibold text-primary">
-                            {cleaner?.rating || 4.2}
+                            {averageRating ?? cleaner?.rating ?? 0}
                         </p>
                         <p className="text-sm font-medium text-primary-light">Avg Rating</p>
                     </div>
@@ -90,7 +53,9 @@ export default function OverviewTab({ cleaner, onViewJobHistory }) {
                     </div>
                     <div className="min-w-0">
                         <p className="text-lg font-semibold">
-                            <span className="text-primary">AU${cleaner?.earnings?.toLocaleString() || "12,420"}</span>
+                            <span className="text-primary">
+                                AU${Number((totalEarnings ?? cleaner?.earnings ?? 0) || 0).toLocaleString()}
+                            </span>
                         </p>
                         <p className="text-sm font-medium text-primary-light">Total Earnings</p>
                     </div>
@@ -112,73 +77,81 @@ export default function OverviewTab({ cleaner, onViewJobHistory }) {
                 </div>
 
                 <div className="overflow-hidden">
-                    <Swiper
-                        modules={[Autoplay]}
-                        spaceBetween={16}
-                        slidesPerView="auto"
-                        autoplay={{ delay: 2800, disableOnInteraction: false }}
-                        loop={true}
-                        className="!overflow-hidden !flex"
-                        style={{ display: "flex", alignItems: "stretch", paddingBottom: "8px" }}
-                    >
-                        {recentJobsData.map((job) => {
-                            const isInProgress = job.status === "In Progress";
-                            return (
-                                <SwiperSlide
-                                    key={job.id}
-                                    className="h-full flex"
-                                    style={{ width: "auto", height: "100%", display: "flex" }}
-                                >
+                    {recentJobs.length === 0 ? (
+                        <div className="bg-white border border-gray-200 rounded-xl p-6 text-sm text-primary-light">
+                            No jobs found for this cleaner.
+                        </div>
+                    ) : (
+                        <Swiper
+                            modules={[Autoplay]}
+                            spaceBetween={16}
+                            slidesPerView="auto"
+                            autoplay={{ delay: 2800, disableOnInteraction: false }}
+                            loop={recentJobs.length > 1}
+                            className="!overflow-hidden !flex"
+                            style={{ display: "flex", alignItems: "stretch", paddingBottom: "8px" }}
+                        >
+                            {recentJobs.map((job) => {
+                                const statusLabel = job.status || "In Progress";
+                                const isInProgress = statusLabel === "In Progress";
+                                const paymentValue = Number(job.amount ?? 0);
+                                return (
+                                    <SwiperSlide
+                                        key={job._id || job.id || job.jobId}
+                                        className="h-full flex !w-[200px] md:!w-[320px]"
+                                        style={{ height: "100%", display: "flex" }}
+                                    >
 
-                                    <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-2 min-w-[260px] md:min-w-[320px] h-full shadow-xs flex flex-col">
+                                        <div className="bg-white border border-gray-200 rounded-xl p-3 md:p-4 space-y-1.5 md:space-y-2 w-full h-full shadow-xs flex flex-col">
 
-                                        {/* Type & Status */}
-                                        <div>
-                                            <p className="text-primary font-medium whitespace-nowrap mb-1">
-                                                {job.type} • {job.subType}
-                                            </p>
+                                            {/* Type & Status */}
+                                            <div>
+                                                <p className="text-primary font-medium mb-1 truncate text-xs md:text-sm">
+                                                    {(job.type || "Job")} • {(job.subType || "Service")}
+                                                </p>
 
-                                            <span
-                                                className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-flex items-center gap-1 ${isInProgress
-                                                    ? "bg-[#FFF8DD] text-[#F6B100] border border-[#F6B10033]"
-                                                    : "bg-[#EAFFF1] text-[#17C653] border border-[#17C65333]"
-                                                    }`}
-                                            >
                                                 <span
-                                                    className={`w-1.5 h-1.5 rounded-full ${isInProgress ? "bg-[#F6B100]" : "bg-[#17C653]"
+                                                    className={`px-1.5 md:px-2 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium whitespace-nowrap inline-flex items-center gap-1 ${isInProgress
+                                                        ? "bg-[#FFF8DD] text-[#F6B100] border border-[#F6B10033]"
+                                                        : "bg-[#EAFFF1] text-[#17C653] border border-[#17C65333]"
                                                         }`}
-                                                />
-                                                {job.status}
-                                            </span>
-                                        </div>
+                                                >
+                                                    <span
+                                                        className={`w-1 h-1 md:w-1.5 md:h-1.5 rounded-full ${isInProgress ? "bg-[#F6B100]" : "bg-[#17C653]"
+                                                            }`}
+                                                    />
+                                                    {statusLabel}
+                                                </span>
+                                            </div>
 
-                                        {/* Location */}
-                                        <div className="flex items-center gap-1.5 text-sm font-medium text-primary-light">
-                                            <MapPin size={12} className="flex-shrink-0" />
-                                            <span className="truncate">{job.location}</span>
-                                        </div>
+                                            {/* Location */}
+                                            <div className="flex items-center gap-1 md:gap-1.5 text-xs md:text-sm font-medium text-primary-light">
+                                                <MapPin size={10} className="md:w-3 md:h-3 flex-shrink-0" />
+                                                <span className="truncate min-w-0">{job.location || "N/A"}</span>
+                                            </div>
 
-                                        {/* Date */}
-                                        <div className="flex items-center gap-1.5 text-sm font-medium text-primary-light">
-                                            <Calendar size={12} className="flex-shrink-0" />
-                                            <span>{job.date}</span>
-                                        </div>
+                                            {/* Date */}
+                                            <div className="flex items-center gap-1 md:gap-1.5 text-xs md:text-sm font-medium text-primary-light">
+                                                <Calendar size={10} className="md:w-3 md:h-3 flex-shrink-0" />
+                                                <span>{formatShortDate(job.date)}</span>
+                                            </div>
 
-                                        {/* Payment Row */}
-                                        <div className="pt-2 flex justify-between">
-                                            <p className="text-sm font-medium">
-                                                <span className="text-[#374151]">Payment: </span>
-                                                <span className="text-primary">${job.payment}</span>
-                                            </p>
-                                            <p className="text-sm font-medium text-[#374151]">
-                                                {job.releasedDate}
-                                            </p>
+                                            {/* Payment Row */}
+                                            <div className="pt-1 md:pt-2 flex justify-between gap-2 md:gap-3">
+                                                <p className="text-xs md:text-sm font-medium truncate min-w-0">
+                                                    <span className="text-[#374151]">Payment: </span>
+                                                    <span className="text-primary">AU${paymentValue.toLocaleString()}</span>
+                                                </p>
+                                                <p className="text-xs md:text-sm font-medium text-[#374151] flex-shrink-0 truncate max-w-[40%] text-right">
+                                                    {job.releasedDate || ""}
+                                                </p>
+                                            </div>
                                         </div>
-                                    </div>
-                                </SwiperSlide>
-                            );
-                        })}
-                    </Swiper>
+                                    </SwiperSlide>
+                                );
+                            })}
+                        </Swiper>
+                    )}
                 </div>
             </div>
 

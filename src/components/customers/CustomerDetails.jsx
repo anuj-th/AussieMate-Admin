@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Ban,
   Calendar,
@@ -14,6 +14,7 @@ import JobsHistoryTab from "./JobsHistoryTab";
 import PaymentsTab from "./PaymentsTab";
 import FeedbackTab from "./FeedbackTab";
 import JobDetails from "../jobs/JobDetails";
+import { fetchCustomerJobs, fetchCustomerReviews } from "../../api/services/customersService";
 
 export default function CustomerDetails({ customer, onBackToList }) {
   if (!customer) return null;
@@ -21,6 +22,100 @@ export default function CustomerDetails({ customer, onBackToList }) {
   const [activeAction, setActiveAction] = useState(null); // "suspend" | null
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedJob, setSelectedJob] = useState(null);
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  const [customerJobs, setCustomerJobs] = useState([]);
+  const [customerReviews, setCustomerReviews] = useState([]);
+  const [reviewsPagination, setReviewsPagination] = useState(null);
+
+  // Avatar helpers (same as CustomersTable fallback)
+  const isValidImageUrl = (url) => {
+    if (!url || typeof url !== "string") return false;
+    return url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:");
+  };
+
+  const getInitials = (firstName, lastName, fullName) => {
+    if (firstName && lastName) {
+      return `${firstName.charAt(0).toUpperCase()}${lastName.charAt(0).toUpperCase()}`;
+    }
+    if (fullName) {
+      const nameParts = fullName.trim().split(/\s+/);
+      if (nameParts.length >= 2) {
+        return `${nameParts[0].charAt(0).toUpperCase()}${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}`;
+      }
+      return nameParts[0].charAt(0).toUpperCase();
+    }
+    return "?";
+  };
+
+  const getAvatarColor = (name, id) => {
+    const colors = [
+      "#FF6B6B",
+      "#4ECDC4",
+      "#45B7D1",
+      "#FFA07A",
+      "#98D8C8",
+      "#F7DC6F",
+      "#BB8FCE",
+      "#85C1E2",
+      "#F8B739",
+      "#52BE80",
+      "#EC7063",
+      "#5DADE2",
+      "#F1948A",
+      "#82E0AA",
+      "#F4D03F",
+      "#A569BD",
+    ];
+    const str = name || id || "default";
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
+
+  useEffect(() => {
+    // reset when switching customers
+    setAvatarFailed(false);
+  }, [customer?.id, customer?._id]);
+
+  useEffect(() => {
+    const loadCustomerJobs = async () => {
+      const customerId = customer?._id || customer?.id;
+      if (!customerId) return;
+      try {
+        const resp = await fetchCustomerJobs(customerId);
+        const data = resp?.data || resp;
+        const list = Array.isArray(data) ? data : Array.isArray(data?.jobs) ? data.jobs : [];
+        setCustomerJobs(list);
+      } catch (e) {
+        console.warn("Failed to load customer jobs", e);
+        setCustomerJobs([]);
+      }
+    };
+
+    loadCustomerJobs();
+  }, [customer?._id, customer?.id]);
+
+  useEffect(() => {
+    const loadCustomerReviews = async () => {
+      const customerId = customer?._id || customer?.id;
+      if (!customerId) return;
+      try {
+        const resp = await fetchCustomerReviews(customerId, { page: 1, limit: 50 });
+        const data = resp?.data || resp;
+        const list = Array.isArray(data?.reviews) ? data.reviews : Array.isArray(data) ? data : [];
+        setCustomerReviews(list);
+        setReviewsPagination(data?.pagination || resp?.pagination || null);
+      } catch (e) {
+        console.warn("Failed to load customer reviews", e);
+        setCustomerReviews([]);
+        setReviewsPagination(null);
+      }
+    };
+
+    loadCustomerReviews();
+  }, [customer?._id, customer?.id]);
 
   const closeModal = () => setActiveAction(null);
 
@@ -58,7 +153,7 @@ export default function CustomerDetails({ customer, onBackToList }) {
   }
 
   return (
-    <div className="space-y-6 w-full max-w-7xl mx-auto">
+    <div className="space-y-6 w-full max-w-6xl mx-auto">
       {/* Profile header */}
       <div
         className="px-4 md:px-6 lg:px-10 pt-8 md:pt-10 pb-6 relative overflow-hidden bg-white rounded-[20px] border border-[#EEF0F5] shadow-sm"
@@ -94,12 +189,24 @@ export default function CustomerDetails({ customer, onBackToList }) {
         </div>
 
         <div className="relative flex flex-col items-center text-center gap-2">
-          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-[3px] border-[#EBF2FD] shadow-md mb-1 bg-white">
-            <img
-              src={customer.avatar}
-              alt={customer.name}
-              className="w-full h-full object-cover"
-            />
+          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-[3px] border-[#EBF2FD] shadow-md mb-1 bg-white flex items-center justify-center">
+            {customer.avatar && isValidImageUrl(customer.avatar) && !avatarFailed ? (
+              <img
+                src={customer.avatar}
+                alt={customer.name}
+                className="w-full h-full object-cover"
+                onError={() => setAvatarFailed(true)}
+              />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center"
+                style={{ backgroundColor: getAvatarColor(customer.name, customer.id || customer._id) }}
+              >
+                <span className="text-white font-semibold text-lg">
+                  {getInitials(customer.firstName, customer.lastName, customer.name)}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -130,7 +237,7 @@ export default function CustomerDetails({ customer, onBackToList }) {
             <span className="text-xs md:text-sm font-medium">
               <span className="text-primary font-medium">Total Spend</span>{" "}
               <span className="text-primary-light font-semibold">
-                AU${customer.spend || "3,240"}
+                AU${(typeof customer.spend === "number" ? customer.spend : Number(customer.spend || 0)).toLocaleString()}
               </span>
             </span>
           </div>
@@ -165,10 +272,17 @@ export default function CustomerDetails({ customer, onBackToList }) {
 
       {/* Tab Content */}
       <div className="mt-4">
-        {activeTab === "overview" && <OverviewTab customer={customer} onViewJobs={() => setActiveTab("jobsHistory")} />}
+        {activeTab === "overview" && (
+          <OverviewTab
+            customer={customer}
+            jobs={customerJobs}
+            onViewJobs={() => setActiveTab("jobsHistory")}
+          />
+        )}
         {activeTab === "jobsHistory" && (
           <JobsHistoryTab
             customer={customer}
+            jobs={customerJobs}
             onViewJob={(job) => {
               const amount = job.amount || 0;
               const platformFees = Math.round(amount * 0.15 * 100) / 100;
@@ -205,7 +319,13 @@ export default function CustomerDetails({ customer, onBackToList }) {
           />
         )}
         {activeTab === "payments" && <PaymentsTab customer={customer} />}
-        {activeTab === "feedback" && <FeedbackTab customer={customer} />}
+        {activeTab === "feedback" && (
+          <FeedbackTab
+            customer={customer}
+            reviews={customerReviews}
+            pagination={reviewsPagination}
+          />
+        )}
       </div>
 
       {/* Global action modal for Suspend */}

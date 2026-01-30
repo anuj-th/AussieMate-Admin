@@ -4,6 +4,7 @@ import Sidebar from "./Sidebar";
 import AppRoutes from "../routes/AppRoutes";
 import Header from "./Header";
 import { Menu } from "lucide-react";
+import { BreadcrumbProvider } from "../context/BreadcrumbContext";
 
 export default function AppLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -52,44 +53,46 @@ export default function AppLayout() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F9FAFB]">
-      {/* Fixed Sidebar */}
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-      
-      {/* Floating toggle button (shows when sidebar is closed) */}
-      {!isSidebarOpen && (
-        <button
-          onClick={toggleSidebar}
-          className="fixed top-4 left-4 z-50 p-2 bg-white cursor-pointer"
+    <BreadcrumbProvider>
+      <div className="flex flex-col min-h-screen bg-[#F9FAFB]">
+        {/* Fixed Sidebar */}
+        <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+        
+        {/* Floating toggle button (shows when sidebar is closed) */}
+        {!isSidebarOpen && (
+          <button
+            onClick={toggleSidebar}
+            className="fixed top-4 left-4 z-50 p-2 bg-white cursor-pointer"
+          >
+            <Menu size={20} className="text-gray-600" />
+          </button>
+        )}
+
+        {/* Fixed Header */}
+        <Header
+          sidebarOpen={isSidebarOpen}
+          onSearchChange={handleGlobalSearch}
+          searchPlaceholder="Search pages (e.g. Jobs, Payments)"
+        />
+
+        {/* Main content area */}
+        <div 
+          className={`flex-1 flex flex-col transition-all duration-300 ease-in-out
+            ${isSidebarOpen 
+              ? 'xl:ml-[290px] lg:ml-[240px] ml-0' 
+              : 'ml-0'
+            }`}
+          style={{ 
+            marginTop: '64px'
+          }}
         >
-          <Menu size={20} className="text-gray-600" />
-        </button>
-      )}
-
-      {/* Fixed Header */}
-      <Header
-        sidebarOpen={isSidebarOpen}
-        onSearchChange={handleGlobalSearch}
-        searchPlaceholder="Search pages (e.g. Jobs, Payments)"
-      />
-
-      {/* Main content area */}
-      <div 
-        className={`flex-1 flex flex-col transition-all duration-300 ease-in-out
-          ${isSidebarOpen 
-            ? 'xl:ml-[290px] lg:ml-[240px] ml-0' 
-            : 'ml-0'
-          }`}
-        style={{ 
-          marginTop: '64px'
-        }}
-      >
-        {/* Scrollable Content area with padding */}
-        <div className="flex-1 p-6 overflow-y-auto">
-          <AppRoutes />
+          {/* Scrollable Content area with padding */}
+          <div className="flex-1 p-6 overflow-y-auto">
+            <AppRoutes />
+          </div>
         </div>
       </div>
-    </div>
+    </BreadcrumbProvider>
   );
 }
 

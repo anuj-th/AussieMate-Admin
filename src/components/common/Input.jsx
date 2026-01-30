@@ -13,6 +13,7 @@ const Input = ({
   error = false,
   errorMessage = '',
   className = '',
+  labelClassName = '',
   ...props
 }) => {
   return (
@@ -20,7 +21,7 @@ const Input = ({
       {label && (
         <label
           htmlFor={id || name}
-          className="block text-sm font-semibold text-gray-900 mb-2"
+          className={`block text-sm font-semibold text-gray-900 mb-2 ${labelClassName}`}
         >
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}

@@ -1,14 +1,61 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import CleanersTable from "../components/cleaners/CleanersTable";
 import CleanerDetails from "../components/cleaners/CleanerDetails";
 import PageHeader from "../layout/PageHeader";
+import { useBreadcrumb } from "../context/BreadcrumbContext";
 
 export default function Cleaners() {
   const [selectedCleaner, setSelectedCleaner] = useState(null);
+  const { setExtraCrumbs, setParentBreadcrumbOnClick } = useBreadcrumb();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { cleanerId } = useParams();
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     setSelectedCleaner(null);
+    navigate("/cleaners", { replace: true });
+  }, [navigate]);
+
+  useEffect(() => {
+    if (location.state?.cleaner) {
+      setSelectedCleaner(location.state.cleaner);
+    }
+    // Note: If cleanerId is in URL but no location.state, 
+    // the table component would need to expose data via ref to find the cleaner
+  }, [location.state, cleanerId]);
+
+  const handleViewCleaner = (cleaner) => {
+    setSelectedCleaner(cleaner);
+    const id = cleaner.id || cleaner._id;
+    if (id) {
+      navigate(`/cleaners/${id}`, { state: { cleaner }, replace: true });
+    }
   };
+
+  // Update breadcrumbs when cleaner is selected
+  useEffect(() => {
+    if (selectedCleaner?.name) {
+      setExtraCrumbs([
+        { 
+          label: selectedCleaner.name, 
+          path: null 
+        }
+      ]);
+      setParentBreadcrumbOnClick(() => handleBack);
+    } else {
+      setExtraCrumbs([]);
+      setParentBreadcrumbOnClick(null);
+    }
+  }, [selectedCleaner, setExtraCrumbs, setParentBreadcrumbOnClick, handleBack]);
+
+  // Cleanup: clear breadcrumbs when component unmounts
+  useEffect(() => {
+    return () => {
+      setExtraCrumbs([]);
+      setParentBreadcrumbOnClick(null);
+    };
+  }, [setExtraCrumbs, setParentBreadcrumbOnClick]);
 
   return (
     <div>
@@ -21,7 +68,7 @@ export default function Cleaners() {
       {selectedCleaner ? (
         <CleanerDetails cleaner={selectedCleaner} onBackToList={handleBack} />
       ) : (
-        <CleanersTable onViewCleaner={setSelectedCleaner} />
+        <CleanersTable onViewCleaner={handleViewCleaner} />
       )}
     </div>
   );

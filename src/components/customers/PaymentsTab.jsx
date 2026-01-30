@@ -20,7 +20,6 @@ import InvoiceModal from "../common/InvoiceModal";
 import PaginationRanges from "../common/PaginationRanges";
 import ReleaseFundsModal from "../common/ReleaseFundsModal";
 import ActionModal from "../common/ActionModal";
-import tableSortIcon from "../../assets/icon/tableSort.svg";
 
 const defaultPayments = [
     {
@@ -114,10 +113,14 @@ export default function PaymentsTab({ customer }) {
         return date.toISOString().split("T")[0];
     };
 
-    const totalSpend = useMemo(
-        () => payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
-        [payments]
-    );
+    const totalSpend = useMemo(() => {
+        // Keep consistent with CustomersTable / CustomerDetails which use stats-derived `customer.spend`
+        if (customer?.spend !== undefined && customer?.spend !== null) {
+            return typeof customer.spend === "number" ? customer.spend : Number(customer.spend || 0);
+        }
+        // Fallback: derive from payment history amounts
+        return payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+    }, [customer?.spend, payments]);
 
     const activeEscrowAmount = useMemo(
         () =>
@@ -469,51 +472,18 @@ export default function PaymentsTab({ customer }) {
                                     </div>
                                 </th>
                                 <th className="min-w-[140px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                    <div
-                                        className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                                        onClick={() => handleSort("date")}
-                                    >
-                                        <span className="font-medium text-gray-700 text-xs md:text-xs">Date</span>
-                                        <img
-                                            src={tableSortIcon}
-                                            alt="sort"
-                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                        />
-                                        {getSortIcon("date")}
-                                    </div>
+                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Date</span>
                                 </th>
                                 <th className="min-w-[140px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                    <div
-                                        className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                                        onClick={() => handleSort("amount")}
-                                    >
-                                        <span className="font-medium text-gray-700 text-xs md:text-xs">Amount</span>
-                                        <img
-                                            src={tableSortIcon}
-                                            alt="sort"
-                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                        />
-                                        {getSortIcon("amount")}
-                                    </div>
+                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Amount</span>
                                 </th>
                                 <th className="min-w-[160px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                    <div
-                                        className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                                        onClick={() => handleSort("paymentMode")}
-                                    >
-                                        <span className="font-medium text-gray-700 text-xs md:text-xs">
-                                            Payment Mode
-                                        </span>
-                                        <img
-                                            src={tableSortIcon}
-                                            alt="sort"
-                                            className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                                        />
-                                        {getSortIcon("paymentMode")}
-                                    </div>
+                                    <span className="font-medium text-gray-700 text-xs md:text-sm">
+                                        Payment Mode
+                                    </span>
                                 </th>
                                 <th className="min-w-[140px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                                    <span className="font-medium text-gray-700 text-xs md:text-xs">Status</span>
+                                    <span className="font-medium text-gray-700 text-xs md:text-sm">Status</span>
                                 </th>
                                 <th className="w-14 md:w-16 px-2 md:px-4 py-2 md:py-3 text-center"></th>
                             </tr>

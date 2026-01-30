@@ -3,6 +3,8 @@ import { Search } from "lucide-react";
 export default function SearchInput({
   placeholder = "Search",
   onChange,
+  onKeyDown,
+  value,
   className = "",
 }) {
   return (
@@ -14,8 +16,10 @@ export default function SearchInput({
       <input
         type="text"
         placeholder={placeholder}
+        value={value}
         className="pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full bg-[#FCFCFC]"
         onChange={(e) => onChange && onChange(e.target.value)}
+        onKeyDown={onKeyDown}
       />
     </div>
   );

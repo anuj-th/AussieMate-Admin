@@ -11,23 +11,35 @@ export default function FeedbackTab({ jobDetails, renderStars }) {
             </div>
 
             <div className="space-y-3 px-4 sm:px-5 md:px-6 lg:px-4 xl:px-7 py-4 sm:py-5">
-                <div className="flex items-center gap-1">
-                    {renderStars(jobDetails.feedback.rating)}
-                    <span className="text-xs sm:text-sm">{jobDetails.feedback.rating}</span>
-                </div>
+                {jobDetails.feedback.rating > 0 ? (
+                    <>
+                        <div className="flex items-center gap-1">
+                            {renderStars(jobDetails.feedback.rating)}
+                            <span className="text-xs sm:text-sm">{jobDetails.feedback.rating}</span>
+                        </div>
 
-                <p className="text-xs sm:text-sm text-primary">{jobDetails.feedback.comment}</p>
-                <div className="flex items-center gap-3">
+                        {jobDetails.feedback.comment && (
+                            <p className="text-xs sm:text-sm text-primary">{jobDetails.feedback.comment}</p>
+                        )}
+                    </>
+                ) : (
+                    <p className="text-xs sm:text-sm text-primary-light">No feedback available</p>
+                )}
+                
+                {/* Customer Profile */}
+                <div className="flex items-center gap-3 pt-2 border-t border-[#F1F1F4]">
                     <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
                         <img
-                            src={jobDetails.feedback.avatar || jobDetails.cleaner.avatar || jobDetails.customer.avatar}
-                            alt={jobDetails.feedback.reviewer}
+                            src={jobDetails.customer.avatar}
+                            alt={jobDetails.customer.name}
                             className="w-full h-full object-cover"
                         />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-sm font-medium text-primary">{jobDetails.feedback.reviewer}</span>
-                        <span className="text-xs text-primary-light">{jobDetails.feedback.date}</span>
+                        <span className="text-sm font-medium text-primary">{jobDetails.customer.name}</span>
+                        {jobDetails.feedback.date && (
+                            <span className="text-xs text-primary-light">{jobDetails.feedback.date}</span>
+                        )}
                     </div>
                 </div>
             </div>

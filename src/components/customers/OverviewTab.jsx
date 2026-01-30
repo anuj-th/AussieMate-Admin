@@ -3,46 +3,68 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
 
-const recentJobsData = [
-  {
-    id: 1,
-    jobId: "AM10432",
-    service: "Cleaning • Bond Cleaning",
-    price: 320,
-    status: "Completed",
-    location: "355, Swan Street, Richmond Station",
-    date: "23 Aug, 2:00 PM",
-  },
-  {
-    id: 2,
-    jobId: "AM10432",
-    service: "Housekeeping",
-    price: 220,
-    status: "Completed",
-    location: "360, Toorak Road, The Como Melbourne",
-    date: "23 Aug, 2:00 PM",
-  },
-  {
-    id: 3,
-    jobId: "AM10432",
-    service: "Handyman",
-    price: 150,
-    status: "Completed",
-    location: "660, Anzac Parade, University of New South Wales",
-    date: "23 Aug, 2:00 PM",
-  },
-  {
-    id: 4,
-    jobId: "AM10433",
-    service: "Cleaning • Deep Clean",
-    price: 280,
-    status: "Completed",
-    location: "120, Collins Street, Melbourne CBD",
-    date: "22 Aug, 10:00 AM",
-  },
-];
+const formatShortDateTime = (value) => {
+  if (!value) return "N/A";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "N/A";
+  return d.toLocaleString(undefined, {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
-export default function OverviewTab({ customer, onViewJobs }) {
+const mapCustomerJobForUi = (job) => {
+  const statusRaw = (job?.status || job?.jobStatus || "").toString().toLowerCase();
+  const status =
+    statusRaw === "completed" || statusRaw === "done"
+      ? "Completed"
+      : statusRaw === "cancelled" || statusRaw === "canceled"
+      ? "Cancelled"
+      : statusRaw === "rejected"
+      ? "Cancelled"
+      : "In Progress";
+
+  const locationObj = job?.location || {};
+  const location =
+    locationObj?.fullAddress ||
+    locationObj?.address ||
+    [locationObj?.city, locationObj?.state].filter(Boolean).join(", ") ||
+    "N/A";
+
+  const service =
+    job?.serviceTypeDisplay ||
+    job?.serviceType ||
+    job?.service ||
+    job?.jobType ||
+    "Service";
+
+  const detail =
+    job?.serviceDetail ||
+    job?.propertyType ||
+    job?.petType ||
+    "";
+
+  const amount =
+    job?.acceptedQuoteId?.price ??
+    job?.customerQuote?.price ??
+    job?.amount ??
+    job?.price ??
+    0;
+
+  return {
+    id: job?._id || job?.id || job?.jobId,
+    jobId: job?.jobId || job?._id || "N/A",
+    service: detail ? `${service} • ${detail}` : service,
+    price: Number(amount || 0),
+    status,
+    location,
+    date: formatShortDateTime(job?.scheduledDate || job?.createdAt || job?.updatedAt),
+  };
+};
+
+export default function OverviewTab({ customer, jobs = [], onViewJobs }) {
   const handleViewJobs = () => {
     if (onViewJobs) {
       onViewJobs();
@@ -50,17 +72,26 @@ export default function OverviewTab({ customer, onViewJobs }) {
   };
 
   // Calculate stats from customer data
-  const jobsPosted = customer?.jobsPosted || 22;
-  const jobsCompleted = customer?.jobsCompleted || 22;
+  const jobsPosted = Array.isArray(jobs) ? jobs.length : (customer?.jobsPosted || 0);
+  const jobsCompleted = Array.isArray(jobs)
+    ? jobs.filter((j) => ["completed", "done"].includes((j?.status || "").toString().toLowerCase())).length
+    : (customer?.jobsCompleted || 0);
   const avgCleanerRating = customer?.avgCleanerRating || 4.3;
-  const totalSpend = customer?.spend 
-    ? parseFloat(customer.spend.replace(/,/g, "")) 
-    : 12420;
+  const totalSpend = (() => {
+    const v = customer?.spend;
+    if (v === undefined || v === null) return 0;
+    if (typeof v === "number") return v;
+    // handle strings like "1,240"
+    const parsed = Number(v.toString().replace(/,/g, ""));
+    return Number.isFinite(parsed) ? parsed : 0;
+  })();
+
+  const recentJobs = (Array.isArray(jobs) ? jobs : []).map(mapCustomerJobForUi).slice(0, 8);
 
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Jobs Posted */}
         <div className="bg-white border border-[#E5E7EB] rounded-lg p-4 flex items-center gap-3 shadow-sm">
           <div className="w-10 h-10 rounded-lg bg-[#EBF2FD] border border-[#E5E7EB] flex items-center justify-center flex-shrink-0">
@@ -88,7 +119,7 @@ export default function OverviewTab({ customer, onViewJobs }) {
         </div>
 
         {/* Avg Cleaner Rating */}
-        <div className="bg-white border border-[#E5E7EB] rounded-lg p-4 flex items-center gap-3 shadow-sm">
+        {/* <div className="bg-white border border-[#E5E7EB] rounded-lg p-4 flex items-center gap-3 shadow-sm">
           <div className="w-10 h-10 rounded-lg bg-[#EBF2FD] border border-[#E5E7EB] flex items-center justify-center flex-shrink-0">
             <Star size={20} className="text-[#2563EB]" />
           </div>
@@ -98,7 +129,7 @@ export default function OverviewTab({ customer, onViewJobs }) {
             </p>
             <p className="text-sm font-medium text-primary-light">Avg Cleaner Rating</p>
           </div>
-        </div>
+        </div> */}
 
         {/* Total Spend */}
         <div className="bg-white border border-[#E5E7EB] rounded-lg p-4 flex items-center gap-3 shadow-sm">
@@ -128,71 +159,80 @@ export default function OverviewTab({ customer, onViewJobs }) {
           </button>
         </div>
         <div className="overflow-hidden">
-          <Swiper
-            modules={[Autoplay]}
-            spaceBetween={16}
-            slidesPerView="auto"
-            autoplay={{ delay: 2800, disableOnInteraction: false }}
-            loop={true}
-            className="!overflow-hidden !flex"
-            style={{ display: "flex", alignItems: "stretch", paddingBottom: "8px" }}
-          >
-            {recentJobsData.map((job) => {
-              const isCompleted = job.status === "Completed";
-              return (
-                <SwiperSlide
-                  key={job.id}
-                  className="h-full flex"
-                  style={{ width: "auto", height: "100%", display: "flex" }}
-                >
-                   <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-2 md:min-w-[350px] h-full min-h-full shadow-sm flex flex-col cursor-pointer">
-                    {/* Top row: Job ID and Status */}
-                    <div className="flex items-start justify-between mb-0">
-                      <p className="text-sm text-primary-light font-medium">
-                        {job.jobId}
-                      </p>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-flex items-center gap-1 ${
-                          isCompleted
-                            ? "bg-[#EAFFF1] text-[#17C653] border border-[#17C65333]"
-                            : "bg-[#FFF8DD] text-[#F6B100] border border-[#F6B10033]"
-                        }`}
-                      >
+          {recentJobs.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-xl p-6 text-sm text-primary-light">
+              No jobs found for this customer.
+            </div>
+          ) : (
+            <Swiper
+              modules={[Autoplay]}
+              spaceBetween={16}
+              slidesPerView="auto"
+              autoplay={{ delay: 2800, disableOnInteraction: false }}
+              loop={recentJobs.length > 1}
+              className="!overflow-hidden !flex"
+              style={{ display: "flex", alignItems: "stretch", paddingBottom: "8px" }}
+            >
+              {recentJobs.map((job) => {
+                const isCompleted = job.status === "Completed";
+                const isCancelled = job.status === "Cancelled";
+                return (
+                  <SwiperSlide
+                    key={job.id}
+                    className="h-full flex !w-[320px]"
+                    style={{ height: "100%", display: "flex" }}
+                  >
+                    <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-2 w-full h-full shadow-sm flex flex-col cursor-pointer">
+                      {/* Top row: Job ID and Status */}
+                      <div className="flex items-start justify-between mb-0 gap-3">
+                        <p className="text-sm text-primary-light font-medium truncate min-w-0">
+                          {job.jobId}
+                        </p>
                         <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            isCompleted ? "bg-[#17C653]" : "bg-[#F6B100]"
+                          className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-flex items-center gap-1 ${
+                            isCompleted
+                              ? "bg-[#EAFFF1] text-[#17C653] border border-[#17C65333]"
+                              : isCancelled
+                              ? "bg-[#FEE2E2] text-[#EF4444] border border-[#EF444433]"
+                              : "bg-[#FFF8DD] text-[#F6B100] border border-[#F6B10033]"
                           }`}
-                        />
-                        {job.status}
-                      </span>
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              isCompleted ? "bg-[#17C653]" : isCancelled ? "bg-[#EF4444]" : "bg-[#F6B100]"
+                            }`}
+                          />
+                          {job.status}
+                        </span>
+                      </div>
+
+                      {/* Service Type */}
+                      <p className="text-sm font-medium text-primary mb-0 truncate">
+                        {job.service}
+                      </p>
+
+                      {/* Price */}
+                      <p className="text-base font-semibold text-primary mb-2">
+                        AU${job.price.toLocaleString()}
+                      </p>
+
+                      {/* Location */}
+                      <div className="flex items-start gap-1.5 text-sm font-medium text-primary-light">
+                        <MapPin size={14} className="flex-shrink-0 mt-0.5" />
+                        <span className="truncate min-w-0">{job.location}</span>
+                      </div>
+
+                      {/* Date & Time */}
+                      <div className="flex items-center gap-1.5 text-sm font-medium text-primary-light">
+                        <Calendar size={14} className="flex-shrink-0" />
+                        <span>{job.date}</span>
+                      </div>
                     </div>
-                    
-                    {/* Service Type */}
-                    <p className="text-sm font-medium text-primary mb-0">
-                      {job.service}
-                    </p>
-                    
-                    {/* Price */}
-                    <p className="text-base font-semibold text-primary mb-2">
-                      AU${job.price}
-                    </p>
-                    
-                    {/* Location */}
-                    <div className="flex items-start gap-1.5 text-sm font-medium text-primary-light">
-                      <MapPin size={14} className="flex-shrink-0 mt-0.5" />
-                      <span className="line-clamp-2">{job.location}</span>
-                    </div>
-                    
-                    {/* Date & Time */}
-                    <div className="flex items-center gap-1.5 text-sm font-medium text-primary-light">
-                      <Calendar size={14} className="flex-shrink-0" />
-                      <span>{job.date}</span>
-                    </div>
-                  </div>
-                </SwiperSlide>
-              );
-            })}
-          </Swiper>
+                  </SwiperSlide>
+                );
+              })}
+            </Swiper>
+          )}
         </div>
       </div>
     </div>

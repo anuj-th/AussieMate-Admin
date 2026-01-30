@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Star,
   Ban,
@@ -21,15 +21,273 @@ import JobHistoryTab from "./JobHistoryTab";
 import EarningsTab from "./EarningsTab";
 import FeedbackTab from "./FeedbackTab";
 import JobDetails from "../jobs/JobDetails";
+import { fetchCleanerById, fetchCleanersJobsStats, fetchCleanerJobs, fetchCleanerReviews } from "../../api/services/cleanersService";
 
 export default function CleanerDetails({ cleaner, onBackToList }) {
   if (!cleaner) return null;
+
+  const originalData = cleaner.originalData || cleaner;
+  const cleanerId = originalData._id || cleaner._id || cleaner.id;
 
   const [activeAction, setActiveAction] = useState(null); // "approve" | "reject" | "suspend" | null
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedJob, setSelectedJob] = useState(null);
 
-  const tier = cleaner.badge || "Silver";
+  const [jobsCompleted, setJobsCompleted] = useState(
+    originalData.jobs ?? originalData.totalJobs ?? originalData.jobsCompleted ?? cleaner.jobs ?? 0
+  );
+  const [averageRating, setAverageRating] = useState(
+    originalData.averageRating ?? originalData.rating ?? cleaner.rating ?? 0
+  );
+  const [cleanerTier, setCleanerTier] = useState(
+    originalData.tier ?? originalData.badge ?? cleaner.badge ?? "Silver"
+  );
+  const [fetchedCleaner, setFetchedCleaner] = useState(null);
+  const [cleanerJobs, setCleanerJobs] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsPagination, setReviewsPagination] = useState(null);
+  const [avatarFailed, setAvatarFailed] = useState(false);
+
+  // Avatar helpers (same behavior as CleanersTable fallback)
+  const isValidImageUrl = (url) => {
+    if (!url || typeof url !== "string") return false;
+    return url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:");
+  };
+
+  const getInitials = (firstName, lastName, fullName) => {
+    if (firstName && lastName) {
+      return `${firstName.charAt(0).toUpperCase()}${lastName.charAt(0).toUpperCase()}`;
+    }
+    if (fullName) {
+      const parts = fullName.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        return `${parts[0].charAt(0).toUpperCase()}${parts[parts.length - 1].charAt(0).toUpperCase()}`;
+      }
+      return parts[0].charAt(0).toUpperCase();
+    }
+    return "?";
+  };
+
+  const getAvatarColor = (name, id) => {
+    const colors = [
+      "#FF6B6B",
+      "#4ECDC4",
+      "#45B7D1",
+      "#FFA07A",
+      "#98D8C8",
+      "#F7DC6F",
+      "#BB8FCE",
+      "#85C1E2",
+      "#F8B739",
+      "#52BE80",
+      "#EC7063",
+      "#5DADE2",
+      "#F1948A",
+      "#82E0AA",
+      "#F4D03F",
+      "#A569BD",
+    ];
+    const str = name || id || "default";
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  };
+
+  const mapJobForUi = (job) => {
+    const statusRaw = (job?.status || "").toString().toLowerCase();
+    const status =
+      statusRaw === "completed" || statusRaw === "done"
+        ? "Completed"
+        : statusRaw === "rejected" || statusRaw === "cancelled" || statusRaw === "canceled"
+        ? "Rejected"
+        : "In Progress";
+
+    const amount =
+      job?.cleanerQuote?.price ??
+      job?.acceptedQuoteId?.price ??
+      job?.amount ??
+      job?.price ??
+      0;
+
+    const customer = job?.customerId || job?.customer || {};
+    const customerName =
+      customer?.name ||
+      `${customer?.firstName || ""} ${customer?.lastName || ""}`.trim() ||
+      "N/A";
+
+    const locationObj = job?.location || {};
+    const location =
+      locationObj?.fullAddress ||
+      locationObj?.address ||
+      [locationObj?.city, locationObj?.state].filter(Boolean).join(", ") ||
+      "N/A";
+
+    return {
+      // keep original job fields for JobDetails view if needed
+      ...job,
+      id: job?._id || job?.id || job?.jobId,
+      _id: job?._id,
+      jobId: job?.jobId || job?._id || "N/A",
+      customer: {
+        ...customer,
+        name: customerName,
+        email: customer?.email || "N/A",
+        avatar: customer?.avatar || customer?.profilePhoto?.url || customer?.profilePhoto || "",
+      },
+      joined: (job?.scheduledDate || job?.createdAt || job?.updatedAt || "").toString().slice(0, 10),
+      amount: Number(amount || 0),
+      status,
+      // fields used by OverviewTab
+      type: job?.serviceTypeDisplay || job?.serviceType || "Job",
+      subType: job?.serviceDetail || job?.service || job?.propertyType || "Service",
+      location,
+      date: job?.scheduledDate || job?.createdAt || job?.updatedAt,
+      releasedDate: job?.completedAt ? `Released ${new Date(job.completedAt).toLocaleDateString()}` : "",
+    };
+  };
+
+  // Fetch completed jobs (stats endpoint is the most reliable)
+  useEffect(() => {
+    const loadJobsStats = async () => {
+      if (!cleanerId) return;
+      try {
+        const response = await fetchCleanersJobsStats();
+        const stats = response?.data || response || [];
+        const match = Array.isArray(stats)
+          ? stats.find((s) => s.cleanerId === cleanerId || s._id === cleanerId)
+          : null;
+        if (match?.completedJobs !== undefined && match?.completedJobs !== null) {
+          setJobsCompleted(match.completedJobs);
+        }
+      } catch (e) {
+        // non-fatal; keep whatever we already have
+        console.warn("Failed to load cleaner jobs stats", e);
+      }
+    };
+
+    loadJobsStats();
+  }, [cleanerId]);
+
+  // Fetch cleaner details for rating/tier (and any other missing fields)
+  useEffect(() => {
+    const loadCleaner = async () => {
+      if (!cleanerId) return;
+
+      // If we already have these fields locally, avoid extra request
+      const hasLocalRating = originalData.averageRating !== undefined && originalData.averageRating !== null;
+      const hasLocalTier = originalData.tier !== undefined && originalData.tier !== null;
+      if (hasLocalRating) setAverageRating(originalData.averageRating);
+      if (hasLocalTier) setCleanerTier(originalData.tier);
+      if (hasLocalRating && hasLocalTier) return;
+
+      try {
+        const resp = await fetchCleanerById(cleanerId);
+        const data = resp?.data || resp;
+        if (data) {
+          setFetchedCleaner(data);
+          if (data.averageRating !== undefined && data.averageRating !== null) {
+            setAverageRating(data.averageRating);
+          }
+          if (data.tier) {
+            setCleanerTier(data.tier);
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to load cleaner details", e);
+      }
+    };
+
+    loadCleaner();
+  }, [cleanerId, originalData]);
+
+  // Fetch jobs for this cleaner
+  useEffect(() => {
+    const loadJobs = async () => {
+      if (!cleanerId) return;
+      try {
+        const resp = await fetchCleanerJobs(cleanerId);
+        const data = resp?.data || resp;
+        const list = Array.isArray(data) ? data : Array.isArray(data?.jobs) ? data.jobs : [];
+        const mapped = list.map(mapJobForUi);
+        // Most recent first
+        mapped.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+        setCleanerJobs(mapped);
+      } catch (e) {
+        console.warn("Failed to load cleaner jobs", e);
+        setCleanerJobs([]);
+      }
+    };
+
+    loadJobs();
+  }, [cleanerId]);
+
+  // Fetch reviews for this cleaner (Feedback tab + average rating)
+  useEffect(() => {
+    const loadReviews = async () => {
+      if (!cleanerId) return;
+      try {
+        const resp = await fetchCleanerReviews(cleanerId, { page: 1, limit: 50 });
+        const data = resp?.data || resp;
+        const list = Array.isArray(data?.reviews) ? data.reviews : Array.isArray(data) ? data : [];
+        setReviews(list);
+        setReviewsPagination(data?.pagination || resp?.pagination || null);
+
+        // Prefer backend computed average rating if provided
+        const avg = data?.pagination?.averageRating;
+        if (avg !== undefined && avg !== null) {
+          setAverageRating(avg);
+        }
+      } catch (e) {
+        console.warn("Failed to load cleaner reviews", e);
+        setReviews([]);
+        setReviewsPagination(null);
+      }
+    };
+
+    loadReviews();
+  }, [cleanerId]);
+
+  const displayCleaner = useMemo(() => {
+    // prefer prop-mapped fields for UI (name/avatar/role/joined), but enrich with fetched API payload
+    return {
+      ...originalData,
+      ...(fetchedCleaner || {}),
+      // UI-friendly name/avatar/role from the mapped cleaner object (keeps consistency with table)
+      name: cleaner.name ?? fetchedCleaner?.name ?? originalData.name,
+      avatar: cleaner.avatar ?? fetchedCleaner?.avatar ?? originalData.avatar,
+      role: cleaner.role ?? fetchedCleaner?.role ?? originalData.role,
+      joined: cleaner.joined ?? fetchedCleaner?.joined ?? originalData.joined,
+      earnings: cleaner.earnings ?? fetchedCleaner?.earnings ?? originalData.earnings,
+    };
+  }, [cleaner, fetchedCleaner, originalData]);
+
+  // If we navigate between cleaners, reset avatar failure state.
+  useEffect(() => {
+    setAvatarFailed(false);
+  }, [cleanerId]);
+
+  const totalEarningsFromJobs = useMemo(() => {
+    const getJobAmount = (job) =>
+      Number(
+        job?.cleanerQuote?.price ??
+          job?.acceptedQuoteId?.price ??
+          job?.amount ??
+          job?.price ??
+          0
+      ) || 0;
+
+    const isCompletedJob = (job) => {
+      const status = (job?.status || job?.jobStatus || "").toString().toLowerCase();
+      return status === "completed" || status === "done";
+    };
+
+    return (cleanerJobs || []).filter(isCompletedJob).reduce((sum, job) => sum + getJobAmount(job), 0);
+  }, [cleanerJobs]);
+
+  const tier = (cleanerTier || displayCleaner.tier || displayCleaner.badge || "Silver").toString();
   const tierLabel = `${tier.charAt(0).toUpperCase()}${tier.slice(1).toLowerCase()} Tier`;
 
   const tierIcon =
@@ -41,12 +299,38 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
 
   const closeModal = () => setActiveAction(null);
 
+  const locationLabel = useMemo(() => {
+    const d = displayCleaner || {};
+    const candidates = [
+      d.location,
+      d.city,
+      d.suburb,
+      d.state,
+      d.address?.suburb,
+      d.address?.city,
+      d.address?.state,
+      d.profile?.address?.suburb,
+      d.profile?.address?.city,
+      d.profile?.address?.state,
+    ].filter(Boolean);
+
+    if (typeof candidates[0] === "string") {
+      // best-effort: if we have separate suburb/state, join them nicely
+      const suburb = d.suburb || d.address?.suburb || d.profile?.address?.suburb;
+      const state = d.state || d.address?.state || d.profile?.address?.state;
+      if (suburb && state) return `${suburb}, ${state}`;
+      return candidates[0];
+    }
+
+    return "N/A";
+  }, [displayCleaner]);
+
   const tabs = [
-    { id: "overview", label: "Overview (Default)" },
-    { id: "documents", label: "Documents & KYC" },
-    { id: "jobHistory", label: "Job History" },
-    { id: "earnings", label: "Earnings & Payouts" },
-    { id: "feedback", label: "Feedback & Ratings" },
+    { id: "overview", label: "Overview (Default)", shortLabel: "Overview" },
+    { id: "documents", label: "Documents & KYC", shortLabel: "Documents" },
+    { id: "jobHistory", label: "Job History", shortLabel: "Jobs" },
+    { id: "earnings", label: "Earnings & Payouts", shortLabel: "Earnings" },
+    { id: "feedback", label: "Feedback & Ratings", shortLabel: "Feedback" },
   ];
 
   if (selectedJob) {
@@ -60,6 +344,7 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
 
   return (
     <div className="space-y-6 w-full max-w-6xl mx-auto ">
+      
       {/* Profile header */}
       <div
         className="px-4 md:px-6 lg:px-10 pt-8 md:pt-10 pb-6 relative overflow-hidden bg-white rounded-[20px] border border-[#EEF0F5] "
@@ -88,23 +373,35 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
         </div>
 
         <div className="relative flex flex-col items-center text-center gap-2">
-          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-[3px] border-[#EBF2FD] shadow-sm mb-1 bg-white">
-            <img
-              src={cleaner.avatar}
-              alt={cleaner.name}
-              className="w-full h-full object-cover"
-            />
+          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-[3px] border-[#EBF2FD] shadow-sm mb-1 bg-white flex items-center justify-center">
+            {displayCleaner.avatar && isValidImageUrl(displayCleaner.avatar) && !avatarFailed ? (
+              <img
+                src={displayCleaner.avatar}
+                alt={displayCleaner.name}
+                className="w-full h-full object-cover"
+                onError={() => setAvatarFailed(true)}
+              />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center"
+                style={{ backgroundColor: getAvatarColor(displayCleaner.name, cleanerId) }}
+              >
+                <span className="text-white font-semibold text-lg">
+                  {getInitials(displayCleaner.firstName, displayCleaner.lastName, displayCleaner.name)}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
             {/* Name + role in a single row */}
             <div className="flex flex-wrap items-center justify-center gap-2">
               <h2 className="text-base md:text-lg font-semibold text-primary">
-                {cleaner.name}
+                {displayCleaner.name}
               </h2>
-              {cleaner.role && (
+              {displayCleaner.role && (
                 <span className="text-xs md:text-sm text-[#9CA3AF]">
-                  • {cleaner.role}
+                  • {displayCleaner.role}
                 </span>
               )}
             </div>
@@ -113,15 +410,15 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
             <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4 mt-1 text-xs md:text-sm text-primary-light font-medium">
               <span className="flex items-center gap-1.5">
                 <MapPin size={12} className="md:w-[14px] md:h-[14px]" />
-                <span>Parramatta, NSW</span>
+                <span>{locationLabel}</span>
               </span>
               <span className="flex items-center gap-1.5">
                 <Briefcase size={12} className="md:w-[14px] md:h-[14px]" />
-                <span>Jobs Completed: {cleaner.jobs || 128}</span>
+                <span>Jobs Completed: {jobsCompleted}</span>
               </span>
               <span className="flex items-center gap-1.5">
                 <Calendar size={12} className="md:w-[14px] md:h-[14px]" />
-                <span>Joined: {cleaner.joined || "12 Jul 2025"}</span>
+                <span>Joined: {displayCleaner.joined || "N/A"}</span>
               </span>
             </div>
           </div>
@@ -130,7 +427,9 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
           <div className="mt-4 px-3 md:px-4 py-2 bg-[#F9FAFB] border border-[#E5E7EB] rounded-md">
             <span className="text-xs md:text-sm font-medium">
               <span className="text-primary">Earnings</span>{" "}
-              <span className="text-primary-light font-semibold">AU${cleaner.earnings?.toLocaleString() || "12,420"}</span>
+              <span className="text-primary-light font-semibold">
+                AU${(totalEarningsFromJobs ?? displayCleaner.earnings ?? 0).toLocaleString()}
+              </span>
             </span>
           </div>
 
@@ -138,7 +437,7 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
           <div className="flex items-center justify-center gap-2 md:gap-3 mt-4">
             <span className="inline-flex items-center gap-1.5 px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-medium bg-[#FFF4E0] border border-[#F6B10033] text-[#F6B100]">
               <Star size={12} className="md:w-[12px] md:h-[12px] text-[#F6B100] fill-[#F59E0B]" />
-              <span className="text-sm">{cleaner.rating || 4.2}</span>
+              <span className="text-sm">{averageRating || 0}</span>
             </span>
             <span className="inline-flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-medium bg-[#F3F4F6] border border-[#E5E7EB] text-[#4B5563]">
               <img src={tierIcon} alt={tierLabel} className="w-3 h-3 md:w-4 md:h-4" />
@@ -155,13 +454,14 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 md:px-6 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
+                className={`px-2 md:px-3 lg:px-6 py-2 md:py-2.5 lg:py-3 text-xs md:text-xs lg:text-sm font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer flex-shrink-0 ${
                   activeTab === tab.id
                     ? "border-[#1F6FEB] text-[#1F6FEB] font-medium"
                     : "border-transparent text-[#78829D] hover:text-primary"
                 }`}
               >
-                {tab.label}
+                <span className="md:hidden">{tab.shortLabel}</span>
+                <span className="hidden md:inline">{tab.label}</span>
               </button>
             ))}
           </div>
@@ -171,11 +471,21 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
 
       {/* Tab Content */}
       <div className="mt-4">
-        {activeTab === "overview" && <OverviewTab cleaner={cleaner} onViewJobHistory={() => setActiveTab("jobHistory")} />}
+        {activeTab === "overview" && (
+          <OverviewTab
+            cleaner={displayCleaner}
+            jobsCompleted={jobsCompleted}
+            averageRating={averageRating}
+            jobs={cleanerJobs}
+            totalEarnings={totalEarningsFromJobs}
+            onViewJobHistory={() => setActiveTab("jobHistory")}
+          />
+        )}
         {activeTab === "documents" && <DocumentsTab cleaner={cleaner} />}
         {activeTab === "jobHistory" && (
           <JobHistoryTab
             cleaner={cleaner}
+            jobs={cleanerJobs}
             onViewJob={(job) => {
               const amount = job.amount || 0;
               const platformFees = Math.round(amount * 0.15 * 100) / 100;
@@ -215,8 +525,21 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
             }}
           />
         )}
-        {activeTab === "earnings" && <EarningsTab cleaner={cleaner} />}
-        {activeTab === "feedback" && <FeedbackTab cleaner={cleaner} />}
+        {activeTab === "earnings" && (
+          <EarningsTab
+            cleaner={displayCleaner}
+            totalEarnings={totalEarningsFromJobs}
+            jobs={cleanerJobs}
+          />
+        )}
+        {activeTab === "feedback" && (
+          <FeedbackTab
+            cleaner={displayCleaner}
+            averageRating={averageRating}
+            reviews={reviews}
+            pagination={reviewsPagination}
+          />
+        )}
       </div>
 
       {/* Global action modal for Approve / Reject / Suspend */}

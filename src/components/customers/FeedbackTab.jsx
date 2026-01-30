@@ -1,43 +1,54 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Flag, Star, Upload } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
 
-const feedbackData = [
-  {
-    id: 1,
-    name: "Naomi P",
-    service: "Cleaning • Bond Cleaning",
-    feedback: "Cleaner was polite and thorough",
-    rating: 5.0,
-    avatar: "https://i.pravatar.cc/150?img=52",
-  },
-  {
-    id: 2,
-    name: "Noah Orn",
-    service: "Handyman",
-    feedback: "Cleaner was polite and thorough",
-    rating: 4.0,
-    avatar: "https://i.pravatar.cc/150?img=57",
-  },
-  {
-    id: 3,
-    name: "Naomi P",
-    service: "Handyman",
-    feedback: "Cleaner was polite and thorough",
-    rating: 5.0,
-    avatar: "https://i.pravatar.cc/150?img=47",
-  },
-  {
-    id: 4,
-    name: "Noah Orn",
-    service: "Handyman",
-    feedback: "Cleaner was polite and thorough",
-    rating: 4.0,
-    avatar: "https://i.pravatar.cc/150?img=57",
-  },
-];
+const isValidImageUrl = (url) => {
+  if (!url || typeof url !== "string") return false;
+  return url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:");
+};
+
+const getInitials = (firstName, lastName, fullName) => {
+  if (firstName && lastName) {
+    return `${firstName.charAt(0).toUpperCase()}${lastName.charAt(0).toUpperCase()}`;
+  }
+  if (fullName) {
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return `${parts[0].charAt(0).toUpperCase()}${parts[parts.length - 1].charAt(0).toUpperCase()}`;
+    }
+    return parts[0].charAt(0).toUpperCase();
+  }
+  return "?";
+};
+
+const getAvatarColor = (name, id) => {
+  const colors = [
+    "#FF6B6B",
+    "#4ECDC4",
+    "#45B7D1",
+    "#FFA07A",
+    "#98D8C8",
+    "#F7DC6F",
+    "#BB8FCE",
+    "#85C1E2",
+    "#F8B739",
+    "#52BE80",
+    "#EC7063",
+    "#5DADE2",
+    "#F1948A",
+    "#82E0AA",
+    "#F4D03F",
+    "#A569BD",
+  ];
+  const str = name || id || "default";
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
 
 const matePoints = [
   { id: "AM10432", points: 200, service: "Cleaning • Bond Cleaning" },
@@ -45,12 +56,19 @@ const matePoints = [
   { id: "AM10433-2", points: 100, service: "Handyman" },
 ];
 
-export default function FeedbackTab({ customer }) {
+export default function FeedbackTab({ customer, reviews = [], pagination }) {
+  const [failedImages, setFailedImages] = useState(new Set());
+
   const averageRating = useMemo(() => {
-    if (!feedbackData.length) return 0;
-    const total = feedbackData.reduce((sum, item) => sum + item.rating, 0);
-    return (total / feedbackData.length).toFixed(1);
-  }, []);
+    // Prefer backend average if provided
+    if (pagination?.averageRating !== undefined && pagination?.averageRating !== null) {
+      return Number(pagination.averageRating || 0).toFixed(1);
+    }
+    const list = Array.isArray(reviews) ? reviews : [];
+    if (!list.length) return "0.0";
+    const total = list.reduce((sum, item) => sum + Number(item.rating || 0), 0);
+    return (total / list.length).toFixed(1);
+  }, [reviews, pagination?.averageRating]);
 
   const renderStars = (rating) => {
     const fullStars = Math.floor(rating);
@@ -88,6 +106,30 @@ export default function FeedbackTab({ customer }) {
     // TODO: wire flag review action
     console.log("Flag review clicked", feedbackId);
   };
+  
+  const mappedReviews = useMemo(() => {
+    const list = Array.isArray(reviews) ? reviews : [];
+    return list.map((r) => {
+      const cleaner = r?.cleaner || {};
+      const cleanerName = `${cleaner?.firstName || ""} ${cleaner?.lastName || ""}`.trim() || "Cleaner";
+      const service = r?.job?.serviceType || "Service";
+      const jobId = r?.job?.jobId || r?.job?.id || "";
+      const feedbackText = (r?.feedback || "").toString().trim() || "—";
+      const rating = Number(r?.rating || 0);
+      const avatarUrl = cleaner?.profilePhoto?.url || cleaner?.avatar || "";
+      return {
+        id: r?.id || r?._id,
+        name: cleanerName,
+        service: jobId ? `${service} • ${jobId}` : service,
+        feedback: feedbackText,
+        rating,
+        avatar: avatarUrl,
+        cleanerId: cleaner?.id || cleaner?._id,
+        firstName: cleaner?.firstName,
+        lastName: cleaner?.lastName,
+      };
+    });
+  }, [reviews]);
 
   const matePointsRef = useRef(null);
 
@@ -121,65 +163,82 @@ export default function FeedbackTab({ customer }) {
       {/* Feedback cards */}
       <div className="bg-transparent">
         <div className="overflow-hidden">
-          <Swiper
-            modules={[Autoplay]}
-            spaceBetween={16}
-            slidesPerView="auto"
-            autoplay={{ delay: 2800, disableOnInteraction: false }}
-            loop={true}
-            className="!overflow-hidden !flex"
-            style={{ display: "flex", alignItems: "stretch", paddingBottom: "8px" }}
-          >
-            {feedbackData.map((item) => (
-              <SwiperSlide
-                key={item.id}
-                className="h-full flex"
-                style={{ width: "auto", height: "100%", display: "flex" }}
-              >
-                <div className="bg-white border border-[#E5E7EB] rounded-[14px] p-4 shadow-sm flex flex-col gap-3 md:min-w-[350px] h-full min-h-full cursor-pointer">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={item.avatar}
-                        alt={item.name}
-                        className="w-9 h-9 rounded-full object-cover flex-shrink-0"
-                      />
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-primary truncate">
-                          {item.name}
-                        </p>
+          {mappedReviews.length === 0 ? (
+            <div className="bg-white border border-[#E5E7EB] rounded-[14px] p-6 text-sm text-primary-light">
+              No reviews found for this customer.
+            </div>
+          ) : (
+            <Swiper
+              modules={[Autoplay]}
+              spaceBetween={16}
+              slidesPerView="auto"
+              autoplay={{ delay: 2800, disableOnInteraction: false }}
+              loop={mappedReviews.length > 1}
+              className="!overflow-hidden !flex"
+              style={{ display: "flex", alignItems: "stretch", paddingBottom: "8px" }}
+            >
+              {mappedReviews.map((item) => (
+                <SwiperSlide
+                  key={item.id}
+                  className="h-full flex !w-[350px]"
+                  style={{ height: "100%", display: "flex" }}
+                >
+                  <div className="bg-white border border-[#E5E7EB] rounded-[14px] p-4 shadow-sm flex flex-col gap-3 w-full h-full cursor-pointer">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {item.avatar && isValidImageUrl(item.avatar) && !failedImages.has(item.id) ? (
+                          <img
+                            src={item.avatar}
+                            alt={item.name}
+                            className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                            onError={() => setFailedImages((prev) => new Set(prev).add(item.id))}
+                          />
+                        ) : (
+                          <div
+                            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                            style={{ backgroundColor: getAvatarColor(item.name, item.cleanerId || item.id) }}
+                          >
+                            <span className="text-white text-xs font-semibold">
+                              {getInitials(item.firstName, item.lastName, item.name)}
+                            </span>
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-primary truncate">
+                            {item.name}
+                          </p>
+                        </div>
                       </div>
+
+                      <button
+                        onClick={() => handleFlagReview(item.id)}
+                        className="flex items-center gap-1 text-xs text-[#2563EB] font-medium whitespace-nowrap"
+                      >
+                        <Flag size={14} className="text-[#2563EB]" />
+                        <span>Flag Review</span>
+                      </button>
                     </div>
 
-                    <button
-                      onClick={() => handleFlagReview(item.id)}
-                      className="flex items-center gap-1 text-xs text-[#2563EB] font-medium whitespace-nowrap"
-                    >
-                      <Flag size={14} className="text-[#2563EB]" />
-                      <span>Flag Review</span>
-                    </button>
-                  </div>
+                    <div className="flex flex-col leading-tight">
+                      <p className="text-xs text-primary-light truncate">
+                        {item.service}
+                      </p>
+                      <p className="text-sm text-primary line-clamp-2">
+                        {item.feedback}
+                      </p>
+                    </div>
 
-                  <div className="flex flex-col leading-tight">
-                    <p className="text-xs text-primary-light">
-                      {item.service}
-                    </p>
-                    <p className="text-sm text-primary">
-                      {item.feedback}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      {renderStars(item.rating)}
+                      <span className="text-sm font-medium text-primary">
+                        {Number(item.rating || 0).toFixed(1)}
+                      </span>
+                    </div>
                   </div>
-
-
-                  <div className="flex items-center gap-2">
-                    {renderStars(item.rating)}
-                    <span className="text-sm font-medium text-primary">
-                      {item.rating.toFixed(1)}
-                    </span>
-                  </div>
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          )}
         </div>
       </div>
 

@@ -5,28 +5,28 @@ import ReleaseFundsModal from "../common/ReleaseFundsModal";
 import { DollarSign, CheckCircle2, Upload } from "lucide-react";
 import camelIllustration from "../../assets/image/camel.svg";
 
-// Sample pending payouts data
-const pendingPayoutsData = [
-    {
-        id: 1,
-        type: "Pet Sitter",
-        subType: "Walking",
-        amount: 1240,
-        date: "10-09-2025",
-    },
-    {
-        id: 2,
-        type: "Pet Sitter",
-        subType: "Feeding",
-        amount: 1240,
-        date: "10-09-2025",
-    },
-];
+// Pending payouts are derived from "In Progress" jobs for this cleaner.
 
-export default function EarningsTab({ cleaner }) {
-    // Use cleaner data or fallback to defaults
-    const totalEarnings = cleaner?.earnings || 12420;
-    const pendingPayouts = pendingPayoutsData; // In real app, this would come from cleaner data
+export default function EarningsTab({ cleaner, totalEarnings, jobs = [] }) {
+    const safeTotalEarnings =
+        totalEarnings !== undefined && totalEarnings !== null
+            ? Number(totalEarnings || 0)
+            : Number(cleaner?.earnings || 0);
+    const pendingPayouts = useMemo(() => {
+        // Derived from jobs passed from CleanerDetails (already fetched from /admin/cleaners/:id/jobs)
+        if (!Array.isArray(jobs) || jobs.length === 0) return [];
+
+        const inProgress = jobs.filter((j) => (j?.status || "").toString() === "In Progress");
+        return inProgress.map((j) => ({
+            id: j._id || j.id || j.jobId,
+            type: j.type || "Job",
+            subType: j.subType || "Service",
+            amount: Number(j.amount ?? j.cleanerQuote?.price ?? j.acceptedQuoteId?.price ?? 0) || 0,
+            date: (j.joined || "").toString() || "N/A",
+            // keep original job if you later want to open details
+            _job: j,
+        }));
+    }, [jobs]);
     const [successModalOpen, setSuccessModalOpen] = useState(false);
     const [activePayout, setActivePayout] = useState(null);
     const [releaseModalOpen, setReleaseModalOpen] = useState(false);
@@ -58,7 +58,7 @@ export default function EarningsTab({ cleaner }) {
                 </div>
                 <div className="min-w-0 flex-1">
                     <p className="text-lg font-semibold text-primary">
-                        AU${totalEarnings.toLocaleString()}
+                        AU${safeTotalEarnings.toLocaleString()}
                     </p>
                     <p className="text-sm font-medium text-primary-light ">
                         Total Earnings

@@ -4,79 +4,95 @@ import Checkbox from "../common/Checkbox";
 import SearchInput from "../common/SearchInput";
 import CustomSelect from "../common/CustomSelect";
 import PaginationRanges from "../common/PaginationRanges";
-import tableSortIcon from "../../assets/icon/tableSort.svg";
 
-const defaultJobHistory = [
-  {
-    id: 1,
-    jobId: "AM10432",
-    jobType: "Bond Cleaning",
-    cleaner: {
-      name: "Lori Mosciski",
-      avatar: "https://i.pravatar.cc/150?img=11",
-    },
-    amount: 320,
-    status: "Completed",
-  },
-  {
-    id: 2,
-    jobId: "AM10433",
-    jobType: "Carpet Cleaning",
-    cleaner: {
-      name: "Randolph Hirthe",
-      avatar: "https://i.pravatar.cc/150?img=12",
-    },
-    amount: 220,
-    status: "Completed",
-  },
-  {
-    id: 3,
-    jobId: "AM10434",
-    jobType: "NDIS Assistance",
-    cleaner: {
-      name: "Constance Harris",
-      avatar: "https://i.pravatar.cc/150?img=13",
-    },
-    amount: 150,
-    status: "Completed",
-  },
-  {
-    id: 4,
-    jobId: "AM10435",
-    jobType: "Bond Cleaning",
-    cleaner: {
-      name: "Guy Brakus",
-      avatar: "https://i.pravatar.cc/150?img=14",
-    },
-    amount: 320,
-    status: "Cancelled",
-  },
-  {
-    id: 5,
-    jobId: "AM10436",
-    jobType: "Carpet Cleaning",
-    cleaner: {
-      name: "Andre Abshire",
-      avatar: "https://i.pravatar.cc/150?img=15",
-    },
-    amount: 220,
-    status: "Completed",
-  },
-  {
-    id: 6,
-    jobId: "AM10437",
-    jobType: "NDIS Assistance",
-    cleaner: {
-      name: "Andre Abshire",
-      avatar: "https://i.pravatar.cc/150?img=15",
-    },
-    amount: 150,
-    status: "Completed",
-  },
-];
+const isValidImageUrl = (url) => {
+  if (!url || typeof url !== "string") return false;
+  return url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:");
+};
 
-export default function JobsHistoryTab({ customer, onViewJob }) {
-  const [jobs, setJobs] = useState(customer?.jobHistory || defaultJobHistory);
+const getInitials = (firstName, lastName, fullName) => {
+  if (firstName && lastName) {
+    return `${firstName.charAt(0).toUpperCase()}${lastName.charAt(0).toUpperCase()}`;
+  }
+  if (fullName) {
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return `${parts[0].charAt(0).toUpperCase()}${parts[parts.length - 1].charAt(0).toUpperCase()}`;
+    }
+    return parts[0].charAt(0).toUpperCase();
+  }
+  return "?";
+};
+
+const getAvatarColor = (name, id) => {
+  const colors = [
+    "#FF6B6B",
+    "#4ECDC4",
+    "#45B7D1",
+    "#FFA07A",
+    "#98D8C8",
+    "#F7DC6F",
+    "#BB8FCE",
+    "#85C1E2",
+    "#F8B739",
+    "#52BE80",
+    "#EC7063",
+    "#5DADE2",
+    "#F1948A",
+    "#82E0AA",
+    "#F4D03F",
+    "#A569BD",
+  ];
+  const str = name || id || "default";
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
+
+const mapCustomerJobForUi = (job) => {
+  const statusRaw = (job?.status || job?.jobStatus || "").toString().toLowerCase();
+  const status =
+    statusRaw === "completed" || statusRaw === "done"
+      ? "Completed"
+      : statusRaw === "cancelled" || statusRaw === "canceled" || statusRaw === "rejected"
+      ? "Cancelled"
+      : "In Progress";
+
+  const amount =
+    job?.acceptedQuoteId?.price ??
+    job?.customerQuote?.price ??
+    job?.amount ??
+    job?.price ??
+    0;
+
+  const cleaner = job?.acceptedQuoteId?.cleanerId || job?.cleanerId || job?.cleaner || null;
+  const cleanerId = cleaner?._id || cleaner?.id || null;
+  const cleanerNameRaw =
+    cleaner?.name || `${cleaner?.firstName || ""} ${cleaner?.lastName || ""}`.trim();
+  const isUnassigned = !cleaner || !cleanerId || !cleanerNameRaw;
+  const cleanerName = isUnassigned ? "Unassigned" : cleanerNameRaw;
+
+  return {
+    ...job,
+    id: job?._id || job?.id || job?.jobId,
+    jobId: job?.jobId || job?._id || "N/A",
+    jobType: job?.serviceTypeDisplay || job?.serviceType || job?.service || job?.jobType || "Service",
+    cleaner: {
+      ...(cleaner || {}),
+      _id: cleanerId,
+      name: cleanerName,
+      avatar: cleaner?.avatar || cleaner?.profilePhoto?.url || cleaner?.profilePhoto || "",
+      isUnassigned,
+    },
+    amount: Number(amount || 0),
+    status,
+  };
+};
+
+export default function JobsHistoryTab({ customer, jobs = [], onViewJob }) {
+  const [internalJobs, setInternalJobs] = useState([]);
   const [selectedRows, setSelectedRows] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -86,22 +102,23 @@ export default function JobsHistoryTab({ customer, onViewJob }) {
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
   const tableRef = useRef(null);
+  const [failedImages, setFailedImages] = useState(new Set());
 
-  const statusOptions = ["Completed", "Cancelled"];
+  const statusOptions = ["In Progress", "Completed", "Cancelled"];
 
   // Filter jobs based on search and filters
   const filteredJobs = useMemo(() => {
-    return jobs.filter((job) => {
+    return internalJobs.filter((job) => {
       const matchesSearch =
         !searchQuery ||
-        job.jobId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        job.jobType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        job.cleaner.name.toLowerCase().includes(searchQuery.toLowerCase());
+        (job.jobId || "").toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (job.jobType || "").toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (job.cleaner?.name || "").toString().toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = !statusFilter || job.status === statusFilter;
 
       return matchesSearch && matchesStatus;
     });
-  }, [jobs, searchQuery, statusFilter]);
+  }, [internalJobs, searchQuery, statusFilter]);
 
   // Sort filtered jobs
   const sortedJobs = useMemo(() => {
@@ -236,16 +253,12 @@ export default function JobsHistoryTab({ customer, onViewJob }) {
   };
 
   useEffect(() => {
-    const sourceJobs = customer?.jobHistory || defaultJobHistory;
-    const normalized = sourceJobs.map((job) => ({
-      ...job,
-      jobType: job.jobType || job.service || "",
-    }));
-    setJobs(normalized);
+    const list = Array.isArray(jobs) ? jobs : [];
+    setInternalJobs(list.map(mapCustomerJobForUi));
     setSelectedRows([]);
     setSelectAll(false);
     setCurrentPage(1);
-  }, [customer]);
+  }, [customer, jobs]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -303,81 +316,47 @@ export default function JobsHistoryTab({ customer, onViewJob }) {
                 </div>
               </th>
               <th className="min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <div
-                  className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                  onClick={() => handleSort("jobId")}
-                >
-                  <span className="font-medium text-gray-700 text-xs md:text-xs">
-                    Job ID
-                  </span>
-                  <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
-                  {getSortIcon("jobId")}
-                </div>
+                <span className="font-medium text-gray-700 text-xs md:text-sm">
+                  Job ID
+                </span>
               </th>
               <th className="min-w-[200px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <div
-                  className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                  onClick={() => handleSort("jobType")}
-                >
-                  <span className="font-medium text-gray-700 text-xs md:text-xs">
-                    Job Type
-                  </span>
-                  <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
-                  {getSortIcon("jobType")}
-                </div>
+                <span className="font-medium text-gray-700 text-xs md:text-sm">
+                  Job Type
+                </span>
               </th>
               <th className="min-w-[180px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <div className="flex items-center gap-1">
-                  <span className="font-medium text-gray-700 text-xs md:text-xs">
-                    Cleaner
-                  </span>
-
-                  <img
-                    src={tableSortIcon}
-                    alt="sort"
-                    className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                  />
-
-                  {getSortIcon("cleaner")}
-                </div>
+                <span className="font-medium text-gray-700 text-xs md:text-sm">
+                  Cleaner
+                </span>
               </th>
               <th className="min-w-[100px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <div
-                  className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
-                  onClick={() => handleSort("amount")}
-                >
-                  <span className="font-medium text-gray-700 text-xs md:text-xs">
-                    Amount
-                  </span>
-                  <img src={tableSortIcon} alt="sort" className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
-                  {getSortIcon("amount")}
-                </div>
+                <span className="font-medium text-gray-700 text-xs md:text-sm">
+                  Amount
+                </span>
               </th>
               <th className="min-w-[120px] px-2 md:px-4 py-2 md:py-3 text-left border-r border-gray-200">
-                <div className="flex items-center gap-1">
-                  <span className="font-medium text-gray-700 text-xs md:text-xs">
-                    Status
-                  </span>
-
-                  <img
-                    src={tableSortIcon}
-                    alt="sort"
-                    className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0"
-                  />
-
-                  {getSortIcon("status")}
-                </div>
+                <span className="font-medium text-gray-700 text-xs md:text-sm">
+                  Status
+                </span>
               </th>
 
               <th className="w-14 md:w-16 px-2 md:px-4 py-2 md:py-3 text-center"></th>
             </tr>
           </thead>
           <tbody>
-            {paginatedJobs.map((job) => (
-              <tr
-                key={job.id}
-                className="border-b border-gray-200 hover:bg-gray-50"
-              >
+            {paginatedJobs.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-10 text-center text-primary-light text-sm">
+                  No job history found
+                </td>
+              </tr>
+            ) : (
+              paginatedJobs.map((job) => (
+                <tr
+                  key={job.id}
+                  className="border-b border-gray-200 hover:bg-gray-50"
+                >
                 <td className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
                   <div className="flex items-center justify-center">
                     <Checkbox
@@ -394,13 +373,31 @@ export default function JobsHistoryTab({ customer, onViewJob }) {
                 </td>
                 <td className="min-w-[180px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
                   <div className="flex items-center gap-2">
-                    <img
-                      src={job.cleaner.avatar}
-                      alt={job.cleaner.name}
-                      className="w-9 h-9 rounded-full object-cover flex-shrink-0"
-                    />
+                    {job.cleaner?.isUnassigned ? (
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 bg-[#1E2A78]">
+                        <span className="text-white text-xs font-semibold">UN</span>
+                      </div>
+                    ) : job.cleaner?.avatar && isValidImageUrl(job.cleaner.avatar) && !failedImages.has(job.id) ? (
+                      <img
+                        src={job.cleaner.avatar}
+                        alt={job.cleaner?.name}
+                        className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                        onError={() => {
+                          setFailedImages((prev) => new Set(prev).add(job.id));
+                        }}
+                      />
+                    ) : (
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: getAvatarColor(job.cleaner?.name, job.cleaner?._id || job.id) }}
+                      >
+                        <span className="text-white text-xs font-semibold">
+                          {getInitials(job.cleaner?.firstName, job.cleaner?.lastName, job.cleaner?.name)}
+                        </span>
+                      </div>
+                    )}
                     <p className="text-sm font-medium text-primary">
-                      {job.cleaner.name}
+                      {job.cleaner?.name || "Unassigned"}
                     </p>
                   </div>
                 </td>
@@ -422,7 +419,8 @@ export default function JobsHistoryTab({ customer, onViewJob }) {
                   </button>
                 </td>
               </tr>
-            ))}
+              ))
+            )}
           </tbody>
         </table>
       </div>
