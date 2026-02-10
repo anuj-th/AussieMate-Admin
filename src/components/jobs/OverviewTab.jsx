@@ -8,6 +8,7 @@ import CustomMenu from "../common/CustomMenu";
 import ReleaseFundsModal from "../common/ReleaseFundsModal";
 import ActionModal from "../common/ActionModal";
 import { updatePaymentStatus } from "../../api/services/jobService";
+import Avatar from "../common/Avatar";
 
 export default function OverviewTab({ jobDetails, getStatusColor, onPaymentStatusUpdate }) {
     const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false);
@@ -21,7 +22,7 @@ export default function OverviewTab({ jobDetails, getStatusColor, onPaymentStatu
     const isEscrowReleased = currentEscrowStatus?.toLowerCase() === "released";
 
     // Get tier icon based on cleaner tier
-    const tier = (jobDetails?.cleaner?.tier || "none").toString().toLowerCase();
+    const tier = (jobDetails?.cleaner?.tier || jobDetails?.cleaner?.badge || "none").toString().toLowerCase();
     const tierIcon =
         tier === "gold"
             ? goldTierIcon
@@ -30,19 +31,301 @@ export default function OverviewTab({ jobDetails, getStatusColor, onPaymentStatu
                 : tier === "none"
                     ? null
                     : silverTierIcon;
-    const tierLabel = tier === "none" 
-        ? "None Tier" 
+    const tierLabel = tier === "none"
+        ? "None Tier"
         : `${tier.charAt(0).toUpperCase()}${tier.slice(1)} Tier`;
 
     const handleInvoiceDownload = () => {
-        const pdf = buildInvoicePdf(jobDetails);
-        const blob = new Blob([pdf], { type: "application/pdf" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${jobDetails?.jobId || "invoice"}.pdf`;
-        link.click();
-        URL.revokeObjectURL(url);
+        if (!jobDetails) return;
+
+        const printWindow = window.open("", "", "width=1200,height=800");
+        if (!printWindow) return;
+
+        const jobId = jobDetails?.jobId || "—";
+        const customerName = jobDetails.customer?.name || "Customer";
+        const cleanerName = jobDetails.cleaner?.name || "Cleaner";
+        const reportDate = new Date().toLocaleDateString('en-AU', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+        });
+
+        // Design colors
+        const primaryColor = "#1F6FEB";
+        const darkColor = "#111827";
+        const lightTextColor = "#6B7280";
+        const borderColor = "#F1F1F4";
+        const successColor = "#17C653";
+
+        const styles = `
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+                
+                * { box-sizing: border-box; }
+                
+                body { 
+                    font-family: 'Inter', sans-serif; 
+                    padding: 40px; 
+                    color: ${darkColor};
+                    line-height: 1.5;
+                    background: white;
+                }
+                
+                .invoice-wrapper {
+                    max-width: 800px;
+                    margin: 0 auto;
+                }
+                
+                .header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 60px;
+                }
+                
+                .brand-section h1 {
+                    font-size: 28px;
+                    font-weight: 800;
+                    color: ${primaryColor};
+                    margin: 0;
+                    letter-spacing: -0.5px;
+                }
+                
+                .brand-section p {
+                    font-size: 14px;
+                    color: ${lightTextColor};
+                    margin: 4px 0 0 0;
+                }
+                
+                .invoice-meta {
+                    text-align: right;
+                }
+                
+                .invoice-meta h2 {
+                    font-size: 32px;
+                    font-weight: 700;
+                    margin: 0;
+                    text-transform: uppercase;
+                    color: ${darkColor};
+                }
+                
+                .invoice-meta p {
+                    margin: 4px 0;
+                    font-weight: 500;
+                }
+                
+                .details-grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 40px;
+                    margin-bottom: 50px;
+                }
+                
+                .detail-box h3 {
+                    font-size: 12px;
+                    text-transform: uppercase;
+                    color: ${lightTextColor};
+                    letter-spacing: 0.05em;
+                    margin-bottom: 12px;
+                    border-bottom: 1px solid ${borderColor};
+                    padding-bottom: 6px;
+                }
+                
+                .detail-box p {
+                    margin: 4px 0;
+                    font-size: 15px;
+                }
+                
+                .detail-box .primary-text {
+                    font-weight: 600;
+                    font-size: 18px;
+                }
+                
+                .status-badge {
+                    display: inline-block;
+                    padding: 4px 12px;
+                    border-radius: 99px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    margin-top: 8px;
+                    background: #F3F4F6;
+                }
+                
+                .status-released {
+                    background: #EAFFF1;
+                    color: ${successColor};
+                }
+                
+                .status-pending {
+                    background: #FFF8DD;
+                    color: #F6B100;
+                }
+                
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 40px 0;
+                }
+                
+                th {
+                    text-align: left;
+                    background: #F9FAFB;
+                    padding: 12px 20px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: ${lightTextColor};
+                    text-transform: uppercase;
+                    border-bottom: 1px solid ${borderColor};
+                }
+                
+                td {
+                    padding: 20px;
+                    border-bottom: 1px solid ${borderColor};
+                    font-size: 15px;
+                }
+                
+                .summary-section {
+                    display: flex;
+                    justify-content: flex-end;
+                }
+                
+                .summary-table {
+                    width: 320px;
+                }
+                
+                .summary-row {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 8px 0;
+                    font-size: 14px;
+                }
+                
+                .summary-row.total {
+                    margin-top: 16px;
+                    padding-top: 16px;
+                    border-top: 2px solid ${darkColor};
+                    font-weight: 700;
+                    font-size: 18px;
+                }
+                
+                .footer {
+                    margin-top: 100px;
+                    text-align: center;
+                    border-top: 1px solid ${borderColor};
+                    padding-top: 24px;
+                }
+                
+                .footer p {
+                    font-size: 12px;
+                    color: ${lightTextColor};
+                    margin: 4px 0;
+                }
+                
+                @media print {
+                    body { padding: 0; }
+                    .invoice-wrapper { width: 100%; }
+                }
+            </style>
+        `;
+
+        const currentStatus = jobDetails?.payment?.escrowStatus || "Pending";
+        const statusClass = `status-${currentStatus.toLowerCase()}`;
+
+        const html = `
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <title>Invoice - ${jobId}</title>
+                    ${styles}
+                </head>
+                <body>
+                    <div class="invoice-wrapper">
+                        <div class="header">
+                            <div class="brand-section">
+                                <h1>AussieMate</h1>
+                                <p>Professional Home Services</p>
+                            </div>
+                            <div class="invoice-meta">
+                                <h2>Invoice</h2>
+                                <p style="font-weight: 600;"># ${jobId}</p>
+                                <p style="color: ${lightTextColor}; font-size: 14px;">Issued on ${reportDate}</p>
+                            </div>
+                        </div>
+
+                        <div class="details-grid">
+                            <div class="detail-box">
+                                <h3>Bill To</h3>
+                                <p class="primary-text">${customerName}</p>
+                                <p>${jobDetails.customer?.email || '—'}</p>
+                                <p>${jobDetails.customer?.phone || '—'}</p>
+                            </div>
+                            <div class="detail-box" style="text-align: right;">
+                                <h3>Cleaner Details</h3>
+                                <p class="primary-text" style="font-size: 16px;">${cleanerName}</p>
+                                <div class="status-badge ${statusClass}">
+                                    ${currentStatus}
+                                </div>
+                            </div>
+                        </div>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 70%;">Service Description</th>
+                                    <th style="text-align: right;">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <p style="font-weight: 600; margin: 0;">Cleaning Service</p>
+                                        <p style="font-size: 13px; color: ${lightTextColor}; margin: 4px 0 0 0;">
+                                            Job ID: ${jobId} • Location: ${jobDetails.location || 'N/A'}
+                                        </p>
+                                    </td>
+                                    <td style="text-align: right; font-weight: 600;">
+                                        AU$${Number(jobDetails.payment.amountPaid || 0).toLocaleString()}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="summary-section">
+                            <div class="summary-table">
+                                <div class="summary-row">
+                                    <span style="color: ${lightTextColor}">Platform Fee (15%)</span>
+                                    <span>AU$${Number(jobDetails.payment.platformFees || 0).toLocaleString()}</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span style="color: ${lightTextColor}">GST (10%)</span>
+                                    <span>AU$${Number(jobDetails.payment.gst || 0).toLocaleString()}</span>
+                                </div>
+                                <div class="summary-row total">
+                                    <span>Total Amount</span>
+                                    <span style="color: ${primaryColor}">AU$${Number(jobDetails.payment.amountPaid || 0).toLocaleString()}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="footer">
+                            <p>Thank you for your business!</p>
+                            <p>© ${new Date().getFullYear()} AussieMate. This is a system-generated document.</p>
+                            <p>For support, contact support@aussiemate.com.au</p>
+                        </div>
+                    </div>
+
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            window.onafterprint = function() { window.close(); };
+                        };
+                    </script>
+                </body>
+            </html>
+        `;
+
+        printWindow.document.write(html);
+        printWindow.document.close();
     };
 
     const paymentMenuItems = isEscrowReleased
@@ -94,9 +377,15 @@ export default function OverviewTab({ jobDetails, getStatusColor, onPaymentStatu
                         <h3 className="text-xs sm:text-sm font-semibold text-primary mb-3 ">Customer</h3>
 
                         <div className="flex items-start gap-3">
-                            <div className="w-12 h-12 rounded-full overflow-hidden">
-                                <img src={jobDetails.customer?.avatar || "https://ui-avatars.com/api/?name=Customer&background=random"} alt={jobDetails.customer?.name || "Customer"} className="w-full h-full object-cover" />
-                            </div>
+                            <Avatar
+                                src={jobDetails.customer?.avatar}
+                                firstName={jobDetails.customer?.firstName}
+                                lastName={jobDetails.customer?.lastName}
+                                fullName={jobDetails.customer?.name}
+                                id={jobDetails.customer?.id}
+                                className="w-12 h-12"
+                                size={48}
+                            />
 
                             <div className="flex-1 min-w-0">
                                 <p className="font-semibold text-sm text-primary break-words">{jobDetails.customer?.name || "—"}</p>
@@ -120,9 +409,15 @@ export default function OverviewTab({ jobDetails, getStatusColor, onPaymentStatu
                         <h3 className="text-xs sm:text-sm font-semibold text-primary mb-1">Cleaner</h3>
 
                         <div className="flex items-start gap-3">
-                            <div className="w-12 h-12 rounded-full overflow-hidden">
-                                <img src={jobDetails.cleaner?.avatar || "https://ui-avatars.com/api/?name=Cleaner&background=random"} alt={jobDetails.cleaner?.name || "Cleaner"} className="w-full h-full object-cover" />
-                            </div>
+                            <Avatar
+                                src={jobDetails.cleaner?.avatar}
+                                firstName={jobDetails.cleaner?.firstName}
+                                lastName={jobDetails.cleaner?.lastName}
+                                fullName={jobDetails.cleaner?.name}
+                                id={jobDetails.cleaner?.id}
+                                className="w-12 h-12"
+                                size={48}
+                            />
 
                             <div className="flex-1 space-y-2 min-w-0">
                                 <div className="flex items-center flex-wrap gap-1">
@@ -141,7 +436,7 @@ export default function OverviewTab({ jobDetails, getStatusColor, onPaymentStatu
                                             >
                                                 <Star size={14} className="text-[#FFB020] fill-[#FFB020]" />
                                                 <span className="text-[10px] sm:text-xs text-primary font-medium">
-                                                    {jobDetails.cleaner.rating}
+                                                    {Number(jobDetails.cleaner.rating || 0).toFixed(1)}
                                                 </span>
                                             </div>
                                         )}
@@ -150,16 +445,16 @@ export default function OverviewTab({ jobDetails, getStatusColor, onPaymentStatu
                                         )}
                                     </div>
 
-                                    {tierIcon && (
+                                    {(tierIcon || tier === "none") && (
                                         <div className="flex items-center gap-2 px-2 py-1 border-[0.5px] border-[#E9E9E9] rounded-full text-[10px] sm:text-xs font-medium bg-[linear-gradient(90deg,#FDFDFD_0%,#E9E9E9_100%)]">
-                                            <img src={tierIcon} alt={tierLabel} className="w-4 h-4 sm:w-5 sm:h-5" />
+                                            {tierIcon && <img src={tierIcon} alt={tierLabel} className="w-4 h-4 sm:w-5 sm:h-5" />}
                                             <span className="text-primary-light">{tierLabel}</span>
                                         </div>
                                     )}
                                 </div>
 
-                                {jobDetails.cleaner?.distance && (
-                                    <p className="text-xs text-primary-light">{jobDetails.cleaner.distance}</p>
+                                {jobDetails.cleaner?.searchRadius && (
+                                    <p className="text-sm text-primary-light mt-1">{jobDetails.cleaner.searchRadius} km distance radius</p>
                                 )}
                             </div>
                         </div>
@@ -234,10 +529,10 @@ export default function OverviewTab({ jobDetails, getStatusColor, onPaymentStatu
                         if (jobId) {
                             // Call API to update payment status
                             await updatePaymentStatus(jobId, "Released");
-                            
+
                             // Update local state
                             setEscrowStatus("Released");
-                            
+
                             // Notify parent component to update JobsTable
                             if (onPaymentStatusUpdate) {
                                 onPaymentStatusUpdate(jobId, "Released");
@@ -295,79 +590,5 @@ export default function OverviewTab({ jobDetails, getStatusColor, onPaymentStatu
             />
         </div>
     );
-}
-
-// Minimal PDF builder (no external deps) for quick invoice export
-function buildInvoicePdf(job) {
-    const jobId = job?.jobId || job?.id || "—";
-    const customer = job?.customer || {};
-    const cleaner = job?.cleaner || {};
-    const payment = job?.payment || {};
-
-    const lines = [
-        `Invoice`,
-        `Job ID: ${jobId}`,
-        `Customer: ${customer.name || "—"} (${customer.email || customer.phone || "-"})`,
-        `Cleaner: ${cleaner.name || "—"}`,
-        `Amount Paid: AU$${payment.amountPaid ?? payment.amount ?? "0"}`,
-        `Platform Fees: AU$${payment.platformFees ?? "0"}`,
-        `GST: AU$${payment.gst ?? "0"}`,
-        `Escrow Release: AU$${payment.escrow ?? "0"}`,
-        `Release Date: ${payment.releaseDate || payment.escrowReleased || "—"}`,
-    ];
-
-    const escapeText = (txt) =>
-        String(txt)
-            .replace(/\\/g, "\\\\")
-            .replace(/\(/g, "\\(")
-            .replace(/\)/g, "\\)")
-            .replace(/\r?\n/g, " ");
-
-    let content = "BT\n/F1 12 Tf\n50 780 Td\n";
-    lines.forEach((line, idx) => {
-        content += `(${escapeText(line)}) Tj\n0 -18 Td\n`;
-    });
-    content += "ET";
-
-    const contentLength = content.length;
-
-    const objects = [];
-    const addObject = (body) => {
-        const offset = objects.reduce((sum, obj) => sum + obj.length, header.length);
-        objects.push({ offset, body });
-    };
-
-    const header = "%PDF-1.4\n";
-
-    addObject("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
-    addObject("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n");
-    addObject(
-        "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 4 0 R >> >> >>\nendobj\n"
-    );
-    addObject("4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n");
-    addObject(`5 0 obj\n<< /Length ${contentLength} >>\nstream\n${content}\nendstream\nendobj\n`);
-
-    // Recompute offsets now that we know bodies
-    let offset = header.length;
-    const offsets = [0]; // object 0 is free
-    const bodyStrings = objects.map((obj, idx) => {
-        const body = obj.body;
-        offsets.push(offset);
-        offset += body.length;
-        return body;
-    });
-
-    let pdf = header + bodyStrings.join("");
-
-    const xrefStart = pdf.length;
-    let xref = `xref\n0 ${offsets.length}\n`;
-    offsets.forEach((off) => {
-        xref += `${off.toString().padStart(10, "0")} 00000 n \n`;
-    });
-
-    const trailer = `trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
-
-    pdf += xref + trailer;
-    return pdf;
 }
 

@@ -71,15 +71,15 @@ export default function Header({
     const segments = pathname.split("/").filter(Boolean);
     // Filter out ID segments from breadcrumbs display
     const filteredSegments = segments.filter(segment => !isIdSegment(segment));
-    
+
     const crumbs = filteredSegments.map((segment, index) => {
       // Build path using only filtered segments (without IDs)
       const path = "/" + filteredSegments.slice(0, index + 1).join("/");
       const label = ROUTE_TITLES[path] || humanizeSegment(segment);
       const isLastUrlCrumb = index === filteredSegments.length - 1;
       // If we have extraCrumbs and onClick handler, make the last URL breadcrumb clickable
-      const onClick = isLastUrlCrumb && allExtraCrumbs.length > 0 && parentBreadcrumbOnClick 
-        ? parentBreadcrumbOnClick 
+      const onClick = isLastUrlCrumb && allExtraCrumbs.length > 0 && parentBreadcrumbOnClick
+        ? parentBreadcrumbOnClick
         : null;
       return { label, path, onClick };
     });
@@ -134,10 +134,10 @@ export default function Header({
   };
 
   return (
-    <header 
+    <header
       className={`fixed top-0 right-0 z-30 flex items-center justify-between bg-white px-6 py-4 border-b border-gray-200 transition-all duration-300 ease-in-out
-        ${sidebarOpen 
-          ? 'lg:left-[240px] xl:left-[290px] left-0' 
+        ${sidebarOpen
+          ? 'lg:left-[240px] xl:left-[290px] left-0'
           : 'left-0'
         }`}
     >
@@ -146,9 +146,12 @@ export default function Header({
           {breadcrumbs.map((crumb, index) => {
             const isLast = index === breadcrumbs.length - 1;
             const hasOnClick = typeof crumb.onClick === 'function';
-            
+
             return (
-              <span key={crumb.path || `${crumb.label}-${index}`}>
+              <span
+                key={crumb.path || `${crumb.label}-${index}`}
+                className={!isLast ? "hidden md:inline" : ""}
+              >
                 {!isLast ? (
                   hasOnClick ? (
                     <button
@@ -234,7 +237,7 @@ export default function Header({
           {isDropdownOpen && (
             <div
               ref={dropdownRef}
-              className="absolute right-0 mt-2 w-64 bg-white rounded-[16px] shadow-lg border border-gray-200 z-60 overflow-hidden"
+              className="absolute right-0 mt-2 bg-white rounded-[16px] shadow-lg border border-gray-200 z-60 overflow-hidden"
             >
               {/* User Info Section */}
               <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200">
@@ -269,7 +272,7 @@ export default function Header({
                 className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
               >
                 <div className="w-10 h-10 rounded-full bg-white  flex items-center justify-center">
-                <CircleUserRound size={20} className="text-gray-600"/>
+                  <CircleUserRound size={20} className="text-gray-600" />
                 </div>
                 <span className="text-sm font-medium text-[#1C1C1C]">My Profile</span>
               </Link>

@@ -21,9 +21,10 @@ import JobHistoryTab from "./JobHistoryTab";
 import EarningsTab from "./EarningsTab";
 import FeedbackTab from "./FeedbackTab";
 import JobDetails from "../jobs/JobDetails";
-import { fetchCleanerById, fetchCleanersJobsStats, fetchCleanerJobs, fetchCleanerReviews } from "../../api/services/cleanersService";
+import { fetchCleanerById, fetchCleanersJobsStats, fetchCleanerJobs, fetchCleanerReviews, fetchCleanerKYCById } from "../../api/services/cleanersService";
+import { suspendUser } from "../../api/services/userService";
 
-export default function CleanerDetails({ cleaner, onBackToList }) {
+export default function CleanerDetails({ cleaner, onBackToList, onJobViewDetail }) {
   if (!cleaner) return null;
 
   const originalData = cleaner.originalData || cleaner;
@@ -46,7 +47,10 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
   const [cleanerJobs, setCleanerJobs] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [reviewsPagination, setReviewsPagination] = useState(null);
+  const [kycData, setKycData] = useState(null);
   const [avatarFailed, setAvatarFailed] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loadingJobs, setLoadingJobs] = useState(false);
 
   // Avatar helpers (same behavior as CleanersTable fallback)
   const isValidImageUrl = (url) => {
@@ -102,8 +106,10 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
       statusRaw === "completed" || statusRaw === "done"
         ? "Completed"
         : statusRaw === "rejected" || statusRaw === "cancelled" || statusRaw === "canceled"
-        ? "Rejected"
-        : "In Progress";
+          ? "Rejected"
+          : statusRaw === "accepted"
+            ? "Accepted"
+            : "In Progress";
 
     const amount =
       job?.cleanerQuote?.price ??
@@ -208,20 +214,60 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
     const loadJobs = async () => {
       if (!cleanerId) return;
       try {
-        const resp = await fetchCleanerJobs(cleanerId);
+        setLoadingJobs(true);
+        const resp = await fetchCleanerJobs(cleanerId, 10);
         const data = resp?.data || resp;
         const list = Array.isArray(data) ? data : Array.isArray(data?.jobs) ? data.jobs : [];
-        const mapped = list.map(mapJobForUi);
+
+        // Map and deduplicate by jobId or _id
+        const mapped = list.filter(Boolean).map(mapJobForUi);
+        const uniqueMapped = [];
+        const seenIds = new Set();
+
+        for (const job of mapped) {
+          const id = job.jobId || job._id || job.id;
+          if (!seenIds.has(id)) {
+            seenIds.add(id);
+            uniqueMapped.push(job);
+          }
+        }
+
         // Most recent first
-        mapped.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-        setCleanerJobs(mapped);
+        uniqueMapped.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+        setCleanerJobs(uniqueMapped);
       } catch (e) {
         console.warn("Failed to load cleaner jobs", e);
         setCleanerJobs([]);
+      } finally {
+        setLoadingJobs(false);
       }
     };
 
     loadJobs();
+  }, [cleanerId]);
+
+  // Fetch KYC details for accurate location/address
+  useEffect(() => {
+    const loadKyc = async () => {
+      if (!cleanerId) return;
+      try {
+        const resp = await fetchCleanerKYCById(cleanerId);
+        // Based on screenshot, structure is: { success: true, data: { cleaner: { ... } } }
+        const rawData = resp?.data ?? resp;
+        let data = rawData?.cleaner || rawData;
+
+        if (Array.isArray(data)) {
+          data = data[0];
+        }
+
+        if (data) {
+          setKycData(data);
+        }
+      } catch (e) {
+        console.warn("Failed to load cleaner KYC for location", e);
+      }
+    };
+    loadKyc();
   }, [cleanerId]);
 
   // Fetch reviews for this cleaner (Feedback tab + average rating)
@@ -255,6 +301,7 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
     return {
       ...originalData,
       ...(fetchedCleaner || {}),
+      kyc: kycData,
       // UI-friendly name/avatar/role from the mapped cleaner object (keeps consistency with table)
       name: cleaner.name ?? fetchedCleaner?.name ?? originalData.name,
       avatar: cleaner.avatar ?? fetchedCleaner?.avatar ?? originalData.avatar,
@@ -262,7 +309,7 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
       joined: cleaner.joined ?? fetchedCleaner?.joined ?? originalData.joined,
       earnings: cleaner.earnings ?? fetchedCleaner?.earnings ?? originalData.earnings,
     };
-  }, [cleaner, fetchedCleaner, originalData]);
+  }, [cleaner, fetchedCleaner, kycData, originalData]);
 
   // If we navigate between cleaners, reset avatar failure state.
   useEffect(() => {
@@ -273,10 +320,10 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
     const getJobAmount = (job) =>
       Number(
         job?.cleanerQuote?.price ??
-          job?.acceptedQuoteId?.price ??
-          job?.amount ??
-          job?.price ??
-          0
+        job?.acceptedQuoteId?.price ??
+        job?.amount ??
+        job?.price ??
+        0
       ) || 0;
 
     const isCompletedJob = (job) => {
@@ -294,35 +341,39 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
     tier.toLowerCase() === "gold"
       ? goldTierIcon
       : tier.toLowerCase() === "bronze"
-      ? bronzeTierIcon
-      : silverTierIcon;
+        ? bronzeTierIcon
+        : silverTierIcon;
 
   const closeModal = () => setActiveAction(null);
 
   const locationLabel = useMemo(() => {
     const d = displayCleaner || {};
-    const candidates = [
-      d.location,
-      d.city,
-      d.suburb,
-      d.state,
-      d.address?.suburb,
-      d.address?.city,
-      d.address?.state,
-      d.profile?.address?.suburb,
-      d.profile?.address?.city,
-      d.profile?.address?.state,
-    ].filter(Boolean);
+    const kyc = d.kyc || {};
 
-    if (typeof candidates[0] === "string") {
-      // best-effort: if we have separate suburb/state, join them nicely
-      const suburb = d.suburb || d.address?.suburb || d.profile?.address?.suburb;
-      const state = d.state || d.address?.state || d.profile?.address?.state;
-      if (suburb && state) return `${suburb}, ${state}`;
-      return candidates[0];
+    // 1. Try to get City/Suburb and State from ANY potential nested object
+    const city =
+      kyc.city || kyc.suburb || kyc.location?.city || kyc.location?.suburb ||
+      d.city || d.suburb || d.location?.city || d.address?.city || d.address?.suburb ||
+      d.profile?.address?.city || d.profile?.address?.suburb;
+
+    const state =
+      kyc.state || kyc.location?.state || kyc.address?.state ||
+      d.state || d.location?.state || d.address?.state ||
+      d.profile?.address?.state;
+
+    // 2. If we have both, show "City, State" (e.g., "Surat, Gujarat")
+    if (city && state) {
+      return `${city}, ${state}`;
     }
 
-    return "N/A";
+    // 3. Fallback to extracting from fullAddress if possible, or just the fullAddress
+    const full = kyc.location?.fullAddress || kyc.fullAddress || d.location?.fullAddress || d.fullAddress || d.address?.fullAddress;
+    if (full) {
+      return full;
+    }
+
+    // 4. Ultimate fallback
+    return city || state || "N/A";
   }, [displayCleaner]);
 
   const tabs = [
@@ -337,14 +388,17 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
     return (
       <JobDetails
         job={selectedJob}
-        onBackToList={() => setSelectedJob(null)}
+        onBackToList={() => {
+          setSelectedJob(null);
+          if (onJobViewDetail) onJobViewDetail(false);
+        }}
       />
     );
   }
 
   return (
     <div className="space-y-6 w-full max-w-6xl mx-auto ">
-      
+
       {/* Profile header */}
       <div
         className="px-4 md:px-6 lg:px-10 pt-8 md:pt-10 pb-6 relative overflow-hidden bg-white rounded-[20px] border border-[#EEF0F5] "
@@ -437,7 +491,9 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
           <div className="flex items-center justify-center gap-2 md:gap-3 mt-4">
             <span className="inline-flex items-center gap-1.5 px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-medium bg-[#FFF4E0] border border-[#F6B10033] text-[#F6B100]">
               <Star size={12} className="md:w-[12px] md:h-[12px] text-[#F6B100] fill-[#F59E0B]" />
-              <span className="text-sm">{averageRating || 0}</span>
+              <span className="text-sm">
+                {Number(averageRating || 0).toFixed(1)}
+              </span>
             </span>
             <span className="inline-flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-medium bg-[#F3F4F6] border border-[#E5E7EB] text-[#4B5563]">
               <img src={tierIcon} alt={tierLabel} className="w-3 h-3 md:w-4 md:h-4" />
@@ -448,26 +504,25 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
       </div>
 
       {/* Tabs Navigation - No background, border, or shadow */}
-        <div className="border-b border-[#EEF0F5] ">
+      <div className="border-b border-[#EEF0F5] ">
         <div className="flex overflow-x-auto scrollbar-hide">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-2 md:px-3 lg:px-6 py-2 md:py-2.5 lg:py-3 text-xs md:text-xs lg:text-sm font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer flex-shrink-0 ${
-                  activeTab === tab.id
-                    ? "border-[#1F6FEB] text-[#1F6FEB] font-medium"
-                    : "border-transparent text-[#78829D] hover:text-primary"
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-2 md:px-3 lg:px-6 py-2 md:py-2.5 lg:py-3 text-xs md:text-xs lg:text-sm font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer flex-shrink-0 ${activeTab === tab.id
+                ? "border-[#1F6FEB] text-[#1F6FEB] font-medium"
+                : "border-transparent text-[#78829D] hover:text-primary"
                 }`}
-              >
-                <span className="md:hidden">{tab.shortLabel}</span>
-                <span className="hidden md:inline">{tab.label}</span>
-              </button>
-            ))}
-          </div>
+            >
+              <span className="md:hidden">{tab.shortLabel}</span>
+              <span className="hidden md:inline">{tab.label}</span>
+            </button>
+          ))}
         </div>
+      </div>
 
-  
+
 
       {/* Tab Content */}
       <div className="mt-4">
@@ -479,6 +534,7 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
             jobs={cleanerJobs}
             totalEarnings={totalEarningsFromJobs}
             onViewJobHistory={() => setActiveTab("jobHistory")}
+            loading={loadingJobs}
           />
         )}
         {activeTab === "documents" && <DocumentsTab cleaner={cleaner} />}
@@ -502,12 +558,13 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
                 customer: {
                   name: job.customer?.name,
                   email: job.customer?.email,
+                  phone: job.customer?.phone,
                   avatar: job.customer?.avatar,
                 },
                 cleaner: {
                   name: cleaner.name,
                   avatar: cleaner.avatar,
-                  role: cleaner.role,
+                  role: job.role || cleaner.role || "Professional Cleaner",
                   jobsCompleted: cleaner.jobs,
                   rating: cleaner.rating,
                   tier: cleaner.badge,
@@ -522,6 +579,7 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
                 },
               };
               setSelectedJob(mappedJob);
+              if (onJobViewDetail) onJobViewDetail(true);
             }}
           />
         )}
@@ -553,15 +611,15 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
                 activeAction === "approve"
                   ? approveKycImg
                   : activeAction === "reject"
-                  ? rejectKycImg
-                  : suspenseKycImg
+                    ? rejectKycImg
+                    : suspenseKycImg
               }
               alt={
                 activeAction === "approve"
                   ? "Approve KYC"
                   : activeAction === "reject"
-                  ? "Reject application"
-                  : "Suspend cleaner"
+                    ? "Reject application"
+                    : "Suspend cleaner"
               }
               className="max-h-52 w-auto"
             />
@@ -570,28 +628,45 @@ export default function CleanerDetails({ cleaner, onBackToList }) {
             activeAction === "approve"
               ? `Approve ${cleaner.name} as Professional Cleaner?`
               : activeAction === "reject"
-              ? "Reject Application"
-              : `Suspend ${cleaner.name}`
+                ? "Reject Application"
+                : `Suspend ${cleaner.name}`
           }
           description={
             activeAction === "approve"
               ? "This will enable her to receive jobs in her radius (0–20 km)."
               : activeAction === "reject"
-              ? `Are you sure you want to reject application of ${cleaner.name}?`
-              : `Are you sure you want to suspend ${cleaner.name}?`
+                ? `Are you sure you want to reject application of ${cleaner.name}?`
+                : `Are you sure you want to suspend ${cleaner.name}?`
           }
           primaryLabel={
             activeAction === "approve"
               ? "Approve KYC"
               : activeAction === "reject"
-              ? "Yes, Reject"
-              : "Yes, Suspend"
+                ? "Yes, Reject"
+                : "Yes, Suspend"
           }
           primaryVariant={
             activeAction === "approve" ? "primary" : "danger"
           }
-          onPrimary={() => {
-            // TODO: wire up API / status updates here
+          onPrimary={async () => {
+            if (activeAction === "suspend") {
+              try {
+                setSaving(true);
+                await suspendUser(cleanerId);
+                closeModal();
+                if (onBackToList) {
+                  onBackToList();
+                }
+              } catch (e) {
+                console.error("Failed to suspend cleaner", e);
+                alert(e?.response?.data?.message || e?.message || "Failed to suspend cleaner.");
+              } finally {
+                setSaving(false);
+              }
+              return;
+            }
+            // Other actions (approve/reject) logic should go here if needed.
+            // For now, based on instructions, we are only wiring up suspend.
             closeModal();
           }}
           hideSecondary={true}

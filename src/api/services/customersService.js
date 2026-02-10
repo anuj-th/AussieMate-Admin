@@ -17,7 +17,7 @@ export const fetchCustomers = async (params = {}) => {
   const queryParams = new URLSearchParams();
   queryParams.append('page', page.toString());
   queryParams.append('limit', limit.toString());
-  
+
   if (search) queryParams.append('search', search);
   if (role) queryParams.append('role', role);
   if (status) queryParams.append('status', status);
@@ -38,10 +38,19 @@ export const fetchCustomersJobsStats = async () => {
 
 // Fetch jobs for a specific customer
 // GET /admin/customers/:customerId/jobs
-export const fetchCustomerJobs = async (customerId) => {
+export const fetchCustomerJobs = async (customerId, params = {}) => {
   if (!customerId) throw new Error("customerId is required");
+
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      queryParams.append(key, value.toString());
+    }
+  });
+
+  const qs = queryParams.toString();
   const response = await client.get(
-    `${ENDPOINTS.CUSTOMERS}/${encodeURIComponent(customerId)}/jobs`
+    `${ENDPOINTS.CUSTOMERS}/${encodeURIComponent(customerId)}/jobs${qs ? `?${qs}` : ""}`
   );
   return response.data;
 };

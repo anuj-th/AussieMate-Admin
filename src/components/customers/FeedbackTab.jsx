@@ -106,7 +106,7 @@ export default function FeedbackTab({ customer, reviews = [], pagination }) {
     // TODO: wire flag review action
     console.log("Flag review clicked", feedbackId);
   };
-  
+
   const mappedReviews = useMemo(() => {
     const list = Array.isArray(reviews) ? reviews : [];
     return list.map((r) => {
@@ -114,7 +114,7 @@ export default function FeedbackTab({ customer, reviews = [], pagination }) {
       const cleanerName = `${cleaner?.firstName || ""} ${cleaner?.lastName || ""}`.trim() || "Cleaner";
       const service = r?.job?.serviceType || "Service";
       const jobId = r?.job?.jobId || r?.job?.id || "";
-      const feedbackText = (r?.feedback || "").toString().trim() || "—";
+      const feedbackText = (r?.feedback || "").toString().trim();
       const rating = Number(r?.rating || 0);
       const avatarUrl = cleaner?.profilePhoto?.url || cleaner?.avatar || "";
       return {
@@ -134,28 +134,116 @@ export default function FeedbackTab({ customer, reviews = [], pagination }) {
   const matePointsRef = useRef(null);
 
   const handleExportReport = () => {
-    // Create CSV content
-    const headers = ["Points", "ID", "Service"];
-    const csvRows = [
-      headers.join(","),
-      ...matePoints.map((row) => [
-        `${row.points} pts`,
-        row.id,
-        `"${row.service}"`,
-      ].join(",")),
-    ];
-    const csvContent = csvRows.join("\n");
+    const reportDate = new Date().toLocaleDateString('en-AU', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
 
-    // Create blob and download
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `MatePoints_Report_${new Date().toISOString().split("T")[0]}.csv`);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const printWindow = window.open('', '_blank');
+    const html = `
+      <html>
+        <head>
+          <title>MatePoints Report - ${customer?.name || 'Customer'}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+            body { 
+              font-family: 'Inter', sans-serif; 
+              padding: 40px; 
+              color: #1C1C1C;
+              line-height: 1.5;
+            }
+            .header { 
+              display: flex; 
+              justify-content: space-between; 
+              align-items: flex-start;
+              margin-bottom: 40px;
+              border-bottom: 2px solid #F1F1F4;
+              padding-bottom: 20px;
+            }
+            .logo { font-size: 24px; font-weight: 700; color: #1F6FEB; }
+            .report-info { text-align: right; }
+            .report-title { font-size: 28px; font-weight: 700; margin-bottom: 10px; }
+            .customer-section { margin-bottom: 30px; }
+            .customer-label { color: #78829D; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+            .customer-name { font-size: 18px; font-weight: 600; margin-top: 4px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th { 
+              text-align: left; 
+              background: #F9FAFB; 
+              padding: 12px 16px; 
+              font-size: 12px; 
+              font-weight: 600; 
+              color: #78829D; 
+              text-transform: uppercase;
+              border-bottom: 1px solid #EEF0F5;
+            }
+            td { 
+              padding: 16px; 
+              border-bottom: 1px solid #EEF0F5; 
+              font-size: 14px;
+            }
+            .points { font-weight: 600; color: #1C1C1C; }
+            .footer { margin-top: 50px; font-size: 12px; color: #9CA3AF; text-align: center; }
+            @media print {
+              body { padding: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="logo">AussieMate</div>
+              <div style="color: #78829D; font-size: 14px; margin-top: 4px;">Admin Portal</div>
+            </div>
+            <div class="report-info">
+              <div style="font-size: 12px; color: #78829D;">Generated on</div>
+              <div style="font-weight: 500;">${reportDate}</div>
+            </div>
+          </div>
+
+          <div class="customer-section">
+            <div class="report-title">MatePoints Report</div>
+            <div class="customer-label">Customer Details</div>
+            <div class="customer-name">${customer?.name || 'Valued Customer'}</div>
+            <div style="color: #78829D; font-size: 14px;">${customer?.email || ''}</div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Points Accumulation</th>
+                <th>Reference ID</th>
+                <th>Service Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${matePoints.map(row => `
+                <tr>
+                  <td class="points">${row.points} pts</td>
+                  <td>${row.id}</td>
+                  <td>${row.service}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="footer">
+            © ${new Date().getFullYear()} AussieMate. This is a system-generated report.
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              window.onafterprint = function() { window.close(); };
+            };
+          </script>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
   };
 
   return (
@@ -170,67 +258,61 @@ export default function FeedbackTab({ customer, reviews = [], pagination }) {
           ) : (
             <Swiper
               modules={[Autoplay]}
-              spaceBetween={16}
+              spaceBetween={12}
               slidesPerView="auto"
               autoplay={{ delay: 2800, disableOnInteraction: false }}
               loop={mappedReviews.length > 1}
-              className="!overflow-hidden !flex"
+              className="!overflow-hidden !flex h-[145px] md:h-[160px]"
               style={{ display: "flex", alignItems: "stretch", paddingBottom: "8px" }}
             >
               {mappedReviews.map((item) => (
                 <SwiperSlide
                   key={item.id}
-                  className="h-full flex !w-[350px]"
+                  className="h-full flex !w-[260px] md:!w-[350px]"
                   style={{ height: "100%", display: "flex" }}
                 >
-                  <div className="bg-white border border-[#E5E7EB] rounded-[14px] p-4 shadow-sm flex flex-col gap-3 w-full h-full cursor-pointer">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
+                  <div className="bg-white border border-[#E5E7EB] rounded-[14px] p-3 md:p-4 shadow-sm flex flex-col gap-2 md:gap-3 w-full h-full cursor-pointer">
+                    <div className="flex items-center justify-between gap-2 md:gap-3 flex-shrink-0">
+                      <div className="flex items-center gap-2 md:gap-3 min-w-0">
                         {item.avatar && isValidImageUrl(item.avatar) && !failedImages.has(item.id) ? (
                           <img
                             src={item.avatar}
                             alt={item.name}
-                            className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                            className="w-7 h-7 md:w-9 md:h-9 rounded-full object-cover flex-shrink-0"
                             onError={() => setFailedImages((prev) => new Set(prev).add(item.id))}
                           />
                         ) : (
                           <div
-                            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                            className="w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center flex-shrink-0"
                             style={{ backgroundColor: getAvatarColor(item.name, item.cleanerId || item.id) }}
                           >
-                            <span className="text-white text-xs font-semibold">
+                            <span className="text-white text-[10px] md:text-xs font-semibold">
                               {getInitials(item.firstName, item.lastName, item.name)}
                             </span>
                           </div>
                         )}
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-primary truncate">
+                          <p className="text-xs md:text-sm font-medium text-primary truncate">
                             {item.name}
                           </p>
                         </div>
                       </div>
-
-                      <button
-                        onClick={() => handleFlagReview(item.id)}
-                        className="flex items-center gap-1 text-xs text-[#2563EB] font-medium whitespace-nowrap"
-                      >
-                        <Flag size={14} className="text-[#2563EB]" />
-                        <span>Flag Review</span>
-                      </button>
                     </div>
 
-                    <div className="flex flex-col leading-tight">
-                      <p className="text-xs text-primary-light truncate">
+                    <div className="flex flex-col leading-tight flex-grow">
+                      <p className="text-[10px] md:text-xs text-primary-light truncate">
                         {item.service}
                       </p>
-                      <p className="text-sm text-primary line-clamp-2">
+                      <p className="text-xs md:text-sm text-primary line-clamp-2">
                         {item.feedback}
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      {renderStars(item.rating)}
-                      <span className="text-sm font-medium text-primary">
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="scale-90 md:scale-100 origin-left">
+                        {renderStars(item.rating)}
+                      </div>
+                      <span className="text-xs md:text-sm font-medium text-primary">
                         {Number(item.rating || 0).toFixed(1)}
                       </span>
                     </div>

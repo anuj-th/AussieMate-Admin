@@ -300,34 +300,224 @@ export default function PaymentsTab({ customer }) {
 
     const handleExportPayoutReport = (payment) => {
         if (!payment) return;
-        const headers = [
-            "Job ID",
-            "Service",
-            "Amount",
-            "Status",
-            "Date",
-            "Payment Mode",
-            "Payment Method",
-        ];
 
-        const row = [
-            payment.jobId || `PAY-${payment.id}`,
-            payment.service || "",
-            `AU$${formatCurrency(payment.amount || 0)}`,
-            payment.status || "",
-            formatDate(payment.date),
-            payment.paymentMode || "",
-            payment.paymentMethod || "",
-        ];
+        const printWindow = window.open("", "", "width=1200,height=800");
+        if (!printWindow) return;
 
-        const csv = [headers.join(","), row.join(",")].join("\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${payment.jobId || `payout-${payment.id}`}-report.csv`;
-        link.click();
-        URL.revokeObjectURL(url);
+        const jobId = payment.jobId || `PAY-${payment.id}`;
+        const customerName = customer?.name || "Customer";
+        const serviceName = payment.service || "Service";
+        const amount = Number(payment.amount || 0);
+
+        const reportDate = new Date().toLocaleDateString('en-AU', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+        });
+
+        // Design colors
+        const primaryColor = "#1F6FEB";
+        const darkColor = "#111827";
+        const lightTextColor = "#6B7280";
+        const borderColor = "#F1F1F4";
+        const successColor = "#17C653";
+
+        const styles = `
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+                
+                * { box-sizing: border-box; }
+                
+                body { 
+                    font-family: 'Inter', sans-serif; 
+                    padding: 40px; 
+                    color: ${darkColor};
+                    line-height: 1.5;
+                    background: white;
+                }
+                
+                .report-wrapper {
+                    max-width: 800px;
+                    margin: 0 auto;
+                }
+                
+                .header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 60px;
+                    border-bottom: 2px solid ${borderColor};
+                    padding-bottom: 20px;
+                }
+                
+                .brand-section h1 {
+                    font-size: 28px;
+                    font-weight: 800;
+                    color: ${primaryColor};
+                    margin: 0;
+                    letter-spacing: -0.5px;
+                }
+                
+                .report-meta {
+                    text-align: right;
+                }
+                
+                .report-meta h2 {
+                    font-size: 24px;
+                    font-weight: 700;
+                    margin: 0;
+                    color: ${darkColor};
+                }
+                
+                .details-grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 40px;
+                    margin-bottom: 40px;
+                }
+                
+                .detail-box h3 {
+                    font-size: 12px;
+                    text-transform: uppercase;
+                    color: ${lightTextColor};
+                    letter-spacing: 0.05em;
+                    margin-bottom: 8px;
+                }
+                
+                .detail-box p {
+                    margin: 2px 0;
+                    font-size: 15px;
+                    font-weight: 500;
+                }
+                
+                .status-badge {
+                    display: inline-block;
+                    padding: 4px 12px;
+                    border-radius: 99px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    margin-top: 8px;
+                    text-transform: capitalize;
+                }
+                
+                .status-released { background: #EAFFF1; color: ${successColor}; }
+                .status-escrowed { background: #EBF2FD; color: ${primaryColor}; }
+                .status-held { background: #FFF8DD; color: #F6B100; }
+                
+                .info-table {
+                    width: 100%;
+                    border: 1px solid ${borderColor};
+                    border-radius: 12px;
+                    overflow: hidden;
+                    margin-bottom: 40px;
+                }
+                
+                .info-row {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 16px 20px;
+                    border-bottom: 1px solid ${borderColor};
+                }
+                
+                .info-row:last-child { border-bottom: none; }
+                
+                .info-label { color: ${lightTextColor}; font-size: 14px; }
+                .info-value { font-weight: 600; color: ${darkColor}; }
+                
+                .footer {
+                    margin-top: 60px;
+                    text-align: center;
+                    font-size: 12px;
+                    color: ${lightTextColor};
+                }
+                
+                @media print {
+                    body { padding: 0; }
+                }
+            </style>
+        `;
+
+        const statusClass = `status-${(payment.status || "").toLowerCase()}`;
+
+        const html = `
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <title>Payout Report - ${jobId}</title>
+                    ${styles}
+                </head>
+                <body>
+                    <div class="report-wrapper">
+                        <div class="header">
+                            <div class="brand-section">
+                                <h1>AussieMate</h1>
+                                <p style="color: ${lightTextColor}; margin: 4px 0;">Payout Disbursement Record</p>
+                            </div>
+                            <div class="report-meta">
+                                <h2>Payout Report</h2>
+                                <p style="color: ${lightTextColor}; font-size: 14px; margin: 4px 0;">Generated on ${reportDate}</p>
+                            </div>
+                        </div>
+
+                        <div class="details-grid">
+                            <div class="detail-box">
+                                <h3>Customer Info</h3>
+                                <p style="font-size: 18px; font-weight: 700;">${customerName}</p>
+                                <p style="color: ${lightTextColor}; font-weight: 400;">${customer?.email || ''}</p>
+                            </div>
+                            <div class="detail-box" style="text-align: right;">
+                                <h3>Transaction Status</h3>
+                                <div class="status-badge ${statusClass}">
+                                    ${payment.status}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-table">
+                            <div class="info-row">
+                                <span class="info-label">Job reference</span>
+                                <span class="info-value">${jobId}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Service category</span>
+                                <span class="info-value">${serviceName}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Payment date</span>
+                                <span class="info-value">${formatDate(payment.date)}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Payment method</span>
+                                <span class="info-value">${payment.paymentMode || payment.paymentMethod || '—'}</span>
+                            </div>
+                            <div class="info-row" style="background: #F9FAFB;">
+                                <span class="info-label" style="font-weight: 700; color: ${darkColor};">Total payout amount</span>
+                                <span class="info-value" style="font-size: 18px; color: ${primaryColor};">AU$${amount.toLocaleString()}</span>
+                            </div>
+                        </div>
+
+                        <div style="background: #F3F4F6; padding: 20px; border-radius: 12px; font-size: 13px; color: ${lightTextColor};">
+                            <strong>Note:</strong> This report serves as a formal record of payout status for the referenced job. 
+                            Funds status depends on the escrow release conditions as per AussieMate terms of service.
+                        </div>
+
+                        <div class="footer">
+                            <p>© ${new Date().getFullYear()} AussieMate. All rights reserved.</p>
+                            <p>This is a system-generated secure document.</p>
+                        </div>
+                    </div>
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            window.onafterprint = function() { window.close(); };
+                        };
+                    </script>
+                </body>
+            </html>
+        `;
+
+        printWindow.document.write(html);
+        printWindow.document.close();
     };
 
     const closeInvoiceModal = () => {
@@ -339,29 +529,145 @@ export default function PaymentsTab({ customer }) {
     }, [searchQuery, statusFilter, paymentModeFilter, itemsPerPage]);
 
     const handleExportHistory = () => {
-        if (!tableRef.current) return;
+        if (!filteredPayments.length) return;
+
         const printWindow = window.open("", "", "width=1200,height=800");
         if (!printWindow) return;
 
-        const styles = `
-      <style>
-        body { font-family: Arial, sans-serif; margin: 16px; color: #111827; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px 12px; border: 1px solid #e5e7eb; text-align: left; font-size: 13px; }
-        th { background: #f9fafb; font-weight: 600; }
-        .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-weight: 600; font-size: 12px; border: 1px solid #e5e7eb; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-      </style>
-    `;
+        const customerName = customer?.name || "Customer";
+        const reportDate = new Date().toLocaleDateString('en-AU', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+        });
 
-        const tableHtml = tableRef.current.innerHTML;
-        printWindow.document.write(
-            `<html><head><title>Payments & Escrow</title>${styles}</head><body>${tableHtml}</body></html>`
-        );
+        const rows = filteredPayments.map(payment => `
+            <tr>
+                <td>${formatDate(payment.date)}</td>
+                <td style="font-weight: 600;">${formatCurrency(payment.amount)}</td>
+                <td>${payment.paymentMode || payment.paymentMethod || "—"}</td>
+                <td>
+                    <span class="status-badge status-${(payment.status || "").toLowerCase()}">
+                        ${payment.status}
+                    </span>
+                </td>
+            </tr>
+        `).join("");
+
+        const styles = `
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+                body { 
+                    font-family: 'Inter', sans-serif; 
+                    padding: 40px; 
+                    color: #1C1C1C;
+                    line-height: 1.5;
+                }
+                .header { 
+                    display: flex; 
+                    justify-content: space-between; 
+                    align-items: flex-start;
+                    margin-bottom: 40px;
+                    border-bottom: 2px solid #F1F1F4;
+                    padding-bottom: 20px;
+                }
+                .logo { font-size: 24px; font-weight: 700; color: #1F6FEB; }
+                .report-info { text-align: right; }
+                .report-title { font-size: 28px; font-weight: 700; margin-bottom: 10px; }
+                .customer-section { margin-bottom: 30px; }
+                .customer-label { color: #78829D; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+                .customer-name { font-size: 18px; font-weight: 600; margin-top: 4px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th { 
+                    text-align: left; 
+                    background: #F9FAFB; 
+                    padding: 12px 16px; 
+                    font-size: 12px; 
+                    font-weight: 600; 
+                    color: #78829D; 
+                    text-transform: uppercase;
+                    border-bottom: 1px solid #EEF0F5;
+                }
+                td { 
+                    padding: 16px; 
+                    border-bottom: 1px solid #EEF0F5; 
+                    font-size: 14px;
+                }
+                .status-badge {
+                    padding: 4px 10px;
+                    border-radius: 99px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    display: inline-block;
+                    text-transform: capitalize;
+                }
+                .status-released { background: #EAFFF1; color: #17C653; }
+                .status-escrowed, .status-held { background: #EBF2FD; color: #2563EB; }
+                .status-pending { background: #FFF8DD; color: #F6B100; }
+                .status-refunded { background: #FEE2E2; color: #EF4444; }
+                .footer { margin-top: 50px; font-size: 12px; color: #9CA3AF; text-align: center; }
+                @media print {
+                    body { padding: 0; }
+                }
+            </style>
+        `;
+
+        const html = `
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <title>Payment History - ${customerName}</title>
+                    ${styles}
+                </head>
+                <body>
+                    <div class="header">
+                        <div>
+                            <div class="logo">AussieMate</div>
+                            <div style="color: #78829D; font-size: 14px; margin-top: 4px;">Admin Portal</div>
+                        </div>
+                        <div class="report-info">
+                            <div style="font-size: 12px; color: #78829D;">Generated on</div>
+                            <div style="font-weight: 500;">${reportDate}</div>
+                        </div>
+                    </div>
+
+                    <div class="customer-section">
+                        <div class="report-title">Payment History Report</div>
+                        <div class="customer-label">Customer Details</div>
+                        <div class="customer-name">${customerName}</div>
+                        <div style="color: #78829D; font-size: 14px;">${customer?.email || ''}</div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Payment Mode</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows}
+                        </tbody>
+                    </table>
+
+                    <div class="footer">
+                        © ${new Date().getFullYear()} AussieMate. This is a system-generated report.
+                    </div>
+
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            window.onafterprint = function() { window.close(); };
+                        };
+                    </script>
+                </body>
+            </html>
+        `;
+
+        printWindow.document.write(html);
         printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
     };
 
     return (
@@ -426,7 +732,7 @@ export default function PaymentsTab({ customer }) {
                                 <SearchInput
                                     placeholder="Search by Job ID or Service"
                                     onChange={setSearchQuery}
-                                    className="md:w-[300px]"
+                                    className=" w-full"
                                 />
                             </div>
                             <div className="w-full sm:w-40">

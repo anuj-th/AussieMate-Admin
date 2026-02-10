@@ -14,7 +14,7 @@ export default function Dashboard() {
   }, [category]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 py-3 md:py-0">
       <StatsCards />
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 w-full">

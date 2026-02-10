@@ -111,7 +111,118 @@ export default function EarningsTab({ cleaner, totalEarnings, jobs = [] }) {
                                             label: "Export Payout Report",
                                             icon: <Upload className="w-5 h-5 text-[#6B7280]" />,
                                             onClick: () => {
-                                                console.log("Export payout report", payout.id);
+                                                const printWindow = window.open("", "", "width=800,height=800");
+                                                if (!printWindow) return;
+
+                                                const cleanerName = cleaner?.name || "Cleaner";
+                                                const amount = payout.amount || 0;
+                                                const platformFee = Math.round(amount * 0.15 * 100) / 100;
+                                                const gst = Math.round(amount * 0.10 * 100) / 100;
+                                                const netAmount = Math.max(amount - platformFee - gst, 0);
+
+                                                const styles = `
+                                                    <style>
+                                                        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+                                                        body { font-family: 'Inter', sans-serif; padding: 40px; color: #1f2937; line-height: 1.6; background-color: white; }
+                                                        .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 2px solid #f3f4f6; padding-bottom: 20px; }
+                                                        .invoice-title { font-size: 24px; font-weight: 600; color: #111827; }
+                                                        .company-info { text-align: right; font-size: 14px; color: #6b7280; }
+                                                        .section { margin-bottom: 30px; }
+                                                        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; }
+                                                        .label { font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+                                                        .value { font-size: 15px; color: #111827; font-weight: 500; }
+                                                        .payout-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                                                        .payout-table th { background-color: #f9fafb; text-align: left; padding: 12px 16px; font-size: 12px; border-bottom: 1px solid #e5e7eb; color: #4b5563; }
+                                                        .payout-table td { padding: 16px; border-bottom: 1px solid #f3f4f6; font-size: 14px; color: #374151; }
+                                                        .totals { margin-top: 30px; margin-left: auto; width: 300px; }
+                                                        .total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; }
+                                                        .total-row.grand-total { margin-top: 10px; padding-top: 15px; border-top: 2px solid #111827; font-size: 18px; font-weight: 600; color: #111827; }
+                                                        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 9999px; background: #FFF8DD; color: #F6B100; font-size: 12px; font-weight: 600; }
+                                                        @media print { body { padding: 0; } }
+                                                    </style>
+                                                `;
+
+                                                const html = `
+                                                    <!DOCTYPE html>
+                                                    <html>
+                                                        <head>
+                                                            <title>Payout Report - ${payout.id}</title>
+                                                            ${styles}
+                                                        </head>
+                                                        <body>
+                                                            <div class="invoice-header">
+                                                                <div>
+                                                                    <div class="invoice-title">Payout Advice</div>
+                                                                    <p class="value">Report ID: PAY-${payout.id}</p>
+                                                                </div>
+                                                                <div class="company-info">
+                                                                    <div class="value">AussieMate Admin</div>
+                                                                    <p>${new Date().toLocaleDateString()}</p>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="grid section">
+                                                                <div>
+                                                                    <div class="label">Payee Details</div>
+                                                                    <div class="value">${cleanerName}</div>
+                                                                    <div class="value">Cleaner Profile ID: ${cleaner?.id || "N/A"}</div>
+                                                                </div>
+                                                                <div>
+                                                                    <div class="label">Payout Status</div>
+                                                                    <div class="status-badge">Pending Approval</div>
+                                                                </div>
+                                                            </div>
+
+                                                            <table class="payout-table">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Service Description</th>
+                                                                        <th>Service Date</th>
+                                                                        <th style="text-align: right">Total Amount</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td>${payout.type} • ${payout.subType}</td>
+                                                                        <td>${payout.date}</td>
+                                                                        <td style="text-align: right">AU$${amount.toLocaleString()}</td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+
+                                                            <div class="totals">
+                                                                <div class="total-row">
+                                                                    <span class="label">Gross Payout</span>
+                                                                    <span class="value">AU$${amount.toLocaleString()}</span>
+                                                                </div>
+                                                                <div class="total-row">
+                                                                    <span class="label">Platform Fee (15%)</span>
+                                                                    <span class="value text-red-500">- AU$${platformFee.toLocaleString()}</span>
+                                                                </div>
+                                                                <div class="total-row">
+                                                                    <span class="label">GST (10%)</span>
+                                                                    <span class="value">- AU$${gst.toLocaleString()}</span>
+                                                                </div>
+                                                                <div class="total-row grand-total">
+                                                                    <span>Net Payout</span>
+                                                                    <span>AU$${netAmount.toLocaleString()}</span>
+                                                                </div>
+                                                            </div>
+
+                                                            <div style="margin-top: 100px; font-size: 12px; color: #9ca3af; border-top: 1px solid #f3f4f6; padding-top: 10px;">
+                                                                This is a computer-generated payout advice and does not require a signature.
+                                                            </div>
+                                                        </body>
+                                                    </html>
+                                                `;
+
+                                                printWindow.document.write(html);
+                                                printWindow.document.close();
+                                                setTimeout(() => {
+                                                    printWindow.focus();
+                                                    printWindow.print();
+                                                    printWindow.close();
+                                                }, 300);
                                             },
                                         },
                                     ]}

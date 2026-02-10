@@ -7,6 +7,7 @@ import { useBreadcrumb } from "../context/BreadcrumbContext";
 
 export default function Cleaners() {
   const [selectedCleaner, setSelectedCleaner] = useState(null);
+  const [isViewingJob, setIsViewingJob] = useState(false);
   const { setExtraCrumbs, setParentBreadcrumbOnClick } = useBreadcrumb();
   const navigate = useNavigate();
   const location = useLocation();
@@ -14,19 +15,20 @@ export default function Cleaners() {
 
   const handleBack = useCallback(() => {
     setSelectedCleaner(null);
+    setIsViewingJob(false);
     navigate("/cleaners", { replace: true });
   }, [navigate]);
 
   useEffect(() => {
     if (location.state?.cleaner) {
       setSelectedCleaner(location.state.cleaner);
+      setIsViewingJob(false);
     }
-    // Note: If cleanerId is in URL but no location.state, 
-    // the table component would need to expose data via ref to find the cleaner
   }, [location.state, cleanerId]);
 
   const handleViewCleaner = (cleaner) => {
     setSelectedCleaner(cleaner);
+    setIsViewingJob(false);
     const id = cleaner.id || cleaner._id;
     if (id) {
       navigate(`/cleaners/${id}`, { state: { cleaner }, replace: true });
@@ -37,9 +39,9 @@ export default function Cleaners() {
   useEffect(() => {
     if (selectedCleaner?.name) {
       setExtraCrumbs([
-        { 
-          label: selectedCleaner.name, 
-          path: null 
+        {
+          label: selectedCleaner.name,
+          path: null
         }
       ]);
       setParentBreadcrumbOnClick(() => handleBack);
@@ -59,14 +61,20 @@ export default function Cleaners() {
 
   return (
     <div>
-      <PageHeader
-        title={selectedCleaner ? selectedCleaner.name : "Cleaners"}
-        showBackArrow={!!selectedCleaner}
-        onBack={selectedCleaner ? handleBack : undefined}
-      />
+      {!isViewingJob && (
+        <PageHeader
+          title={selectedCleaner ? selectedCleaner.name : "Cleaners"}
+          showBackArrow={!!selectedCleaner}
+          onBack={selectedCleaner ? handleBack : undefined}
+        />
+      )}
 
       {selectedCleaner ? (
-        <CleanerDetails cleaner={selectedCleaner} onBackToList={handleBack} />
+        <CleanerDetails
+          cleaner={selectedCleaner}
+          onBackToList={handleBack}
+          onJobViewDetail={setIsViewingJob}
+        />
       ) : (
         <CleanersTable onViewCleaner={handleViewCleaner} />
       )}

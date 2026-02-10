@@ -8,8 +8,9 @@ import PaginationRanges from "../common/PaginationRanges";
 import silverTierIcon from "../../assets/icon/silver.svg";
 import goldTierIcon from "../../assets/icon/gold.svg";
 import bronzeTierIcon from "../../assets/icon/bronze.svg";
-import { fetchCleaners, fetchCleanersJobsStats, fetchCleanerJobs } from "../../api/services/cleanersService";
+import { fetchCleaners, fetchCleanersJobsStats } from "../../api/services/cleanersService";
 import Loader from "../common/Loader";
+import Avatar from "../common/Avatar";
 
 export default function CleanersTable({ onViewCleaner }) {
     const [cleaners, setCleaners] = useState([]);
@@ -25,7 +26,6 @@ export default function CleanersTable({ onViewCleaner }) {
     const [dateJoined, setDateJoined] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [failedImages, setFailedImages] = useState(new Set()); // Track failed image loads
     // Cache computed earnings from completed jobs (keyed by cleanerId)
     const [computedEarningsByCleanerId, setComputedEarningsByCleanerId] = useState({});
     // Cache computed total jobs count (keyed by cleanerId)
@@ -74,61 +74,7 @@ export default function CleanersTable({ onViewCleaner }) {
         return new Date(year, month - 1, day);
     };
 
-    // Helper function to get initials from name
-    const getInitials = (firstName, lastName, fullName) => {
-        if (firstName && lastName) {
-            return `${firstName.charAt(0).toUpperCase()}${lastName.charAt(0).toUpperCase()}`;
-        }
-        if (fullName) {
-            const nameParts = fullName.trim().split(/\s+/);
-            if (nameParts.length >= 2) {
-                return `${nameParts[0].charAt(0).toUpperCase()}${nameParts[nameParts.length - 1].charAt(0).toUpperCase()}`;
-            }
-            return nameParts[0].charAt(0).toUpperCase();
-        }
-        return "?";
-    };
 
-    // Helper function to generate a color based on name/ID (consistent for same name)
-    const getAvatarColor = (name, id) => {
-        // Color palette - different shades for avatars
-        const colors = [
-            '#FF6B6B', // Red
-            '#4ECDC4', // Teal
-            '#45B7D1', // Blue
-            '#FFA07A', // Light Salmon
-            '#98D8C8', // Mint
-            '#F7DC6F', // Yellow
-            '#BB8FCE', // Purple
-            '#85C1E2', // Sky Blue
-            '#F8B739', // Orange
-            '#52BE80', // Green
-            '#EC7063', // Coral
-            '#5DADE2', // Light Blue
-            '#F1948A', // Pink
-            '#82E0AA', // Light Green
-            '#F4D03F', // Gold
-            '#A569BD', // Medium Purple
-        ];
-        
-        // Use name or ID to generate a consistent hash
-        const str = name || id || 'default';
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            hash = str.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        
-        // Get color index from hash
-        const index = Math.abs(hash) % colors.length;
-        return colors[index];
-    };
-
-    // Helper function to check if a value is a valid image URL
-    const isValidImageUrl = (url) => {
-        if (!url || typeof url !== 'string') return false;
-        // Check if it's a valid URL (starts with http:// or https://) or is a data URL
-        return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:');
-    };
 
     // Map API response to UI structure
     const mapCleanerFromAPI = (cleaner) => {
@@ -136,16 +82,11 @@ export default function CleanersTable({ onViewCleaner }) {
         const lastName = cleaner.lastName || "";
         const name = `${firstName} ${lastName}`.trim() || cleaner.name || "Unknown Cleaner";
         const email = cleaner.email || "";
-        
-        // Get avatar URL - only use if it's a valid string URL
-        let avatar = null;
-        if (cleaner.profilePhoto?.url && isValidImageUrl(cleaner.profilePhoto.url)) {
-            avatar = cleaner.profilePhoto.url;
-        } else if (cleaner.avatar && isValidImageUrl(cleaner.avatar)) {
-            avatar = cleaner.avatar;
-        } else if (typeof cleaner.profilePhoto === 'string' && isValidImageUrl(cleaner.profilePhoto)) {
-            avatar = cleaner.profilePhoto;
-        }
+
+        // Get avatar URL candidate (must be a string)
+        const avatar = (typeof cleaner.profilePhoto?.url === 'string' ? cleaner.profilePhoto.url : null) ||
+            (typeof cleaner.avatar === 'string' ? cleaner.avatar : null) ||
+            (typeof cleaner.profilePhoto === 'string' ? cleaner.profilePhoto : null);
 
         const role = cleaner.role || cleaner.serviceType || "Professional Cleaner";
         const badge = cleaner.badge || cleaner.tier || "Silver";
@@ -196,11 +137,11 @@ export default function CleanersTable({ onViewCleaner }) {
             setError(null);
             try {
                 const isDateFilterActive = !!(dateJoined?.start && dateJoined?.end);
-                
+
                 // For date filtering, grouped role filtering, or client-side status/badge filtering, we need client-side filtering
                 const isGroupedRoleFilter = roleFilter === "Support Service Provider";
                 const needsClientSideFilter = isDateFilterActive || isGroupedRoleFilter || statusFilter || badgeFilter;
-                
+
                 let response;
                 if (needsClientSideFilter) {
                     // Fetch all pages when doing client-side filtering
@@ -208,7 +149,7 @@ export default function CleanersTable({ onViewCleaner }) {
                     let currentPageNum = 1;
                     let hasMore = true;
                     const pageLimit = 100;
-                    
+
                     while (hasMore) {
                         const pageResponse = await fetchCleaners({
                             page: currentPageNum,
@@ -218,7 +159,7 @@ export default function CleanersTable({ onViewCleaner }) {
                             status: statusFilter,
                             badge: badgeFilter,
                         });
-                        
+
                         let pageData = [];
                         if (pageResponse?.data?.cleaners && Array.isArray(pageResponse.data.cleaners)) {
                             pageData = pageResponse.data.cleaners;
@@ -229,9 +170,9 @@ export default function CleanersTable({ onViewCleaner }) {
                         } else if (Array.isArray(pageResponse.cleaners)) {
                             pageData = pageResponse.cleaners;
                         }
-                        
+
                         allData = [...allData, ...pageData];
-                        
+
                         if (pageResponse?.data?.pagination) {
                             hasMore = pageResponse.data.pagination.hasNextPage === true;
                             currentPageNum++;
@@ -239,12 +180,12 @@ export default function CleanersTable({ onViewCleaner }) {
                             hasMore = pageData.length === pageLimit && pageData.length > 0;
                             currentPageNum++;
                         }
-                        
+
                         if (pageData.length === 0 || currentPageNum > 100) {
                             hasMore = false;
                         }
                     }
-                    
+
                     response = {
                         data: {
                             cleaners: allData,
@@ -269,7 +210,7 @@ export default function CleanersTable({ onViewCleaner }) {
                         badge: badgeFilter,
                     });
                 }
-                
+
                 // Extract cleaners array
                 let data = [];
                 if (response?.data?.cleaners && Array.isArray(response.data.cleaners)) {
@@ -301,41 +242,40 @@ export default function CleanersTable({ onViewCleaner }) {
                         });
                     }
                 }
-                
+
                 if (!Array.isArray(data)) {
                     console.error('API response is not an array. Response:', response);
                     setError('Invalid data format received from server. Expected array of cleaners.');
                     setCleaners([]);
                     return;
                 }
-                
+
                 // Map API response to UI structure
                 let mappedCleaners = data.map(mapCleanerFromAPI);
 
-                // Fetch job stats and merge completedJobs into cleaners.jobs
+                // Fetch jobs stats in bulk and merge
                 try {
                     const statsResponse = await fetchCleanersJobsStats();
-                    const statsData = statsResponse?.data || statsResponse || [];
-                    const statsMap = Array.isArray(statsData)
-                        ? statsData.reduce((acc, item) => {
-                            const id = item.cleanerId || item._id;
-                            if (id) {
-                                acc[id] = item.completedJobs ?? item.totalAssigned ?? 0;
+                    const stats = statsResponse?.data || statsResponse || [];
+
+                    if (Array.isArray(stats)) {
+                        mappedCleaners = mappedCleaners.map(cleaner => {
+                            const cleanerStat = stats.find(s => s.cleanerId === cleaner.id || s._id === cleaner.id);
+                            if (cleanerStat) {
+                                return {
+                                    ...cleaner,
+                                    jobs: cleanerStat.completedJobs ?? cleaner.jobs,
+                                    earnings: cleanerStat.totalEarnings ?? cleaner.earnings
+                                };
                             }
-                            return acc;
-                        }, {})
-                        : {};
-                    
-                    mappedCleaners = mappedCleaners.map((cleaner) => {
-                        const jobsTotal = statsMap[cleaner.id];
-                        return {
-                            ...cleaner,
-                            jobs: jobsTotal !== undefined ? jobsTotal : cleaner.jobs,
-                        };
-                    });
+                            return cleaner;
+                        });
+                    }
                 } catch (statsErr) {
-                    console.warn('Failed to fetch cleaners job stats', statsErr);
+                    console.warn("Failed to fetch cleaners jobs stats", statsErr);
                 }
+
+                setCleaners(mappedCleaners);
 
                 // Client-side status filter (ensure dropdown matches table even if API doesn't filter)
                 if (statusFilter) {
@@ -362,7 +302,7 @@ export default function CleanersTable({ onViewCleaner }) {
                         return cleanerRole === target;
                     });
                 }
-                
+
                 // Apply client-side date filtering if needed
                 if (isDateFilterActive) {
                     const startTime = new Date(dateJoined.start).setHours(0, 0, 0, 0);
@@ -374,13 +314,13 @@ export default function CleanersTable({ onViewCleaner }) {
                         return time >= startTime && time <= endTime;
                     });
                 }
-                
+
                 // If doing client-side filtering (date range, grouped role, status, badge), paginate client-side
                 if (needsClientSideFilter) {
                     const total = mappedCleaners.length;
                     const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
                     const validCurrentPage = Math.min(currentPage, totalPages);
-                    
+
                     setPaginationInfo({
                         currentPage: validCurrentPage,
                         totalPages,
@@ -389,16 +329,16 @@ export default function CleanersTable({ onViewCleaner }) {
                         hasNextPage: validCurrentPage < totalPages,
                         hasPrevPage: validCurrentPage > 1
                     });
-                    
+
                     if (currentPage > totalPages) {
                         setCurrentPage(1);
                     }
-                    
+
                     setCleaners(mappedCleaners);
                 } else {
                     // API pagination is working correctly - use cleaners as-is
                     setCleaners(mappedCleaners);
-                    
+
                     if (response?.data?.pagination) {
                         const apiPagination = response.data.pagination;
                         setPaginationInfo({
@@ -435,10 +375,10 @@ export default function CleanersTable({ onViewCleaner }) {
                 }
             } catch (err) {
                 console.error('Error fetching cleaners:', err);
-                const errorMessage = 
-                    err?.response?.data?.message || 
-                    err?.response?.data?.error || 
-                    err?.message || 
+                const errorMessage =
+                    err?.response?.data?.message ||
+                    err?.response?.data?.error ||
+                    err?.message ||
                     'Failed to load cleaners data';
                 setError(errorMessage);
                 setCleaners([]);
@@ -454,7 +394,7 @@ export default function CleanersTable({ onViewCleaner }) {
     const isDateFilterActive = !!(dateJoined?.start && dateJoined?.end);
     const isGroupedRoleFilter = roleFilter === "Support Service Provider"; // grouped roles need client-side slicing
     const needsClientSidePagination = isDateFilterActive || isGroupedRoleFilter || statusFilter || badgeFilter || cleaners.length > itemsPerPage;
-    
+
     const paginatedCleaners = useMemo(() => {
         if (needsClientSidePagination) {
             // Client-side pagination - slice the cleaners array
@@ -464,83 +404,6 @@ export default function CleanersTable({ onViewCleaner }) {
         // Server-side pagination - cleaners are already paginated from API
         return cleaners;
     }, [cleaners, currentPage, itemsPerPage, needsClientSidePagination]);
-
-    // Compute total earnings from completed jobs AND total jobs count for cleaners visible on the current page.
-    // Uses GET /admin/cleaners/:cleanerId/jobs and caches results to avoid refetching.
-    useEffect(() => {
-        let cancelled = false;
-
-        const getJobAmount = (job) => {
-            const amount =
-                job?.cleanerQuote?.price ??
-                job?.acceptedQuoteId?.price ??
-                job?.amount ??
-                job?.price ??
-                0;
-            return Number(amount || 0);
-        };
-
-        const isCompletedJob = (job) => {
-            const status = (job?.status || job?.jobStatus || "").toString().toLowerCase();
-            return status === "completed" || status === "done";
-        };
-
-        const loadEarningsForVisibleCleaners = async () => {
-            const idsToFetch = (paginatedCleaners || [])
-                .map((c) => c?.id)
-                .filter(Boolean)
-                // fetch if either cache is missing for this cleaner
-                .filter((id) => computedEarningsByCleanerId[id] === undefined || computedJobsCountByCleanerId[id] === undefined);
-
-            if (idsToFetch.length === 0) return;
-
-            try {
-                const results = await Promise.allSettled(
-                    idsToFetch.map(async (cleanerId) => {
-                        const resp = await fetchCleanerJobs(cleanerId);
-                        const data = resp?.data || resp;
-                        const jobs = Array.isArray(data) ? data : Array.isArray(data?.jobs) ? data.jobs : [];
-                        const total = jobs
-                            .filter(isCompletedJob)
-                            .reduce((sum, job) => sum + getJobAmount(job), 0);
-                        const totalJobs = jobs.length;
-                        return { cleanerId, total, totalJobs };
-                    })
-                );
-
-                if (cancelled) return;
-
-                setComputedEarningsByCleanerId((prev) => {
-                    const next = { ...prev };
-                    for (const r of results) {
-                        if (r.status === "fulfilled" && r.value?.cleanerId) {
-                            next[r.value.cleanerId] = r.value.total;
-                        }
-                    }
-                    return next;
-                });
-
-                setComputedJobsCountByCleanerId((prev) => {
-                    const next = { ...prev };
-                    for (const r of results) {
-                        if (r.status === "fulfilled" && r.value?.cleanerId) {
-                            next[r.value.cleanerId] = r.value.totalJobs ?? 0;
-                        }
-                    }
-                    return next;
-                });
-            } catch (e) {
-                // Non-fatal; table will fall back to existing cleaner.earnings
-                console.warn("Failed to compute earnings from cleaner jobs", e);
-            }
-        };
-
-        loadEarningsForVisibleCleaners();
-        return () => {
-            cancelled = true;
-        };
-        // Intentionally depend on IDs (via paginatedCleaners) and cache state
-    }, [paginatedCleaners, computedEarningsByCleanerId, computedJobsCountByCleanerId]);
 
     const handleSelectAll = (checked) => {
         setSelectAll(checked);
@@ -793,26 +656,14 @@ export default function CleanersTable({ onViewCleaner }) {
                                         </td>
                                         <td className="min-w-[200px] md:min-w-[250px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
                                             <div className="flex items-center gap-2 md:gap-3">
-                                                {cleaner.avatar && isValidImageUrl(cleaner.avatar) && !failedImages.has(cleaner.id) ? (
-                                                    <img
-                                                        src={cleaner.avatar}
-                                                        alt={cleaner.name}
-                                                        className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover flex-shrink-0"
-                                                        onError={() => {
-                                                            // If image fails to load, add to failed images set
-                                                            setFailedImages(prev => new Set(prev).add(cleaner.id));
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <div 
-                                                        className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                                                        style={{ backgroundColor: getAvatarColor(cleaner.name, cleaner.id) }}
-                                                    >
-                                                        <span className="text-xs md:text-sm font-medium text-white">
-                                                            {getInitials(cleaner.firstName, cleaner.lastName, cleaner.name)}
-                                                        </span>
-                                                    </div>
-                                                )}
+                                                <Avatar
+                                                    src={cleaner.avatar}
+                                                    firstName={cleaner.firstName}
+                                                    lastName={cleaner.lastName}
+                                                    fullName={cleaner.name}
+                                                    id={cleaner.id}
+                                                    className="w-8 h-8 md:w-10 md:h-10"
+                                                />
                                                 <div className="min-w-0">
                                                     <p className="font-medium text-primary text-xs md:text-sm truncate">
                                                         {cleaner.name}
@@ -839,11 +690,7 @@ export default function CleanersTable({ onViewCleaner }) {
                                             })()}
                                         </td>
                                         <td className="min-w-[80px] md:min-w-[100px] px-2 md:px-4 py-2 md:py-4 text-primary border-r border-gray-200 text-xs md:text-sm font-medium">
-                                            {(() => {
-                                                const computed = computedJobsCountByCleanerId[cleaner.id];
-                                                const fallback = Number(cleaner.jobs || 0);
-                                                return computed !== undefined ? computed : fallback;
-                                            })()}
+                                            {cleaner.jobs}
                                         </td>
                                         <td className="min-w-[80px] md:min-w-[100px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
                                             <div
@@ -852,17 +699,12 @@ export default function CleanersTable({ onViewCleaner }) {
                                             >
                                                 <Star size={14} className="text-[#FFB020] fill-[#FFB020]" />
                                                 <span className="text-xs md:text-sm text-primary font-medium">
-                                                    {cleaner.rating}
+                                                    {Number(cleaner.rating || 0).toFixed(1)}
                                                 </span>
                                             </div>
                                         </td>
                                         <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-primary font-medium border-r border-gray-200 text-xs md:text-sm">
-                                            {(() => {
-                                                const computed = computedEarningsByCleanerId[cleaner.id];
-                                                const fallback = Number(cleaner.earnings || 0);
-                                                const value = computed !== undefined ? computed : fallback;
-                                                return `AU$${Number(value || 0).toLocaleString()}`;
-                                            })()}
+                                            {`AU$${Number(cleaner.earnings || 0).toLocaleString()}`}
                                         </td>
                                         <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200 ">
                                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${statusColors.bg} ${statusColors.border} ${statusColors.text} text-xs md:text-sm font-medium`}>

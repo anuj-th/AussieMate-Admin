@@ -16,5 +16,7 @@ export const ENDPOINTS = {
   TOP_LOCATIONS: '/admin/jobs/top-locations',
   JOBS: '/jobs',
   UPDATE_PAYMENT_STATUS: '/jobs',
+  REVIEWS: '/reviews',
   ADMIN_USERS: '/admin/users',
+  REVENUE_MTD: '/revenue/mtd',
 };

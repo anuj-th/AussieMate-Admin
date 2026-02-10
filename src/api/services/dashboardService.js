@@ -13,3 +13,9 @@ export const fetchTopLocations = async () => {
   return response.data;
 };
 
+// Fetch revenue MTD for dashboard
+export const fetchRevenueMTD = async () => {
+  const response = await client.get(ENDPOINTS.REVENUE_MTD);
+  return response.data;
+};
+

@@ -32,6 +32,7 @@ import {
   verifyCleanerAbn,
 } from "../../api/services/cleanersService";
 import { suspendUser } from "../../api/services/userService";
+import Avatar from "../common/Avatar";
 const INITIAL_DOCUMENTS = [
   {
     id: 1,
@@ -68,7 +69,7 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
 
   // Get original API data if available
   const originalData = cleaner.originalData || cleaner;
-  
+
   // Map API data to documents structure
   const mapDocumentsFromAPI = useCallback((kycData) => {
     const docs = [];
@@ -98,16 +99,16 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
       // Police Check
       if (docsObj.policeCheck) {
         const policeCheck = docsObj.policeCheck;
-        const isImage = policeCheck.fileType?.startsWith('image/') || 
-                       policeCheck.fileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+        const isImage = policeCheck.fileType?.startsWith('image/') ||
+          policeCheck.fileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
         docs.push({
           id: docId++,
           label: "Police Check",
           value: policeCheck.fileName || policeCheck.url || "",
           type: isImage ? "image" : "file",
-          status: policeCheck.status === "pending_review" ? "Pending" : 
-                 policeCheck.status === "approved" ? "Approved" : 
-                 policeCheck.status === "rejected" ? "Rejected" : "Pending",
+          status: policeCheck.status === "pending_review" ? "Pending" :
+            policeCheck.status === "approved" ? "Approved" :
+              policeCheck.status === "rejected" ? "Rejected" : "Pending",
           url: policeCheck.url,
           fileName: policeCheck.fileName,
           fileType: policeCheck.fileType,
@@ -126,16 +127,16 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
       // Photo ID
       if (docsObj.photoId) {
         const photoId = docsObj.photoId;
-        const isImage = photoId.fileType?.startsWith('image/') || 
-                       photoId.fileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+        const isImage = photoId.fileType?.startsWith('image/') ||
+          photoId.fileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
         docs.push({
           id: docId++,
           label: "Photo ID",
           value: photoId.fileName || photoId.url || "",
           type: isImage ? "image" : "file",
-          status: photoId.status === "pending_review" ? "Pending" : 
-                 photoId.status === "approved" ? "Approved" : 
-                 photoId.status === "rejected" ? "Rejected" : "Pending",
+          status: photoId.status === "pending_review" ? "Pending" :
+            photoId.status === "approved" ? "Approved" :
+              photoId.status === "rejected" ? "Rejected" : "Pending",
           url: photoId.url,
           fileName: photoId.fileName,
           fileType: photoId.fileType,
@@ -154,16 +155,16 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
       // Training Certificates
       if (docsObj.trainingCertificates) {
         const trainingCert = docsObj.trainingCertificates;
-        const isImage = trainingCert.fileType?.startsWith('image/') || 
-                       trainingCert.fileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+        const isImage = trainingCert.fileType?.startsWith('image/') ||
+          trainingCert.fileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
         docs.push({
           id: docId++,
           label: "Training Certificates",
           value: trainingCert.fileName || trainingCert.url || "",
           type: isImage ? "image" : "file",
-          status: trainingCert.status === "pending_review" ? "Pending" : 
-                 trainingCert.status === "approved" ? "Approved" : 
-                 trainingCert.status === "rejected" ? "Rejected" : "Pending",
+          status: trainingCert.status === "pending_review" ? "Pending" :
+            trainingCert.status === "approved" ? "Approved" :
+              trainingCert.status === "rejected" ? "Rejected" : "Pending",
           url: trainingCert.url,
           fileName: trainingCert.fileName,
           fileType: trainingCert.fileType,
@@ -186,9 +187,23 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
   const [documents, setDocuments] = useState(() => mapDocumentsFromAPI(originalData));
   const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [activeAction, setActiveAction] = useState(null); // "approve" | "reject" | "suspend" | null
-  const [completedJobs, setCompletedJobs] = useState(0);
-  const [averageRating, setAverageRating] = useState(0);
-  const [cleanerTier, setCleanerTier] = useState("none");
+  const [completedJobs, setCompletedJobs] = useState(() => {
+    const cleanerSrc = originalData.cleaner || originalData;
+    return cleanerSrc?.completedJobs ?? 0;
+  });
+  const [averageRating, setAverageRating] = useState(() => {
+    const cleanerSrc = originalData.cleaner || originalData;
+    return cleanerSrc?.averageRating ?? 0;
+  });
+  const [cleanerTier, setCleanerTier] = useState(() => {
+    const cleanerSrc = originalData.cleaner || originalData;
+    return cleanerSrc?.tier ?? "none";
+  });
+
+  const isKycComplete = documents.length > 0 && documents.every(doc =>
+    doc.status !== "Not Uploaded" &&
+    !(doc.type === "abn" && (!doc.value || doc.value === "null" || doc.value === ""))
+  );
   const [savingKyc, setSavingKyc] = useState(false);
   const [rejectModal, setRejectModal] = useState({ open: false, docId: null, docKey: null, docLabel: "" });
   const [rejectReason, setRejectReason] = useState("");
@@ -214,77 +229,7 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
     return "Pending";
   }, []);
 
-  // Fetch completed jobs for the cleaner
-  useEffect(() => {
-    const loadCompletedJobs = async () => {
-      try {
-        const response = await fetchCleanersJobsStats();
-        const stats = response?.data || response || [];
-        
-        // Get cleaner ID from originalData or cleaner
-        const cleanerId = originalData._id || cleaner._id || cleaner.id;
-        
-        // Find matching cleaner stats
-        const cleanerStats = Array.isArray(stats)
-          ? stats.find((stat) => stat.cleanerId === cleanerId || stat._id === cleanerId)
-          : null;
-        
-        if (cleanerStats?.completedJobs !== undefined) {
-          setCompletedJobs(cleanerStats.completedJobs);
-        }
-      } catch (error) {
-        console.warn("Failed to load cleaner jobs stats", error);
-      }
-    };
 
-    if (cleaner) {
-      loadCompletedJobs();
-    }
-  }, [cleaner, originalData]);
-
-  // Fetch cleaner details (averageRating and tier)
-  useEffect(() => {
-    const loadCleanerDetails = async () => {
-      try {
-        // Get cleaner ID from originalData or cleaner
-        const cleanerId = originalData._id || cleaner._id || cleaner.id;
-        
-        if (!cleanerId) return;
-
-        // If we already have these fields locally, skip the extra API call
-        const hasLocalRating = originalData.averageRating !== undefined && originalData.averageRating !== null;
-        const hasLocalTier = originalData.tier !== undefined && originalData.tier !== null;
-        if (hasLocalRating) setAverageRating(originalData.averageRating);
-        if (hasLocalTier) setCleanerTier(originalData.tier);
-        if (hasLocalRating && hasLocalTier) return;
-
-        const response = await fetchCleanerById(cleanerId);
-        const cleanerData = response?.data || response;
-        
-        if (cleanerData) {
-          if (cleanerData.averageRating !== undefined) {
-            setAverageRating(cleanerData.averageRating);
-          }
-          if (cleanerData.tier !== undefined) {
-            setCleanerTier(cleanerData.tier);
-          }
-        }
-      } catch (error) {
-        console.warn("Failed to load cleaner details", error);
-        // Fallback to existing data
-        if (originalData.averageRating !== undefined) {
-          setAverageRating(originalData.averageRating);
-        }
-        if (originalData.tier) {
-          setCleanerTier(originalData.tier);
-        }
-      }
-    };
-
-    if (cleaner) {
-      loadCleanerDetails();
-    }
-  }, [cleaner, originalData]);
 
   // Fetch cleaner KYC documents
   useEffect(() => {
@@ -303,7 +248,7 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
         }
         // Get cleaner ID from originalData or cleaner
         const cleanerId = originalData._id || cleaner._id || cleaner.id;
-        
+
         if (!cleanerId) {
           // Fallback to original data mapping
           const mappedDocs = mapDocumentsFromAPI();
@@ -328,6 +273,14 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
         if (kycData) {
           const mappedDocs = mapDocumentsFromAPI(kycData);
           setDocuments(mappedDocs);
+
+          // Extract stats and names from kycData.cleaner if available
+          const cleanerInfo = kycData.cleaner || kycData;
+          if (cleanerInfo.firstName !== undefined) cleaner.firstName = cleanerInfo.firstName;
+          if (cleanerInfo.lastName !== undefined) cleaner.lastName = cleanerInfo.lastName;
+          if (cleanerInfo.completedJobs !== undefined) setCompletedJobs(cleanerInfo.completedJobs);
+          if (cleanerInfo.averageRating !== undefined) setAverageRating(cleanerInfo.averageRating);
+          if (cleanerInfo.tier !== undefined) setCleanerTier(cleanerInfo.tier);
         } else {
           // Fallback to original data mapping
           const mappedDocs = mapDocumentsFromAPI();
@@ -349,8 +302,8 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
   }, [cleaner, originalData, mapDocumentsFromAPI]);
 
   const tier = cleanerTier || cleaner.tier || originalData.tier || "none";
-  const tierLabel = tier.toLowerCase() === "none" 
-    ? "None Tier" 
+  const tierLabel = tier.toLowerCase() === "none"
+    ? "None Tier"
     : `${tier.charAt(0).toUpperCase()}${tier.slice(1).toLowerCase()} Tier`;
 
   const tierIcon =
@@ -547,50 +500,54 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
           }}
         >
           <div className="relative flex flex-col items-center text-center gap-2 pt-4 pb-6">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-[3px] border-[#EBF2FD] shadow-md mb-1 bg-white">
-            <img
-              src={cleaner.avatar}
-              alt={cleaner.name}
-              className="w-full h-full object-cover"
-            />
-          </div>
+            <div className="w-24 h-24 rounded-full overflow-hidden border-[3px] border-[#EBF2FD] shadow-md mb-1 bg-white flex items-center justify-center">
+              <Avatar
+                src={cleaner.avatar}
+                firstName={cleaner.firstName}
+                lastName={cleaner.lastName}
+                fullName={cleaner.name}
+                id={cleanerId}
+                className="w-full h-full"
+                size={96}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <h2 className="text-lg font-semibold text-primary">
-              {cleaner.name}
-            </h2>
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold text-primary">
+                {cleaner.name}
+              </h2>
 
-            {/* Role, joined date, jobs completed */}
-            <div className="flex flex-wrap items-center justify-center gap-4 mt-1 text-sm text-[#78829D]">
-              <span className="flex items-center gap-1.5">
-                <User size={16} className="text-[#78829D]" />
-                <span>{cleaner.role || "Professional Cleaner"}</span>
+              {/* Role, joined date, jobs completed */}
+              <div className="flex flex-wrap items-center justify-center gap-4 mt-1 text-sm text-[#78829D]">
+                <span className="flex items-center gap-1.5">
+                  <User size={16} className="text-[#78829D]" />
+                  <span>{cleaner.role || "Professional Cleaner"}</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Calendar size={16} className="text-[#78829D]" />
+                  <span>Joined: {cleaner.joined}</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Briefcase size={16} className="text-[#78829D]" />
+                  <span>Jobs Completed: {completedJobs}</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Rating & Tier */}
+            <div className="flex items-center justify-center gap-3 mt-4 ">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-[#FFF8DD] border border-[#F6B10033] text-[#F6B100]">
+                <Star size={14} className="text-[#F6B100] fill-[#F6B100]" />
+                <span>{averageRating > 0 ? averageRating.toFixed(1) : "0.0"}</span>
               </span>
-              <span className="flex items-center gap-1.5">
-                <Calendar size={16} className="text-[#78829D]" />
-                <span>Joined: {cleaner.joined}</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Briefcase size={16} className="text-[#78829D]" />
-                <span>Jobs Completed: {completedJobs}</span>
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-[#F3F4F6] border border-[#E5E7EB] text-[#4B5563]">
+                {tierIcon && <img src={tierIcon} alt={tierLabel} className="w-4 h-4" />}
+                <span>{tierLabel}</span>
               </span>
             </div>
           </div>
-
-          {/* Rating & Tier */}
-          <div className="flex items-center justify-center gap-3 mt-4 ">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-[#FFF8DD] border border-[#F6B10033] text-[#F6B100]">
-              <Star size={14} className="text-[#F6B100] fill-[#F6B100]" />
-              <span>{averageRating > 0 ? averageRating.toFixed(1) : "0.0"}</span>
-            </span>
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-[#F3F4F6] border border-[#E5E7EB] text-[#4B5563]">
-              {tierIcon && <img src={tierIcon} alt={tierLabel} className="w-4 h-4" />}
-              <span>{tierLabel}</span>
-            </span>
-          </div>
-          </div>
         </div>
-        
+
         {/* Top-right actions menu - positioned outside overflow-hidden container */}
         <div className="absolute top-4 right-4 z-10">
           <CustomMenu
@@ -645,164 +602,164 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
             </div>
           ) : (
             documents.map((doc) => (
-            <div
-              key={doc.id}
-              className="px-4 md:px-6 py-3 md:py-4 flex flex-col md:flex-row md:items-center gap-3 md:gap-4 font-medium min-w-0"
-            >
-              {/* Label */}
-              <div className="w-full md:w-1/5 flex items-center gap-2 text-sm text-primary ">
-                <span className="text-primary font-medium">{doc.id}.</span>
-                <span className="font-medium text-primary">
-                  {doc.label}
-                </span>
-              </div>
+              <div
+                key={doc.id}
+                className="px-4 md:px-6 py-3 md:py-4 flex flex-col md:flex-row md:items-center gap-3 md:gap-4 font-medium min-w-0"
+              >
+                {/* Label */}
+                <div className="w-full md:w-1/5 flex items-center gap-2 text-sm text-primary ">
+                  <span className="text-primary font-medium">{doc.id}.</span>
+                  <span className="font-medium text-primary">
+                    {doc.label}
+                  </span>
+                </div>
 
-              {/* Value + status/actions */}
-              <div className="flex-1 flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-                {/* ABN row with checkbox + value */}
-                {doc.type === "abn" && (
-                  <div className="flex w-full items-center gap-3">
-                    <div className="flex-1">
-                      <div className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-md px-3 py-2 text-sm text-[#111827]">
+                {/* Value + status/actions */}
+                <div className="flex-1 flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+                  {/* ABN row with checkbox + value */}
+                  {doc.type === "abn" && (
+                    <div className="flex w-full items-center gap-3">
+                      <div className="flex-1">
+                        <div className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-md px-3 py-2 text-sm text-[#111827]">
+                          {doc.value}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <Checkbox
+                          checked={doc.status === "Verified" || doc.abnVerified === true}
+                          onChange={(e) => handleAbnVerifiedToggle(e.target.checked)}
+                          disabled={savingKyc || doc.abnVerified === true}
+                          checkboxSize="w-4 h-4"
+                          className="items-center"
+                        />
+                        Verified
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Text value rows (non‑ABN) */}
+                  {doc.type === "text" && doc.label !== "ABN Number" && (
+                    <div className="w-full md:w-2/3">
+                      <div className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-md px-3 py-2 text-xs text-[#111827]">
                         {doc.value}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <Checkbox
-                        checked={doc.status === "Verified" || doc.abnVerified === true}
-                        onChange={(e) => handleAbnVerifiedToggle(e.target.checked)}
-                        disabled={savingKyc || doc.abnVerified === true}
-                        checkboxSize="w-4 h-4"
-                        className="items-center"
-                      />
-                      Verified
-                    </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Text value rows (non‑ABN) */}
-                {doc.type === "text" && doc.label !== "ABN Number" && (
-                  <div className="w-full md:w-2/3">
-                    <div className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-md px-3 py-2 text-xs text-[#111827]">
-                      {doc.value}
-                    </div>
-                  </div>
-                )}
-
-                {/* File rows with red PDF icon */}
-                {doc.type === "file" && doc.status !== "Not Uploaded" && (
-                  <div className="flex items-center gap-3 w-full md:w-auto">
-                    <a
-                      href={doc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-xs font-medium cursor-pointer hover:underline"
-                    >
-                      <FileText
-                        size={18}
-                        className="text-[#EF4444]"
-                      />
-                      <span className="text-sm text-primary">{doc.value || doc.fileName}</span>
-                    </a>
-                    <a
-                      href={doc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#2563EB] hover:bg-[#EFF6FF] rounded cursor-pointer transition-colors"
-                      title="View document"
-                    >
-                      <Eye size={14} />
-                      View
-                    </a>
-                  </div>
-                )}
-
-                {/* Image preview */}
-                {doc.type === "image" && doc.status !== "Not Uploaded" && (
-                  <div className="flex items-center gap-3 w-full md:w-auto">
-                    <div className="w-full md:w-32 h-20 border border-[#E5E7EB] rounded-md overflow-hidden bg-[#F9FAFB]">
-                      {doc.url ? (
-                        <img
-                          src={doc.url}
-                          alt={doc.fileName || doc.label}
-                          className="w-full h-full object-cover"
+                  {/* File rows with red PDF icon */}
+                  {doc.type === "file" && doc.status !== "Not Uploaded" && (
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-xs font-medium cursor-pointer hover:underline"
+                      >
+                        <FileText
+                          size={18}
+                          className="text-[#EF4444]"
                         />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[10px] text-[#9CA3AF]">
-                          Preview
-                        </div>
-                      )}
-                    </div>
-                    {doc.url && (
+                        <span className="text-sm text-primary">{doc.value || doc.fileName}</span>
+                      </a>
                       <a
                         href={doc.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#2563EB] hover:bg-[#EFF6FF] rounded cursor-pointer transition-colors"
-                        title="View image"
+                        title="View document"
                       >
                         <Eye size={14} />
                         View
                       </a>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  )}
 
-                {/* No document uploaded message */}
-                {doc.status === "Not Uploaded" && (
-                  <div className="text-sm text-[#9CA3AF] italic">
-                    No document uploaded
-                  </div>
-                )}
-
-                {/* Status / actions (skip for ABN row and Not Uploaded) */}
-                {doc.type !== "abn" && doc.status !== "Not Uploaded" && (
-                  <div className="flex items-center gap-3 text-sm md:ml-auto justify-start md:justify-end">
-                    {doc.status === "Verified" && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#EAFFF1] text-[#17C653] border border-[#17C65333] ">
-                        <CheckCircle2 size={14} />
-                        Verified
-                      </span>
-                    )}
-
-                    {doc.status === "Approved" && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#EAFFF1] text-[#17C653] border border-[#17C65333] !cursor-pointer">
-                        <CheckCircle2 size={14} />
-                        Approved
-                      </span>
-                    )}
-
-                    {doc.status === "Rejected" && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#FFE5E9] text-[#F1416C] border border-[#F1416C33] !cursor-pointer">
-                        <XCircle size={14} />
-                        Rejected
-                      </span>
-                    )}
-
-                    {doc.status === "Pending" && (
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          disabled={savingKyc}
-                          onClick={() => handleReviewDoc(doc.id, "approve")}
-                          className="text-[#17C653] font-medium hover:underline cursor-pointer"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          type="button"
-                          disabled={savingKyc}
-                          onClick={() => handleReviewDoc(doc.id, "reject")}
-                          className="text-[#F1416C] font-medium hover:underline cursor-pointer"
-                        >
-                          Reject
-                        </button>
+                  {/* Image preview */}
+                  {doc.type === "image" && doc.status !== "Not Uploaded" && (
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                      <div className="w-full md:w-32 h-20 border border-[#E5E7EB] rounded-md overflow-hidden bg-[#F9FAFB]">
+                        {doc.url ? (
+                          <img
+                            src={doc.url}
+                            alt={doc.fileName || doc.label}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[10px] text-[#9CA3AF]">
+                            Preview
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                )}
+                      {doc.url && (
+                        <a
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#2563EB] hover:bg-[#EFF6FF] rounded cursor-pointer transition-colors"
+                          title="View image"
+                        >
+                          <Eye size={14} />
+                          View
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {/* No document uploaded message */}
+                  {doc.status === "Not Uploaded" && (
+                    <div className="text-sm text-[#9CA3AF] italic">
+                      No document uploaded
+                    </div>
+                  )}
+
+                  {/* Status / actions (skip for ABN row and Not Uploaded) */}
+                  {doc.type !== "abn" && doc.status !== "Not Uploaded" && (
+                    <div className="flex items-center gap-3 text-sm md:ml-auto justify-start md:justify-end">
+                      {doc.status === "Verified" && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#EAFFF1] text-[#17C653] border border-[#17C65333] ">
+                          <CheckCircle2 size={14} />
+                          Verified
+                        </span>
+                      )}
+
+                      {doc.status === "Approved" && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#EAFFF1] text-[#17C653] border border-[#17C65333] !cursor-pointer">
+                          <CheckCircle2 size={14} />
+                          Approved
+                        </span>
+                      )}
+
+                      {doc.status === "Rejected" && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#FFE5E9] text-[#F1416C] border border-[#F1416C33] !cursor-pointer">
+                          <XCircle size={14} />
+                          Rejected
+                        </span>
+                      )}
+
+                      {doc.status === "Pending" && (
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            disabled={savingKyc}
+                            onClick={() => handleReviewDoc(doc.id, "approve")}
+                            className="text-[#17C653] font-medium hover:underline cursor-pointer"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            disabled={savingKyc}
+                            onClick={() => handleReviewDoc(doc.id, "reject")}
+                            className="text-[#F1416C] font-medium hover:underline cursor-pointer"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
             ))
           )}
         </div>
@@ -841,14 +798,25 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
           }
           description={
             activeAction === "approve"
-              ? `This will enable ${cleaner.name} to receive jobs in their radius (${cleaner.radius || originalData.radius || "0–20 km"}).`
+              ? (
+                <span className="flex flex-col gap-2">
+                  <span>{`This will enable ${cleaner.name} to receive jobs in their radius (${cleaner.radius || originalData.radius || "0–20 km"}).`}</span>
+                  {!isKycComplete && (
+                    <span className="text-[#F1416C] font-semibold text-xs mt-2 bg-[#FFE5E9] p-3 rounded-lg border border-[#F1416C33] text-left">
+                      ⚠️ Cannot approve KYC. Please ensure all documents (Police Check, Photo ID, Training Certificates) are uploaded and the ABN number is provided.
+                    </span>
+                  )}
+                </span>
+              )
               : activeAction === "reject"
                 ? `Are you sure you want to reject application of ${cleaner.name}?`
                 : `Are you sure you want to suspend ${cleaner.name}?`
           }
           primaryLabel={
             activeAction === "approve"
-              ? "Approve KYC"
+              ? isKycComplete
+                ? "Approve KYC"
+                : "Missing Documents"
               : activeAction === "reject"
                 ? "Yes, Reject"
                 : savingKyc
@@ -866,6 +834,9 @@ export default function ApprovalsDetails({ cleaner, onBackToList }) {
 
             // Approve KYC = verify ABN + approve all documents
             if (activeAction === "approve") {
+              if (!isKycComplete) {
+                return;
+              }
               try {
                 setSavingKyc(true);
                 const abnDoc = documents.find((d) => d.type === "abn");

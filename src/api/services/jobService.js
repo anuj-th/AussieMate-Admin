@@ -16,7 +16,7 @@ export const fetchJobs = async (params = {}) => {
   const queryParams = new URLSearchParams();
   queryParams.append('page', page.toString());
   queryParams.append('limit', limit.toString());
-  
+
   if (search) queryParams.append('search', search);
   if (jobType) queryParams.append('jobType', jobType);
   if (jobStatus) queryParams.append('jobStatus', jobStatus);
@@ -42,41 +42,41 @@ export const fetchJobsStats = async () => {
     const queryParams = new URLSearchParams();
     queryParams.append('page', '1');
     queryParams.append('limit', '1');
-    
+
     const response = await client.get(`${ENDPOINTS.JOBS}?${queryParams.toString()}`);
-    
+
     // Debug: log the full response structure
     console.log('fetchJobsStats raw response:', response);
     console.log('fetchJobsStats response.data:', response?.data);
-    
+
     // Extract total jobs - check all possible locations in the response
     // Check response.data first (standard axios response structure)
     const data = response?.data || response;
-    
+
     // Check root level of data (as user mentioned: totalJobs: 52)
     if (data?.totalJobs !== undefined && data.totalJobs !== null) {
       return { totalJobs: data.totalJobs };
     }
-    
+
     // Check pagination object
     if (data?.pagination?.totalJobs !== undefined && data.pagination.totalJobs !== null) {
       return { totalJobs: data.pagination.totalJobs };
     }
-    
+
     // Check alternative pagination structure
     if (data?.pagination?.total !== undefined && data.pagination.total !== null) {
       return { totalJobs: data.pagination.total };
     }
-    
+
     // Check nested data structure
     if (data?.data?.totalJobs !== undefined && data.data.totalJobs !== null) {
       return { totalJobs: data.data.totalJobs };
     }
-    
+
     if (data?.data?.pagination?.totalJobs !== undefined && data.data.pagination.totalJobs !== null) {
       return { totalJobs: data.data.pagination.totalJobs };
     }
-    
+
     // Fallback: if no pagination info, return 0
     console.warn('fetchJobsStats: Could not find totalJobs in response. Full response:', response);
     return { totalJobs: 0 };
@@ -120,8 +120,14 @@ export const updatePaymentStatus = async (jobId, status) => {
       throw error;
     }
   }
-  
+
   // If all endpoints failed, throw the last error
   throw lastError;
+};
+
+// Fetch job review status
+export const fetchJobReviewStatus = async (jobId) => {
+  const response = await client.get(`${ENDPOINTS.REVIEWS}/job/${jobId}/status`);
+  return response.data;
 };
 

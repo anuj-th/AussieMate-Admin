@@ -102,14 +102,14 @@ export default function CustomersTable({ onViewCustomer }) {
             '#F4D03F', // Gold
             '#A569BD', // Medium Purple
         ];
-        
+
         // Use name or ID to generate a consistent hash
         const str = name || id || 'default';
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
             hash = str.charCodeAt(i) + ((hash << 5) - hash);
         }
-        
+
         // Get color index from hash
         const index = Math.abs(hash) % colors.length;
         return colors[index];
@@ -129,7 +129,7 @@ export default function CustomersTable({ onViewCustomer }) {
         const name = `${firstName} ${lastName}`.trim() || customer.name || "Unknown Customer";
         const email = customer.email || "";
         const phone = customer.phone || customer.phoneNumber || "";
-        
+
         // Get avatar URL - only use if it's a valid string URL
         let avatar = null;
         if (customer.profilePhoto?.url && isValidImageUrl(customer.profilePhoto.url)) {
@@ -177,10 +177,10 @@ export default function CustomersTable({ onViewCustomer }) {
             setError(null);
             try {
                 const isDateFilterActive = !!(dateJoined?.start && dateJoined?.end);
-                
+
                 // For date filtering or NDIS toggle, we need client-side filtering
                 const needsClientSideFilter = isDateFilterActive || ndisOnly;
-                
+
                 let response;
                 if (needsClientSideFilter) {
                     // Fetch all pages when doing client-side filtering
@@ -188,7 +188,7 @@ export default function CustomersTable({ onViewCustomer }) {
                     let currentPageNum = 1;
                     let hasMore = true;
                     const pageLimit = 100;
-                    
+
                     while (hasMore) {
                         const pageResponse = await fetchCustomers({
                             page: currentPageNum,
@@ -199,7 +199,7 @@ export default function CustomersTable({ onViewCustomer }) {
                             location: locationFilter,
                             badge: badgeFilter,
                         });
-                        
+
                         let pageData = [];
                         if (pageResponse?.data?.customers && Array.isArray(pageResponse.data.customers)) {
                             pageData = pageResponse.data.customers;
@@ -210,9 +210,9 @@ export default function CustomersTable({ onViewCustomer }) {
                         } else if (Array.isArray(pageResponse.customers)) {
                             pageData = pageResponse.customers;
                         }
-                        
+
                         allData = [...allData, ...pageData];
-                        
+
                         if (pageResponse?.data?.pagination) {
                             hasMore = pageResponse.data.pagination.hasNextPage === true;
                             currentPageNum++;
@@ -220,12 +220,12 @@ export default function CustomersTable({ onViewCustomer }) {
                             hasMore = pageData.length === pageLimit && pageData.length > 0;
                             currentPageNum++;
                         }
-                        
+
                         if (pageData.length === 0 || currentPageNum > 100) {
                             hasMore = false;
                         }
                     }
-                    
+
                     response = {
                         data: {
                             customers: allData,
@@ -251,7 +251,7 @@ export default function CustomersTable({ onViewCustomer }) {
                         badge: badgeFilter,
                     });
                 }
-                
+
                 // Extract customers array
                 let data = [];
                 if (response?.data?.customers && Array.isArray(response.data.customers)) {
@@ -283,14 +283,14 @@ export default function CustomersTable({ onViewCustomer }) {
                         });
                     }
                 }
-                
+
                 if (!Array.isArray(data)) {
                     console.error('API response is not an array. Response:', response);
                     setError('Invalid data format received from server. Expected array of customers.');
                     setCustomers([]);
                     return;
                 }
-                
+
                 // Map API response to UI structure
                 let mappedCustomers = data.map(mapCustomerFromAPI);
 
@@ -302,24 +302,26 @@ export default function CustomersTable({ onViewCustomer }) {
                         ? statsData.reduce((acc, item) => {
                             const id = item.customerId || item._id;
                             if (id) {
-                                const totalJobs = item.totalJobs ?? item.completedJobs ?? item.postedJobs ?? 0;
+                                const totalJobs = item.totalJobs ?? item.postedJobs ?? 0;
+                                const jobsCompleted = item.completedJobs ?? 0;
                                 // Prefer totalSpend from API; otherwise derive from cents if provided
                                 const totalSpend =
                                     item.totalSpend ??
                                     (item.totalSpendCents !== undefined && item.totalSpendCents !== null
                                         ? Number(item.totalSpendCents) / 100
                                         : undefined);
-                                acc[id] = { totalJobs, totalSpend };
+                                acc[id] = { totalJobs, jobsCompleted, totalSpend };
                             }
                             return acc;
                         }, {})
                         : {};
-                    
+
                     mappedCustomers = mappedCustomers.map((customer) => {
                         const stats = statsMap[customer.id];
                         return {
                             ...customer,
                             jobsPosted: stats?.totalJobs !== undefined ? stats.totalJobs : customer.jobsPosted,
+                            jobsCompleted: stats?.jobsCompleted !== undefined ? stats.jobsCompleted : (customer.jobsCompleted || 0),
                             spend: stats?.totalSpend !== undefined ? stats.totalSpend : customer.spend,
                         };
                     });
@@ -331,7 +333,7 @@ export default function CustomersTable({ onViewCustomer }) {
                 if (ndisOnly) {
                     mappedCustomers = mappedCustomers.filter((customer) => customer.isNdisParticipant);
                 }
-                
+
                 // Apply client-side date filtering if needed
                 if (isDateFilterActive) {
                     const startTime = new Date(dateJoined.start).setHours(0, 0, 0, 0);
@@ -343,13 +345,13 @@ export default function CustomersTable({ onViewCustomer }) {
                         return time >= startTime && time <= endTime;
                     });
                 }
-                
+
                 // If doing client-side filtering, paginate client-side
                 if (needsClientSideFilter) {
                     const total = mappedCustomers.length;
                     const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
                     const validCurrentPage = Math.min(currentPage, totalPages);
-                    
+
                     setPaginationInfo({
                         currentPage: validCurrentPage,
                         totalPages,
@@ -358,16 +360,16 @@ export default function CustomersTable({ onViewCustomer }) {
                         hasNextPage: validCurrentPage < totalPages,
                         hasPrevPage: validCurrentPage > 1
                     });
-                    
+
                     if (currentPage > totalPages) {
                         setCurrentPage(1);
                     }
-                    
+
                     setCustomers(mappedCustomers);
                 } else {
                     // API pagination is working correctly - use customers as-is
                     setCustomers(mappedCustomers);
-                    
+
                     if (response?.data?.pagination) {
                         const apiPagination = response.data.pagination;
                         setPaginationInfo({
@@ -388,7 +390,7 @@ export default function CustomersTable({ onViewCustomer }) {
                             hasNextPage: apiPagination.hasNextPage !== undefined ? apiPagination.hasNextPage : currentPage < (apiPagination.totalPages || 1),
                             hasPrevPage: apiPagination.hasPrevPage !== undefined ? apiPagination.hasPrevPage : currentPage > 1
                         });
-            } else {
+                    } else {
                         // Fallback pagination
                         const total = mappedCustomers.length;
                         const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
@@ -404,10 +406,10 @@ export default function CustomersTable({ onViewCustomer }) {
                 }
             } catch (err) {
                 console.error('Error fetching customers:', err);
-                const errorMessage = 
-                    err?.response?.data?.message || 
-                    err?.response?.data?.error || 
-                    err?.message || 
+                const errorMessage =
+                    err?.response?.data?.message ||
+                    err?.response?.data?.error ||
+                    err?.message ||
                     'Failed to load customers data';
                 setError(errorMessage);
                 setCustomers([]);
@@ -422,11 +424,11 @@ export default function CustomersTable({ onViewCustomer }) {
     // Determine if we need client-side pagination
     const isDateFilterActive = !!(dateJoined?.start && dateJoined?.end);
     const needsClientSidePagination = isDateFilterActive || ndisOnly || customers.length > itemsPerPage;
-    
+
     const paginatedCustomers = useMemo(() => {
         if (needsClientSidePagination) {
             // Client-side pagination - slice the customers array
-        const startIndex = (currentPage - 1) * itemsPerPage;
+            const startIndex = (currentPage - 1) * itemsPerPage;
             return customers.slice(startIndex, startIndex + itemsPerPage);
         }
         // Server-side pagination - customers are already paginated from API
@@ -579,20 +581,20 @@ export default function CustomersTable({ onViewCustomer }) {
                             </tr>
                         ) : (
                             paginatedCustomers.map((customer) => (
-                            <tr
-                                key={customer.id}
+                                <tr
+                                    key={customer.id}
                                     className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
-                            >
-                                <td className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                                    <div className="flex items-center justify-center">
-                                        <Checkbox
-                                            checked={selectedRows.includes(customer.id)}
-                                            onChange={(e) =>
-                                                handleSelectRow(customer.id, e.target.checked)
-                                            }
-                                        />
-                                    </div>
-                                </td>
+                                >
+                                    <td className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
+                                        <div className="flex items-center justify-center">
+                                            <Checkbox
+                                                checked={selectedRows.includes(customer.id)}
+                                                onChange={(e) =>
+                                                    handleSelectRow(customer.id, e.target.checked)
+                                                }
+                                            />
+                                        </div>
+                                    </td>
                                     <td className="min-w-[200px] md:min-w-[250px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
                                         <div className="flex items-center gap-2 md:gap-3">
                                             {customer.avatar && isValidImageUrl(customer.avatar) && !failedImages.has(customer.id) ? (
@@ -606,7 +608,7 @@ export default function CustomersTable({ onViewCustomer }) {
                                                     }}
                                                 />
                                             ) : (
-                                                <div 
+                                                <div
                                                     className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
                                                     style={{ backgroundColor: getAvatarColor(customer.name, customer.id) }}
                                                 >
@@ -625,31 +627,31 @@ export default function CustomersTable({ onViewCustomer }) {
                                             </div>
                                         </div>
                                     </td>
-                                <td className="min-w-[140px] md:min-w-[160px] px-2 md:px-4 py-2 md:py-4 text-primary-light border-r border-gray-200 text-xs md:text-sm">
-                                    {customer.phone}
-                                </td>
-                                <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-sm font-medium text-primary border-r border-gray-200">
-                                    {customer.jobsPosted}
-                                </td>
-                                <td className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-4 text-sm font-medium text-primary border-r border-gray-200">
+                                    <td className="min-w-[140px] md:min-w-[160px] px-2 md:px-4 py-2 md:py-4 text-primary-light border-r border-gray-200 text-xs md:text-sm">
+                                        {customer.phone}
+                                    </td>
+                                    <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-sm font-medium text-primary border-r border-gray-200">
+                                        {customer.jobsPosted}
+                                    </td>
+                                    <td className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-4 text-sm font-medium text-primary border-r border-gray-200">
                                         AU${typeof customer.spend === 'number' ? customer.spend.toLocaleString() : customer.spend}
-                                </td>
-                                <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-sm font-medium text-primary border-r border-gray-200">
-                                    {customer.joined}
-                                </td>
-                                <td className="w-16 md:w-20 px-2 md:px-4 py-2 md:py-4 text-center">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            onViewCustomer &&
-                                                onViewCustomer(customer);
-                                        }}
-                                        className="rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors mx-auto"
-                                    >
-                                        <Eye size={20} className="text-[#78829D] cursor-pointer" />
-                                    </button>
-                                </td>
-                            </tr>
+                                    </td>
+                                    <td className="min-w-[100px] md:min-w-[120px] px-2 md:px-4 py-2 md:py-4 text-sm font-medium text-primary border-r border-gray-200">
+                                        {customer.joined}
+                                    </td>
+                                    <td className="w-16 md:w-20 px-2 md:px-4 py-2 md:py-4 text-center">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                onViewCustomer &&
+                                                    onViewCustomer(customer);
+                                            }}
+                                            className="rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors mx-auto"
+                                        >
+                                            <Eye size={20} className="text-[#78829D] cursor-pointer" />
+                                        </button>
+                                    </td>
+                                </tr>
                             ))
                         )}
                     </tbody>

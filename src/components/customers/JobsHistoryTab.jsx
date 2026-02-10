@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronUp, ChevronDown, Eye, Upload } from "lucide-react";
 import Checkbox from "../common/Checkbox";
 import SearchInput from "../common/SearchInput";
 import CustomSelect from "../common/CustomSelect";
 import PaginationRanges from "../common/PaginationRanges";
+import { fetchCustomerJobs } from "../../api/services/customersService";
 
 const isValidImageUrl = (url) => {
   if (!url || typeof url !== "string") return false;
@@ -57,8 +58,8 @@ const mapCustomerJobForUi = (job) => {
     statusRaw === "completed" || statusRaw === "done"
       ? "Completed"
       : statusRaw === "cancelled" || statusRaw === "canceled" || statusRaw === "rejected"
-      ? "Cancelled"
-      : "In Progress";
+        ? "Cancelled"
+        : "In Progress";
 
   const amount =
     job?.acceptedQuoteId?.price ??
@@ -91,73 +92,66 @@ const mapCustomerJobForUi = (job) => {
   };
 };
 
-export default function JobsHistoryTab({ customer, jobs = [], onViewJob }) {
+export default function JobsHistoryTab({ customer, onViewJob }) {
   const [internalJobs, setInternalJobs] = useState([]);
+  const [totalItems, setTotalItems] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [sortColumn, setSortColumn] = useState(null);
-  const [sortDirection, setSortDirection] = useState("asc");
+  const [sortColumn, setSortColumn] = useState("createdAt");
+  const [sortDirection, setSortDirection] = useState("desc");
   const tableRef = useRef(null);
   const [failedImages, setFailedImages] = useState(new Set());
 
   const statusOptions = ["In Progress", "Completed", "Cancelled"];
 
-  // Filter jobs based on search and filters
-  const filteredJobs = useMemo(() => {
-    return internalJobs.filter((job) => {
-      const matchesSearch =
-        !searchQuery ||
-        (job.jobId || "").toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (job.jobType || "").toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (job.cleaner?.name || "").toString().toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = !statusFilter || job.status === statusFilter;
+  const loadJobs = async () => {
+    const customerId = customer?._id || customer?.id;
+    if (!customerId) return;
 
-      return matchesSearch && matchesStatus;
-    });
-  }, [internalJobs, searchQuery, statusFilter]);
+    setIsLoading(true);
+    try {
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+        sortBy: sortColumn,
+        sortOrder: sortDirection,
+      };
 
-  // Sort filtered jobs
-  const sortedJobs = useMemo(() => {
-    return [...filteredJobs].sort((a, b) => {
-      if (!sortColumn) return 0;
+      if (searchQuery) params.search = searchQuery;
+      if (statusFilter) params.status = statusFilter.toLowerCase();
 
-      let aValue = a[sortColumn];
-      let bValue = b[sortColumn];
+      const resp = await fetchCustomerJobs(customerId, params);
+      const data = resp?.data || resp;
+      const list = Array.isArray(data) ? data : (Array.isArray(data?.jobs) ? data.jobs : []);
+      const pagination = data?.pagination || resp?.pagination;
 
-      if (sortColumn === "amount") {
-        aValue = Number(aValue);
-        bValue = Number(bValue);
-      } else if (sortColumn === "cleaner") {
-        aValue = a.cleaner?.name || "";
-        bValue = b.cleaner?.name || "";
-      }
+      setInternalJobs(list.map(mapCustomerJobForUi));
+      setTotalItems(pagination?.total || list.length);
+    } catch (e) {
+      console.warn("Failed to load customer jobs", e);
+      setInternalJobs([]);
+      setTotalItems(0);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      if (sortDirection === "asc") {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-  }, [filteredJobs, sortColumn, sortDirection]);
-
-  // Paginate sorted jobs
-  const paginatedJobs = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return sortedJobs.slice(startIndex, endIndex);
-  }, [sortedJobs, currentPage, itemsPerPage]);
+  useEffect(() => {
+    loadJobs();
+  }, [customer, currentPage, itemsPerPage, searchQuery, statusFilter, sortColumn, sortDirection]);
 
   const handleSelectAll = (checked) => {
     setSelectAll(checked);
     if (checked) {
-      const pageIds = paginatedJobs.map((job) => job.id);
+      const pageIds = internalJobs.map((job) => job.id);
       setSelectedRows([...new Set([...selectedRows, ...pageIds])]);
     } else {
-      const pageIds = paginatedJobs.map((job) => job.id);
+      const pageIds = internalJobs.map((job) => job.id);
       setSelectedRows(selectedRows.filter((id) => !pageIds.includes(id)));
     }
   };
@@ -252,14 +246,6 @@ export default function JobsHistoryTab({ customer, jobs = [], onViewJob }) {
     );
   };
 
-  useEffect(() => {
-    const list = Array.isArray(jobs) ? jobs : [];
-    setInternalJobs(list.map(mapCustomerJobForUi));
-    setSelectedRows([]);
-    setSelectAll(false);
-    setCurrentPage(1);
-  }, [customer, jobs]);
-
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
@@ -267,7 +253,7 @@ export default function JobsHistoryTab({ customer, jobs = [], onViewJob }) {
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-      
+
       {/* Filters Section */}
       <div className="p-3 md:p-4 border-b border-gray-200">
         <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 items-stretch lg:items-center justify-between">
@@ -345,80 +331,89 @@ export default function JobsHistoryTab({ customer, jobs = [], onViewJob }) {
             </tr>
           </thead>
           <tbody>
-            {paginatedJobs.length === 0 ? (
+            {isLoading ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-20 text-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-8 h-8 border-4 border-[#1F6FEB] border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-sm text-primary-light">Loading job history...</p>
+                  </div>
+                </td>
+              </tr>
+            ) : internalJobs.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-4 py-10 text-center text-primary-light text-sm">
                   No job history found
                 </td>
               </tr>
             ) : (
-              paginatedJobs.map((job) => (
+              internalJobs.map((job) => (
                 <tr
                   key={job.id}
                   className="border-b border-gray-200 hover:bg-gray-50"
                 >
-                <td className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                  <div className="flex items-center justify-center">
-                    <Checkbox
-                      checked={selectedRows.includes(job.id)}
-                      onChange={(e) => handleSelectRow(job.id, e.target.checked)}
-                    />
-                  </div>
-                </td>
-                <td className="min-w-[120px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                  <p className="text-sm font-medium text-primary">{job.jobId}</p>
-                </td>
-                <td className="min-w-[200px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                  <p className="text-sm text-primary font-medium">{job.jobType}</p>
-                </td>
-                <td className="min-w-[180px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                  <div className="flex items-center gap-2">
-                    {job.cleaner?.isUnassigned ? (
-                      <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 bg-[#1E2A78]">
-                        <span className="text-white text-xs font-semibold">UN</span>
-                      </div>
-                    ) : job.cleaner?.avatar && isValidImageUrl(job.cleaner.avatar) && !failedImages.has(job.id) ? (
-                      <img
-                        src={job.cleaner.avatar}
-                        alt={job.cleaner?.name}
-                        className="w-9 h-9 rounded-full object-cover flex-shrink-0"
-                        onError={() => {
-                          setFailedImages((prev) => new Set(prev).add(job.id));
-                        }}
+                  <td className="w-12 md:w-16 px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
+                    <div className="flex items-center justify-center">
+                      <Checkbox
+                        checked={selectedRows.includes(job.id)}
+                        onChange={(e) => handleSelectRow(job.id, e.target.checked)}
                       />
-                    ) : (
-                      <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: getAvatarColor(job.cleaner?.name, job.cleaner?._id || job.id) }}
-                      >
-                        <span className="text-white text-xs font-semibold">
-                          {getInitials(job.cleaner?.firstName, job.cleaner?.lastName, job.cleaner?.name)}
-                        </span>
-                      </div>
-                    )}
+                    </div>
+                  </td>
+                  <td className="min-w-[120px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
+                    <p className="text-sm font-medium text-primary">{job.jobId}</p>
+                  </td>
+                  <td className="min-w-[200px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
+                    <p className="text-sm text-primary font-medium">{job.jobType}</p>
+                  </td>
+                  <td className="min-w-[180px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
+                    <div className="flex items-center gap-2">
+                      {job.cleaner?.isUnassigned ? (
+                        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 bg-[#1E2A78]">
+                          <span className="text-white text-xs font-semibold">UN</span>
+                        </div>
+                      ) : job.cleaner?.avatar && isValidImageUrl(job.cleaner.avatar) && !failedImages.has(job.id) ? (
+                        <img
+                          src={job.cleaner.avatar}
+                          alt={job.cleaner?.name}
+                          className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                          onError={() => {
+                            setFailedImages((prev) => new Set(prev).add(job.id));
+                          }}
+                        />
+                      ) : (
+                        <div
+                          className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: getAvatarColor(job.cleaner?.name, job.cleaner?._id || job.id) }}
+                        >
+                          <span className="text-white text-xs font-semibold">
+                            {getInitials(job.cleaner?.firstName, job.cleaner?.lastName, job.cleaner?.name)}
+                          </span>
+                        </div>
+                      )}
+                      <p className="text-sm font-medium text-primary">
+                        {job.cleaner?.name || "Unassigned"}
+                      </p>
+                    </div>
+                  </td>
+                  <td className="min-w-[100px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
                     <p className="text-sm font-medium text-primary">
-                      {job.cleaner?.name || "Unassigned"}
+                      AU${Number(job.amount).toLocaleString()}
                     </p>
-                  </div>
-                </td>
-                <td className="min-w-[100px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                  <p className="text-sm font-medium text-primary">
-                    AU${Number(job.amount).toLocaleString()}
-                  </p>
-                </td>
-                <td className="min-w-[120px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                  {getStatusBadge(job.status)}
-                </td>
-                <td className="w-14 md:w-16 px-2 md:px-4 py-2 md:py-4 text-center">
-                  <button
-                    type="button"
-                    className="p-2 inline-flex items-center justify-center cursor-pointer"
-                    onClick={() => onViewJob && onViewJob(job)}
-                  >
-                    <Eye size={18} className="text-[#78829D]" />
-                  </button>
-                </td>
-              </tr>
+                  </td>
+                  <td className="min-w-[120px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
+                    {getStatusBadge(job.status)}
+                  </td>
+                  <td className="w-14 md:w-16 px-2 md:px-4 py-2 md:py-4 text-center">
+                    <button
+                      type="button"
+                      className="p-2 inline-flex items-center justify-center cursor-pointer"
+                      onClick={() => onViewJob && onViewJob(job)}
+                    >
+                      <Eye size={18} className="text-[#78829D]" />
+                    </button>
+                  </td>
+                </tr>
               ))
             )}
           </tbody>
@@ -429,7 +424,7 @@ export default function JobsHistoryTab({ customer, jobs = [], onViewJob }) {
       <PaginationRanges
         currentPage={currentPage}
         rowsPerPage={itemsPerPage}
-        totalItems={filteredJobs.length}
+        totalItems={totalItems}
         onPageChange={setCurrentPage}
         onRowsPerPageChange={setItemsPerPage}
       />

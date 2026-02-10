@@ -7,6 +7,7 @@ import DatePicker from "../common/DatePicker";
 import PaginationRanges from "../common/PaginationRanges";
 import { fetchCleanersKYC } from "../../api/services/cleanersService";
 import Loader from "../common/Loader";
+import Avatar from "../common/Avatar";
 
 export default function ApprovalsTable({ onViewCleaner }) {
     const [cleaners, setCleaners] = useState([]);
@@ -395,8 +396,10 @@ export default function ApprovalsTable({ onViewCleaner }) {
                     return {
                         id: cleaner._id,
                         name: cleaner.cleanerName || `${cleaner.firstName || ''} ${cleaner.lastName || ''}`.trim() || 'Unknown',
+                        firstName: cleaner.firstName || '',
+                        lastName: cleaner.lastName || '',
                         role: cleaner.role || "Professional Cleaner",
-                        avatar: cleaner.profilePhoto?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cleaner.cleanerName || cleaner.firstName || 'User')}&background=random`,
+                        avatar: cleaner.profilePhoto?.url || cleaner.avatar || cleaner.profilePhoto,
                         radius: cleaner.radius || "0-20 km",
                         joined: formattedDate || "N/A",
                         status: status,
@@ -692,10 +695,13 @@ export default function ApprovalsTable({ onViewCleaner }) {
                                 </td>
                                 <td className="min-w-[200px] md:min-w-[250px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
                                     <div className="flex items-center gap-2 md:gap-3">
-                                        <img
+                                        <Avatar
                                             src={cleaner.avatar}
-                                            alt={cleaner.name}
-                                            className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover flex-shrink-0"
+                                            firstName={cleaner.firstName}
+                                            lastName={cleaner.lastName}
+                                            fullName={cleaner.name}
+                                            id={cleaner.id}
+                                            className="w-8 h-8 md:w-9 md:h-9"
                                         />
                                         <div className="min-w-0">
                                             <p className="font-medium text-gray-900 text-xs md:text-sm truncate">

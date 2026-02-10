@@ -16,8 +16,15 @@ export default function JobDetails({ job, onBackToList, onPaymentStatusUpdate })
         const loadJobDetails = async () => {
             if (!job) return;
 
-            // If job has originalData, use it first (it contains full API response)
-            if (job.originalData) {
+            // We only skip fetching if we already have the full details (status, location, and cleaner role)
+            const currentRole =
+                job.originalData?.completedBy?.role ||
+                job.originalData?.acceptedCleaner?.role ||
+                (Array.isArray(job.originalData?.quotes) && (job.originalData.quotes[0]?.cleaner?.role || job.originalData.quotes[0]?.cleanerId?.role)) ||
+                job.role ||
+                job.cleaner?.role;
+
+            if (job.originalData && job.originalData.status && job.originalData.location && currentRole) {
                 setJobData(job.originalData);
                 return;
             }
@@ -44,11 +51,16 @@ export default function JobDetails({ job, onBackToList, onPaymentStatusUpdate })
 
     // Derive payment figures when only summary data is available from JobsTable
     // Prefer explicit payment data, fall back to accepted quote price
-    const acceptedQuote =
-        sourceJob.acceptedQuoteId ||
-        (Array.isArray(sourceJob.quotes)
-            ? sourceJob.quotes.find((q) => q.status === "accepted") || sourceJob.quotes[0]
-            : null);
+    const acceptedQuote = (() => {
+        if (Array.isArray(sourceJob.quotes)) {
+            // Find by status or ID match
+            const quoteId = sourceJob.acceptedQuoteId?._id || sourceJob.acceptedQuoteId;
+            return sourceJob.quotes.find((q) => q.status === "accepted") ||
+                sourceJob.quotes.find((q) => q._id === quoteId) ||
+                sourceJob.quotes[0];
+        }
+        return typeof sourceJob.acceptedQuoteId === 'object' ? sourceJob.acceptedQuoteId : null;
+    })();
 
     const amountPaid =
         sourceJob?.payment?.amountPaid ??
@@ -65,6 +77,7 @@ export default function JobDetails({ job, onBackToList, onPaymentStatusUpdate })
     const jobDetails = {
         _id: sourceJob?._id || sourceJob?.id,
         jobId: sourceJob?.jobId || "AM10432",
+        serviceTypeDisplay: sourceJob?.serviceTypeDisplay || sourceJob?.jobType || "Cleaning",
         jobTitle:
             sourceJob?.jobTitle ||
             sourceJob?.serviceTypeDisplay ||
@@ -91,12 +104,12 @@ export default function JobDetails({ job, onBackToList, onPaymentStatusUpdate })
         status: (() => {
             const rawStatus = sourceJob?.status || sourceJob?.jobStatus || "Upcoming";
             const statusLower = rawStatus.toLowerCase().trim();
-            
+
             // Map backend statuses to frontend display statuses
             if (statusLower === "posted" || statusLower === "quoted" || statusLower === "accepted" || statusLower === "accept") {
                 return "Upcoming";
             }
-            if (statusLower === "in_progress" || statusLower === "in-progress" || statusLower === "started" || 
+            if (statusLower === "in_progress" || statusLower === "in-progress" || statusLower === "started" ||
                 statusLower === "pending_customer_confirmation" || statusLower === "pending-customer-confirmation") {
                 return "Ongoing";
             }
@@ -106,80 +119,131 @@ export default function JobDetails({ job, onBackToList, onPaymentStatusUpdate })
             if (statusLower === "cancelled" || statusLower === "canceled" || statusLower === "cancel") {
                 return "Cancelled";
             }
-            
+
             // Return capitalized version if it matches one of our statuses
             const capitalized = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1).toLowerCase();
             if (["Completed", "Ongoing", "Upcoming", "Cancelled"].includes(capitalized)) {
                 return capitalized;
             }
-            
+
             return "Upcoming"; // Default
         })(),
         customer: {
+            id: sourceJob?.customer?._id || sourceJob?.customerId?._id || sourceJob?.customer?.id || sourceJob?.customerId?.id || job?.customer?.id,
+            firstName: sourceJob?.customer?.firstName || sourceJob?.customerId?.firstName || "",
+            lastName: sourceJob?.customer?.lastName || sourceJob?.customerId?.lastName || "",
             name:
                 sourceJob?.customer?.fullName ||
                 sourceJob?.customer?.name ||
-                `${sourceJob?.customer?.firstName || sourceJob?.customerId?.firstName || ""} ${sourceJob?.customer?.lastName || sourceJob?.customerId?.lastName || ""
-                    }`.trim() ||
+                (sourceJob?.customer?.firstName || sourceJob?.customerId?.firstName
+                    ? `${sourceJob.customer?.firstName || sourceJob.customerId?.firstName || ""} ${sourceJob.customer?.lastName || sourceJob.customerId?.lastName || ""}`.trim()
+                    : null) ||
+                sourceJob?.customerName ||
+                sourceJob?.postedBy ||
                 job?.customer?.name ||
                 "Customer",
-            email: sourceJob?.customer?.email || sourceJob?.customerId?.email || job?.customer?.email || "—",
-            phone: sourceJob?.customer?.phone || sourceJob?.customerId?.phone || job?.customer?.phone || "—",
+            email:
+                sourceJob?.customer?.email ||
+                sourceJob?.customerId?.email ||
+                sourceJob?.customerEmail ||
+                job?.customer?.email ||
+                "—",
+            phone:
+                sourceJob?.customer?.phone ||
+                sourceJob?.customerId?.phone ||
+                sourceJob?.customerPhone ||
+                job?.customer?.phone ||
+                "—",
             avatar:
                 sourceJob?.customer?.profilePhoto?.url ||
                 sourceJob?.customerId?.profilePhoto?.url ||
                 sourceJob?.customer?.avatar ||
                 sourceJob?.customerId?.avatar ||
-                job?.customer?.avatar ||
-                "https://ui-avatars.com/api/?name=Customer&background=random",
+                job?.customer?.avatar,
         },
         cleaner: {
+            id: sourceJob?.completedBy?._id || sourceJob?.acceptedCleaner?._id || acceptedQuote?.cleaner?._id || acceptedQuote?.cleanerId?._id || sourceJob?.acceptedQuoteId?.cleanerId?._id || job?.cleaner?.id,
+            firstName: sourceJob?.completedBy?.firstName || acceptedQuote?.cleaner?.firstName || sourceJob?.acceptedCleaner?.firstName || sourceJob?.acceptedQuoteId?.cleanerId?.firstName || "",
+            lastName: sourceJob?.completedBy?.lastName || acceptedQuote?.cleaner?.lastName || sourceJob?.acceptedCleaner?.lastName || sourceJob?.acceptedQuoteId?.cleanerId?.lastName || "",
             name:
-                sourceJob?.acceptedCleaner?.fullName ||
-                sourceJob?.acceptedCleaner?.name ||
-                `${sourceJob?.acceptedCleaner?.firstName || sourceJob?.acceptedQuoteId?.cleanerId?.firstName || ""} ${sourceJob?.acceptedCleaner?.lastName || sourceJob?.acceptedQuoteId?.cleanerId?.lastName || ""
-                    }`.trim() ||
-                sourceJob?.cleaner?.name ||
-                job?.cleaner?.name ||
-                "Cleaner",
+                (() => {
+                    const firstName = sourceJob?.completedBy?.firstName || acceptedQuote?.cleaner?.firstName || sourceJob?.acceptedCleaner?.firstName || sourceJob?.acceptedQuoteId?.cleanerId?.firstName;
+                    const lastName = sourceJob?.completedBy?.lastName || acceptedQuote?.cleaner?.lastName || sourceJob?.acceptedCleaner?.lastName || sourceJob?.acceptedQuoteId?.cleanerId?.lastName;
+                    if (firstName || lastName) return `${firstName || ""} ${lastName || ""}`.trim();
+                    return sourceJob?.acceptedCleaner?.fullName || sourceJob?.acceptedCleaner?.name || sourceJob?.cleaner?.name || job?.cleaner?.name || "Cleaner";
+                })(),
             role:
-                sourceJob?.acceptedCleaner?.role ||
-                sourceJob?.acceptedQuoteId?.cleanerId?.role ||
-                sourceJob?.cleaner?.role ||
-                job?.cleaner?.role ||
-                "Professional Cleaner",
+                (() => {
+                    const role =
+                        sourceJob?.completedBy?.role ||
+                        acceptedQuote?.cleaner?.role ||
+                        acceptedQuote?.cleanerId?.role ||
+                        sourceJob?.acceptedQuoteId?.cleanerId?.role ||
+                        sourceJob?.acceptedQuoteId?.cleaner?.role ||
+                        sourceJob?.acceptedCleaner?.role ||
+                        sourceJob?.cleaner?.role ||
+                        sourceJob?.role ||
+                        job?.cleaner?.role;
+
+                    if (role) return role;
+                    return "";
+                })(),
             rating:
+                sourceJob?.completedBy?.averageRating ??
                 sourceJob?.acceptedCleaner?.averageRating ??
+                acceptedQuote?.cleaner?.averageRating ??
+                acceptedQuote?.cleanerId?.averageRating ??
                 sourceJob?.acceptedQuoteId?.cleanerId?.averageRating ??
+                sourceJob?.acceptedQuoteId?.cleaner?.averageRating ??
                 sourceJob?.cleaner?.rating ??
                 job?.cleaner?.rating ??
                 0,
             jobsCompleted:
+                sourceJob?.completedBy?.completedJobs ??
                 sourceJob?.acceptedCleaner?.completedJobs ??
+                acceptedQuote?.cleaner?.completedJobs ??
+                acceptedQuote?.cleanerId?.completedJobs ??
                 sourceJob?.acceptedQuoteId?.cleanerId?.completedJobs ??
+                sourceJob?.acceptedQuoteId?.cleaner?.completedJobs ??
                 sourceJob?.cleaner?.jobsCompleted ??
                 job?.cleaner?.jobsCompleted ??
                 0,
+            searchRadius:
+                sourceJob?.acceptedCleaner?.searchRadius ??
+                acceptedQuote?.cleaner?.searchRadius ??
+                acceptedQuote?.cleanerId?.searchRadius ??
+                sourceJob?.acceptedQuoteId?.cleanerId?.searchRadius ??
+                sourceJob?.acceptedQuoteId?.cleaner?.searchRadius,
             distance:
                 sourceJob?.cleaner?.distance ||
                 job?.cleaner?.distance ||
-                (sourceJob?.acceptedCleaner?.searchRadius
-                    ? `${sourceJob.acceptedCleaner.searchRadius} km distance radius`
+                (sourceJob?.acceptedCleaner?.searchRadius || acceptedQuote?.cleaner?.searchRadius
+                    ? `${sourceJob?.acceptedCleaner?.searchRadius || acceptedQuote?.cleaner?.searchRadius} km distance radius`
                     : "—"),
             tier:
+                sourceJob?.completedBy?.tier ||
                 sourceJob?.acceptedCleaner?.tier ||
+                acceptedQuote?.cleaner?.tier ||
+                acceptedQuote?.cleanerId?.tier ||
                 sourceJob?.acceptedQuoteId?.cleanerId?.tier ||
+                sourceJob?.acceptedQuoteId?.cleaner?.tier ||
                 sourceJob?.cleaner?.tier ||
                 job?.cleaner?.tier ||
                 "Silver",
             avatar:
+                sourceJob?.completedBy?.profilePhoto?.url ||
                 sourceJob?.acceptedCleaner?.profilePhoto?.url ||
+                acceptedQuote?.cleaner?.profilePhoto?.url ||
+                acceptedQuote?.cleanerId?.profilePhoto?.url ||
                 sourceJob?.acceptedQuoteId?.cleanerId?.profilePhoto?.url ||
+                sourceJob?.acceptedQuoteId?.cleaner?.profilePhoto?.url ||
                 sourceJob?.acceptedCleaner?.avatar ||
+                acceptedQuote?.cleaner?.avatar ||
+                acceptedQuote?.cleanerId?.avatar ||
                 sourceJob?.acceptedQuoteId?.cleanerId?.avatar ||
+                sourceJob?.acceptedQuoteId?.cleaner?.avatar ||
                 sourceJob?.cleaner?.avatar ||
-                job?.cleaner?.avatar ||
-                "https://ui-avatars.com/api/?name=Cleaner&background=random",
+                job?.cleaner?.avatar,
         },
         payment: {
             mode: sourceJob?.payment?.mode || job?.payment?.mode || "Online",
@@ -196,14 +260,15 @@ export default function JobDetails({ job, onBackToList, onPaymentStatusUpdate })
         },
         jobInfo: {
             category:
-                sourceJob?.jobInfo?.category ||
                 sourceJob?.serviceTypeDisplay ||
-                sourceJob?.serviceType ||
+                sourceJob?.jobType ||
+                sourceJob?.jobInfo?.category ||
                 "Cleaning",
-            petType: sourceJob?.jobInfo?.petType || "",
-            breed: sourceJob?.jobInfo?.breed || "",
-            numberOfPets: sourceJob?.jobInfo?.numberOfPets || 0,
+            petType: sourceJob?.petType || sourceJob?.jobInfo?.petType || "",
+            breed: sourceJob?.petBreed || sourceJob?.jobInfo?.breed || "",
+            numberOfPets: sourceJob?.numberOfPets ?? sourceJob?.jobInfo?.numberOfPets ?? 0,
             serviceType:
+                sourceJob?.serviceDetail ||
                 sourceJob?.jobInfo?.serviceType ||
                 sourceJob?.serviceTypeDisplay ||
                 sourceJob?.serviceType ||
@@ -375,11 +440,10 @@ export default function JobDetails({ job, onBackToList, onPaymentStatusUpdate })
     return (
         <>
             <PageHeader
-                title={job ? job.jobId : "Jobs"}
-                subtitle={job ? (job.jobTitle || job.jobType) : ""}
-                role={job?.cleaner?.role}
-                showBackArrow={!!job}
-                onBack={job ? handleBack : undefined} />
+                title={jobDetails.jobId}
+                subtitle={jobDetails.serviceTypeDisplay}
+                showBackArrow={true}
+                onBack={handleBack} />
             <div className="space-y-6 mx-auto w-full max-w-6xl pb-10">
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
@@ -389,7 +453,7 @@ export default function JobDetails({ job, onBackToList, onPaymentStatusUpdate })
 
                         {/* Header Card */}
                         <div className="w-full flex flex-col md:flex-row md:items-center md:justify-between rounded-[12px] 
-                p-4 sm:p-5 md:p-6 lg:p-[30px] border border-[#F1F1F4] bg-white shadow-sm gap-4 md:gap-0">
+                        p-4 sm:p-5 md:p-6 lg:p-[30px] border border-[#F1F1F4] bg-white shadow-sm gap-4 md:gap-0">
 
                             {/* Left Section */}
                             <div className="w-full">
@@ -402,13 +466,13 @@ export default function JobDetails({ job, onBackToList, onPaymentStatusUpdate })
 
                                     <span
                                         className={`inline-flex items-center px-3 py-1 rounded-[6px] text-[10px] sm:text-xs font-medium border 
-                ${getStatusColor(jobDetails.status)}`}>
+                                        ${getStatusColor(jobDetails.status)}`}>
                                         {jobDetails.status}
                                     </span>
                                 </div>
 
                                 <p className="text-xs sm:text-sm font-medium text-primary-light">
-                                    {jobDetails.category}
+                                    {jobDetails.serviceTypeDisplay}
                                 </p>
                             </div>
 

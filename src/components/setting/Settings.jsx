@@ -14,7 +14,7 @@ export default function Settings() {
 
   // Load user data on mount
   useEffect(() => {
-    refreshProfile().catch(() => {});
+    refreshProfile().catch(() => { });
   }, [refreshProfile]);
 
   // Sync form when user changes
@@ -67,7 +67,7 @@ export default function Settings() {
         return;
       }
     }
-    
+
     // Reset local state
     setProfileImage(null);
     setImagePreview(null);
@@ -108,17 +108,17 @@ export default function Settings() {
     }
   };
 
+  if (loading && !user) {
+    return <Loader fullscreen message="Loading profile..." />;
+  }
+
   return (
     <div className="w-full space-y-6">
+      {loading && user && <Loader fullscreen message="Saving changes..." />}
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Status */}
-        {(loading || error || success) && (
+        {(error || success) && (
           <div className="space-y-2">
-            {loading && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Loader size="sm" /> <span>Saving...</span>
-              </div>
-            )}
             {error && (
               <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
                 {error}

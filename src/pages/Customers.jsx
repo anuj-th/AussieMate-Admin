@@ -7,6 +7,7 @@ import { useBreadcrumb } from "../context/BreadcrumbContext";
 
 export default function Customers() {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [isViewingJob, setIsViewingJob] = useState(false);
   const { setExtraCrumbs, setParentBreadcrumbOnClick } = useBreadcrumb();
   const navigate = useNavigate();
   const location = useLocation();
@@ -14,12 +15,14 @@ export default function Customers() {
 
   const handleBack = useCallback(() => {
     setSelectedCustomer(null);
+    setIsViewingJob(false);
     navigate("/customers", { replace: true });
   }, [navigate]);
 
   useEffect(() => {
     if (location.state?.customer) {
       setSelectedCustomer(location.state.customer);
+      setIsViewingJob(false);
     }
     // Note: If customerId is in URL but no location.state, 
     // the table component would need to expose data via ref to find the customer
@@ -27,6 +30,7 @@ export default function Customers() {
 
   const handleViewCustomer = (customer) => {
     setSelectedCustomer(customer);
+    setIsViewingJob(false);
     const id = customer.id || customer._id;
     if (id) {
       navigate(`/customers/${id}`, { state: { customer }, replace: true });
@@ -37,9 +41,9 @@ export default function Customers() {
   useEffect(() => {
     if (selectedCustomer?.name) {
       setExtraCrumbs([
-        { 
-          label: selectedCustomer.name, 
-          path: null 
+        {
+          label: selectedCustomer.name,
+          path: null
         }
       ]);
       setParentBreadcrumbOnClick(() => handleBack);
@@ -59,14 +63,20 @@ export default function Customers() {
 
   return (
     <div className="">
-      <PageHeader
-        title={selectedCustomer ? selectedCustomer.name : "Customers"}
-        showBackArrow={!!selectedCustomer}
-        onBack={selectedCustomer ? handleBack : undefined}
-      />
+      {!isViewingJob && (
+        <PageHeader
+          title={selectedCustomer ? selectedCustomer.name : "Customers"}
+          showBackArrow={!!selectedCustomer}
+          onBack={selectedCustomer ? handleBack : undefined}
+        />
+      )}
 
       {selectedCustomer ? (
-        <CustomerDetails customer={selectedCustomer} onBackToList={handleBack} />
+        <CustomerDetails
+          customer={selectedCustomer}
+          onBackToList={handleBack}
+          onJobViewDetail={setIsViewingJob}
+        />
       ) : (
         <CustomersTable onViewCustomer={handleViewCustomer} />
       )}

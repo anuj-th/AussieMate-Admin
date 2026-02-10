@@ -2,6 +2,7 @@ import { Briefcase, CheckCircle, Star, DollarSign, MapPin, Calendar } from "luci
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
+import Loader from "../common/Loader";
 
 const formatShortDateTime = (value) => {
   if (!value) return "N/A";
@@ -21,10 +22,10 @@ const mapCustomerJobForUi = (job) => {
     statusRaw === "completed" || statusRaw === "done"
       ? "Completed"
       : statusRaw === "cancelled" || statusRaw === "canceled"
-      ? "Cancelled"
-      : statusRaw === "rejected"
-      ? "Cancelled"
-      : "In Progress";
+        ? "Cancelled"
+        : statusRaw === "rejected"
+          ? "Cancelled"
+          : "In Progress";
 
   const locationObj = job?.location || {};
   const location =
@@ -64,7 +65,7 @@ const mapCustomerJobForUi = (job) => {
   };
 };
 
-export default function OverviewTab({ customer, jobs = [], onViewJobs }) {
+export default function OverviewTab({ customer, jobs = [], onViewJobs, loading = false }) {
   const handleViewJobs = () => {
     if (onViewJobs) {
       onViewJobs();
@@ -72,10 +73,10 @@ export default function OverviewTab({ customer, jobs = [], onViewJobs }) {
   };
 
   // Calculate stats from customer data
-  const jobsPosted = Array.isArray(jobs) ? jobs.length : (customer?.jobsPosted || 0);
-  const jobsCompleted = Array.isArray(jobs)
+  const jobsPosted = customer?.jobsPosted || (Array.isArray(jobs) ? jobs.length : 0);
+  const jobsCompleted = customer?.jobsCompleted || (Array.isArray(jobs)
     ? jobs.filter((j) => ["completed", "done"].includes((j?.status || "").toString().toLowerCase())).length
-    : (customer?.jobsCompleted || 0);
+    : 0);
   const avgCleanerRating = customer?.avgCleanerRating || 4.3;
   const totalSpend = (() => {
     const v = customer?.spend;
@@ -159,7 +160,11 @@ export default function OverviewTab({ customer, jobs = [], onViewJobs }) {
           </button>
         </div>
         <div className="overflow-hidden">
-          {recentJobs.length === 0 ? (
+          {loading ? (
+            <div className="flex justify-center items-center py-10 bg-white border border-gray-200 rounded-xl">
+              <Loader size={40} message="Loading recent jobs..." />
+            </div>
+          ) : recentJobs.length === 0 ? (
             <div className="bg-white border border-gray-200 rounded-xl p-6 text-sm text-primary-light">
               No jobs found for this customer.
             </div>
@@ -179,52 +184,50 @@ export default function OverviewTab({ customer, jobs = [], onViewJobs }) {
                 return (
                   <SwiperSlide
                     key={job.id}
-                    className="h-full flex !w-[320px]"
+                    className="h-full flex !w-[240px] md:!w-[320px]"
                     style={{ height: "100%", display: "flex" }}
                   >
-                    <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-2 w-full h-full shadow-sm flex flex-col cursor-pointer">
+                    <div className="bg-white border border-gray-200 rounded-xl p-3 md:p-4 space-y-1.5 md:space-y-2 w-full h-full shadow-sm flex flex-col cursor-pointer transition-transform hover:scale-[1.02]">
                       {/* Top row: Job ID and Status */}
-                      <div className="flex items-start justify-between mb-0 gap-3">
-                        <p className="text-sm text-primary-light font-medium truncate min-w-0">
+                      <div className="flex items-start justify-between mb-0 gap-2 md:gap-3">
+                        <p className="text-[11px] md:text-sm text-primary-light font-medium truncate min-w-0">
                           {job.jobId}
                         </p>
                         <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-flex items-center gap-1 ${
-                            isCompleted
-                              ? "bg-[#EAFFF1] text-[#17C653] border border-[#17C65333]"
-                              : isCancelled
+                          className={`px-1.5 md:px-2 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium whitespace-nowrap inline-flex items-center gap-1 ${isCompleted
+                            ? "bg-[#EAFFF1] text-[#17C653] border border-[#17C65333]"
+                            : isCancelled
                               ? "bg-[#FEE2E2] text-[#EF4444] border border-[#EF444433]"
                               : "bg-[#FFF8DD] text-[#F6B100] border border-[#F6B10033]"
-                          }`}
+                            }`}
                         >
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              isCompleted ? "bg-[#17C653]" : isCancelled ? "bg-[#EF4444]" : "bg-[#F6B100]"
-                            }`}
+                            className={`w-1 md:w-1.5 h-1 md:h-1.5 rounded-full ${isCompleted ? "bg-[#17C653]" : isCancelled ? "bg-[#EF4444]" : "bg-[#F6B100]"
+                              }`}
                           />
                           {job.status}
                         </span>
                       </div>
 
                       {/* Service Type */}
-                      <p className="text-sm font-medium text-primary mb-0 truncate">
+                      <p className="text-xs md:text-sm font-medium text-primary mb-0 truncate" title={job.service}>
                         {job.service}
                       </p>
 
                       {/* Price */}
-                      <p className="text-base font-semibold text-primary mb-2">
+                      <p className="text-sm md:text-base font-semibold text-primary mb-1 md:mb-2">
                         AU${job.price.toLocaleString()}
                       </p>
 
                       {/* Location */}
-                      <div className="flex items-start gap-1.5 text-sm font-medium text-primary-light">
-                        <MapPin size={14} className="flex-shrink-0 mt-0.5" />
-                        <span className="truncate min-w-0">{job.location}</span>
+                      <div className="flex items-start gap-1 md:gap-1.5 text-[11px] md:text-sm font-medium text-primary-light min-w-0">
+                        <MapPin size={12} className="flex-shrink-0 mt-0.5 md:w-[14px] md:h-[14px]" />
+                        <span className="truncate min-w-0" title={job.location}>{job.location}</span>
                       </div>
 
                       {/* Date & Time */}
-                      <div className="flex items-center gap-1.5 text-sm font-medium text-primary-light">
-                        <Calendar size={14} className="flex-shrink-0" />
+                      <div className="flex items-center gap-1 md:gap-1.5 text-[11px] md:text-sm font-medium text-primary-light">
+                        <Calendar size={12} className="flex-shrink-0 md:w-[14px] md:h-[14px]" />
                         <span>{job.date}</span>
                       </div>
                     </div>

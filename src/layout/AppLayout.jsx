@@ -87,7 +87,7 @@ export default function AppLayout() {
           }}
         >
           {/* Scrollable Content area with padding */}
-          <div className="flex-1 p-6 overflow-y-auto">
+          <div className="flex-1 p-3 md:p-6 overflow-y-auto">
             <AppRoutes />
           </div>
         </div>

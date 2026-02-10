@@ -79,48 +79,236 @@ export default function TransactionDetailModal({ isOpen, onClose, transaction })
   const totalPayable = transaction.payableAmount || transaction.totalAmount - platformFee - gstFee;
 
   const handleExportHistory = () => {
-    try {
-      // Prepare CSV data
-      const csvRows = [
-        ["Transaction Details"],
-        [],
-        ["Job ID", transaction.jobId],
-        ["Transaction ID", transaction.transactionId],
-        ["Customer Name", transaction.customer?.name || "N/A"],
-        ["Customer Email", transaction.customer?.email || "N/A"],
-        ["Cleaner Name", transaction.cleaner?.name || "N/A"],
-        ["Cleaner Email", transaction.cleaner?.email || "N/A"],
-        ["Amount Paid", formatCurrency(transaction.totalAmount)],
-        ["Platform Fee", formatCurrency(platformFee)],
-        ["GST Fee", formatCurrency(gstFee)],
-        ["Total Payable", formatCurrency(totalPayable)],
-        ["Status", transaction.status],
-        ["Date", transaction.date ? formatDateTime(transaction.date) : "N/A"],
-      ];
+    if (!transaction) return;
 
-      // Convert to CSV format
-      const csvContent = csvRows
-        .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
-        .join("\n");
+    const printWindow = window.open("", "", "width=1200,height=800");
+    if (!printWindow) return;
 
-      // Create blob and download
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `Transaction_${transaction.transactionId}_${new Date().toISOString().split("T")[0]}.csv`
-      );
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Error exporting transaction history:", error);
-      alert("Failed to export transaction history. Please try again.");
-    }
+    const jobId = transaction.jobId || "—";
+    const transactionId = transaction.transactionId || "—";
+    const reportDate = new Date().toLocaleDateString('en-AU', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // Design colors
+    const primaryColor = "#1F6FEB";
+    const darkColor = "#111827";
+    const lightTextColor = "#6B7280";
+    const borderColor = "#F1F1F4";
+    const successColor = "#17C653";
+
+    const styles = `
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        * { box-sizing: border-box; }
+        
+        body { 
+          font-family: 'Inter', sans-serif; 
+          padding: 40px; 
+          color: ${darkColor};
+          line-height: 1.5;
+          background: white;
+        }
+        
+        .report-wrapper {
+          max-width: 800px;
+          margin: 0 auto;
+        }
+        
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 50px;
+          border-bottom: 2px solid ${borderColor};
+          padding-bottom: 20px;
+        }
+        
+        .brand-section h1 {
+          font-size: 28px;
+          font-weight: 800;
+          color: ${primaryColor};
+          margin: 0;
+          letter-spacing: -0.5px;
+        }
+        
+        .report-meta {
+          text-align: right;
+        }
+        
+        .report-meta h2 {
+          font-size: 24px;
+          font-weight: 700;
+          margin: 0;
+          color: ${darkColor};
+        }
+        
+        .details-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 40px;
+          margin-bottom: 40px;
+        }
+        
+        .detail-box h3 {
+          font-size: 12px;
+          text-transform: uppercase;
+          color: ${lightTextColor};
+          letter-spacing: 0.05em;
+          margin-bottom: 12px;
+          border-bottom: 1px solid ${borderColor};
+          padding-bottom: 6px;
+        }
+        
+        .detail-box p {
+          margin: 4px 0;
+          font-size: 15px;
+        }
+        
+        .status-badge {
+          display: inline-block;
+          padding: 4px 12px;
+          border-radius: 99px;
+          font-size: 12px;
+          font-weight: 600;
+          margin-top: 8px;
+        }
+        
+        .status-released { background: #EAFFF1; color: ${successColor}; }
+        .status-held { background: #FFF8DD; color: #F6B100; }
+        .status-failed { background: #FEE2E2; color: #EF4444; }
+        
+        .payment-summary {
+          background: #F9FAFB;
+          border: 1px solid ${borderColor};
+          border-radius: 12px;
+          padding: 24px;
+          margin-bottom: 40px;
+        }
+        
+        .summary-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 12px 0;
+          border-bottom: 1px solid ${borderColor};
+        }
+        
+        .summary-row:last-of-type {
+          border-bottom: none;
+          padding-top: 20px;
+          margin-top: 8px;
+          font-weight: 700;
+          font-size: 18px;
+        }
+        
+        .footer {
+          margin-top: 80px;
+          text-align: center;
+          border-top: 1px solid ${borderColor};
+          padding-top: 24px;
+          font-size: 12px;
+          color: ${lightTextColor};
+        }
+        
+        @media print {
+          body { padding: 0; }
+        }
+      </style>
+    `;
+
+    const statusClass = `status-${(transaction.status || "").toLowerCase()}`;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Transaction Report - ${transactionId}</title>
+          ${styles}
+        </head>
+        <body>
+          <div class="report-wrapper">
+            <div class="header">
+              <div class="brand-section">
+                <h1>AussieMate</h1>
+                <p style="color: ${lightTextColor}; margin: 4px 0;">Transaction Settlement Record</p>
+              </div>
+              <div class="report-meta">
+                <h2>Transaction Report</h2>
+                <p style="color: ${lightTextColor}; font-size: 14px; margin: 4px 0;">${reportDate}</p>
+              </div>
+            </div>
+
+            <div class="details-grid">
+              <div class="detail-box">
+                <h3>Customer Details</h3>
+                <p style="font-weight: 700; font-size: 18px;">${transaction.customer?.name || "—"}</p>
+                <p style="color: ${lightTextColor};">${transaction.customer?.email || "—"}</p>
+              </div>
+              <div class="detail-box">
+                <h3>Cleaner Details</h3>
+                <p style="font-weight: 700; font-size: 18px;">${transaction.cleaner?.name || "—"}</p>
+                <p style="color: ${lightTextColor};">${transaction.cleaner?.email || "—"}</p>
+              </div>
+            </div>
+
+            <div class="details-grid" style="margin-bottom: 20px;">
+              <div class="detail-box">
+                <h3>Reference Info</h3>
+                <p><span style="color: ${lightTextColor};">Job ID:</span> ${jobId}</p>
+                <p><span style="color: ${lightTextColor};">Transaction ID:</span> ${transactionId}</p>
+              </div>
+              <div class="detail-box" style="text-align: right;">
+                <h3>Status</h3>
+                <div class="status-badge ${statusClass}">${transaction.status}</div>
+              </div>
+            </div>
+
+            <div class="payment-summary">
+              <div class="summary-row">
+                <span>Amount Paid by Customer</span>
+                <span>${formatCurrency(transaction.totalAmount)}</span>
+              </div>
+              <div class="summary-row" style="color: ${lightTextColor}; font-size: 14px;">
+                <span>Platform Commission (15%)</span>
+                <span>- ${formatCurrency(platformFee)}</span>
+              </div>
+              <div class="summary-row" style="color: ${lightTextColor}; font-size: 14px;">
+                <span>GST on Commission (10%)</span>
+                <span>- ${formatCurrency(gstFee)}</span>
+              </div>
+              <div class="summary-row">
+                <span>Total Settlement Payable</span>
+                <span style="color: ${primaryColor}">${formatCurrency(totalPayable)}</span>
+              </div>
+            </div>
+
+            <div style="background: #FFF8DD; border-left: 4px solid #F6B100; padding: 16px; border-radius: 4px; font-size: 13px;">
+              <strong>Note:</strong> Settlement is subject to AussieMate payout schedule and escrow release conditions. 
+              This document is a digital record for administrative purposes.
+            </div>
+
+            <div class="footer">
+              <p>© ${new Date().getFullYear()} AussieMate. System Generated Secure Receipt.</p>
+              <p>For inquiries, please contact admin-support@aussiemate.com.au</p>
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              window.onafterprint = function() { window.close(); };
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
   };
 
   return (
@@ -171,7 +359,7 @@ export default function TransactionDetailModal({ isOpen, onClose, transaction })
             <h3 className="font-medium text-sm sm:text-base text-primary px-3 sm:px-5 md:px-7 py-2.5 sm:py-3 border-b border-gray-200">
               Payment
             </h3>
-            
+
             <div className="">
               {/* Job ID */}
               <div className="flex justify-between sm:justify-start gap-1 sm:gap-0 border-b border-gray-200 px-3 sm:px-5 md:px-7 py-2.5 sm:py-3">

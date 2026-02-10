@@ -15,7 +15,7 @@ export const fetchCleanersKYC = async (params = {}) => {
   const queryParams = new URLSearchParams();
   queryParams.append('page', page.toString());
   queryParams.append('limit', limit.toString());
-  
+
   if (search) queryParams.append('search', search);
   if (role) queryParams.append('role', role);
   if (status) queryParams.append('status', status);
@@ -66,7 +66,7 @@ export const fetchCleaners = async (params = {}) => {
   const queryParams = new URLSearchParams();
   queryParams.append('page', page.toString());
   queryParams.append('limit', limit.toString());
-  
+
   if (search) queryParams.append('search', search);
   if (role) queryParams.append('role', role);
   if (status) queryParams.append('status', status);
@@ -85,10 +85,35 @@ export const fetchCleanersJobsStats = async () => {
 };
 
 // Fetch jobs for a specific cleaner
-// GET /admin/cleaners/:cleanerId/jobs
-export const fetchCleanerJobs = async (cleanerId) => {
+// GET /cleaners/:cleanerId/jobs
+export const fetchCleanerJobs = async (cleanerId, params = {}) => {
   if (!cleanerId) throw new Error("cleanerId is required");
-  const response = await client.get(`${ENDPOINTS.CLEANERS}/${encodeURIComponent(cleanerId)}/jobs`);
+
+  const queryParams = new URLSearchParams();
+
+  // If params is a number (legacy support), treat it as limit
+  if (typeof params === 'number') {
+    queryParams.append('limit', params.toString());
+  } else {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        queryParams.append(key, value.toString());
+      }
+    });
+  }
+
+  const qs = queryParams.toString();
+  const response = await client.get(
+    `/cleaners/${encodeURIComponent(cleanerId)}/jobs${qs ? `?${qs}` : ""}`
+  );
+  return response.data;
+};
+
+// Fetch job summary for a specific cleaner
+// GET /cleaners/:cleanerId/job-summary
+export const fetchCleanerJobSummary = async (cleanerId) => {
+  if (!cleanerId) throw new Error("cleanerId is required");
+  const response = await client.get(`/cleaners/${encodeURIComponent(cleanerId)}/job-summary`);
   return response.data;
 };
 

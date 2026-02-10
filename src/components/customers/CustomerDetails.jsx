@@ -16,7 +16,7 @@ import FeedbackTab from "./FeedbackTab";
 import JobDetails from "../jobs/JobDetails";
 import { fetchCustomerJobs, fetchCustomerReviews } from "../../api/services/customersService";
 
-export default function CustomerDetails({ customer, onBackToList }) {
+export default function CustomerDetails({ customer, onBackToList, onJobViewDetail }) {
   if (!customer) return null;
 
   const [activeAction, setActiveAction] = useState(null); // "suspend" | null
@@ -26,6 +26,14 @@ export default function CustomerDetails({ customer, onBackToList }) {
   const [customerJobs, setCustomerJobs] = useState([]);
   const [customerReviews, setCustomerReviews] = useState([]);
   const [reviewsPagination, setReviewsPagination] = useState(null);
+  const [loadingJobs, setLoadingJobs] = useState(false);
+
+  // Notify parent if we are viewing job details
+  useEffect(() => {
+    if (onJobViewDetail) {
+      onJobViewDetail(!!selectedJob);
+    }
+  }, [selectedJob, onJobViewDetail]);
 
   // Avatar helpers (same as CustomersTable fallback)
   const isValidImageUrl = (url) => {
@@ -84,13 +92,16 @@ export default function CustomerDetails({ customer, onBackToList }) {
       const customerId = customer?._id || customer?.id;
       if (!customerId) return;
       try {
-        const resp = await fetchCustomerJobs(customerId);
+        setLoadingJobs(true);
+        const resp = await fetchCustomerJobs(customerId, { limit: 10 });
         const data = resp?.data || resp;
         const list = Array.isArray(data) ? data : Array.isArray(data?.jobs) ? data.jobs : [];
         setCustomerJobs(list);
       } catch (e) {
         console.warn("Failed to load customer jobs", e);
         setCustomerJobs([]);
+      } finally {
+        setLoadingJobs(false);
       }
     };
 
@@ -120,10 +131,10 @@ export default function CustomerDetails({ customer, onBackToList }) {
   const closeModal = () => setActiveAction(null);
 
   const tabs = [
-    { id: "overview", label: "Overview (Default)" },
-    { id: "jobsHistory", label: "Jobs History" },
-    { id: "payments", label: "Payments & Escrow" },
-    { id: "feedback", label: "Feedback" },
+    { id: "overview", label: "Overview (Default)", shortLabel: "Overview" },
+    { id: "jobsHistory", label: "Jobs History", shortLabel: "Jobs" },
+    { id: "payments", label: "Payments & Escrow", shortLabel: "Payments" },
+    { id: "feedback", label: "Feedback", shortLabel: "Feedback" },
   ];
 
   // Format date for display
@@ -171,7 +182,7 @@ export default function CustomerDetails({ customer, onBackToList }) {
             <span className="w-1.5 h-1.5 rounded-full bg-[#17C653]"></span>
             {customer.status || "Active"}
           </span>
-          
+
           {/* Menu */}
           <CustomMenu
             align="right"
@@ -244,20 +255,19 @@ export default function CustomerDetails({ customer, onBackToList }) {
         </div>
       </div>
 
-      {/* Tabs Navigation */}
       <div className="border-b border-[#EEF0F5]">
         <div className="flex overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 md:px-6 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
-                activeTab === tab.id
-                  ? "border-[#1F6FEB] text-[#1F6FEB] font-medium"
-                  : "border-transparent text-[#78829D] hover:text-primary"
-              }`}
+              className={`px-2 md:px-3 lg:px-6 py-2 md:py-2.5 lg:py-3 text-xs md:text-xs lg:text-sm font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer flex-shrink-0 ${activeTab === tab.id
+                ? "border-[#1F6FEB] text-[#1F6FEB] font-medium"
+                : "border-transparent text-[#78829D] hover:text-primary"
+                }`}
             >
-              {tab.label}
+              <span className="md:hidden">{tab.shortLabel}</span>
+              <span className="hidden md:inline">{tab.label}</span>
             </button>
           ))}
         </div>
@@ -277,6 +287,7 @@ export default function CustomerDetails({ customer, onBackToList }) {
             customer={customer}
             jobs={customerJobs}
             onViewJobs={() => setActiveTab("jobsHistory")}
+            loading={loadingJobs}
           />
         )}
         {activeTab === "jobsHistory" && (

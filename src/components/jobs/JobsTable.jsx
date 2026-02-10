@@ -9,6 +9,7 @@ import PageHeader from "../../layout/PageHeader";
 import { fetchJobs } from "../../api/services/jobService";
 import Loader from "../common/Loader";
 import StatusBadge from "../common/StatusBadge";
+import Avatar from "../common/Avatar";
 
 const JobsTable = forwardRef(({ onViewJob }, ref) => {
     const [jobs, setJobs] = useState([]);
@@ -24,6 +25,17 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
     const [dateFilter, setDateFilter] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+
+    // Debounce search input
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setSearchQuery(searchInputValue.trim());
+        }, 500); // 500ms delay
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [searchInputValue]);
     // Pagination info from API
     const [paginationInfo, setPaginationInfo] = useState({
         currentPage: 1,
@@ -40,7 +52,7 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
         "Support Service Provider",
         "Commercial Cleaning",
         "Housekeeping",
-        "Pet Sitter",
+        "pet sitting",
     ];
 
     const jobStatusOptions = ["Completed", "Ongoing", "Upcoming", "Cancelled"];
@@ -50,12 +62,12 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
     // Returns an array of job type values that should match the selected filter
     const getJobTypeVariations = (selectedJobType) => {
         if (!selectedJobType) return [];
-        
+
         // When "Support Service Provider" is selected, also match "Support Services" and "NDIS"
         if (selectedJobType === "Support Service Provider") {
             return ["Support Service Provider", "Support Services", "NDIS", "ndis"];
         }
-        
+
         // For other job types, return the exact match
         return [selectedJobType];
     };
@@ -110,9 +122,9 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
     // - Ongoing → Held (default for ongoing jobs)
     const derivePaymentStatus = (jobStatus) => {
         if (!jobStatus) return "Held";
-        
+
         const status = jobStatus.trim();
-        
+
         if (status === "Upcoming") {
             return "Held";
         } else if (status === "Completed") {
@@ -122,7 +134,7 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
         } else if (status === "Ongoing") {
             return "Held";
         }
-        
+
         // Default to Held for any other status
         return "Held";
     };
@@ -132,29 +144,29 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
     const normalizeJobStatus = (status) => {
         if (!status) return "Upcoming";
         const statusLower = status.toLowerCase().trim();
-        
+
         // Backend: posted, quoted, accepted → Frontend: Upcoming
         if (statusLower === "posted" || statusLower === "quoted" || statusLower === "accepted" || statusLower === "accept") {
             return "Upcoming";
         }
-        
+
         // Backend: in_progress, started, pending_customer_confirmation → Frontend: Ongoing
-        if (statusLower === "in_progress" || statusLower === "in-progress" || 
-            statusLower === "started" || 
+        if (statusLower === "in_progress" || statusLower === "in-progress" ||
+            statusLower === "started" ||
             statusLower === "pending_customer_confirmation" || statusLower === "pending-customer-confirmation") {
             return "Ongoing";
         }
-        
+
         // Backend: completed → Frontend: Completed
         if (statusLower === "completed" || statusLower === "complete" || statusLower === "done" || statusLower === "finished") {
             return "Completed";
         }
-        
+
         // Backend: cancelled → Frontend: Cancelled
         if (statusLower === "cancelled" || statusLower === "canceled" || statusLower === "cancel") {
             return "Cancelled";
         }
-        
+
         // Legacy/alternative mappings
         if (statusLower === "ongoing" || statusLower === "active" || statusLower === "progress") {
             return "Ongoing";
@@ -162,13 +174,13 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
         if (statusLower === "upcoming" || statusLower === "scheduled" || statusLower === "pending" || statusLower === "booked") {
             return "Upcoming";
         }
-        
+
         // Return capitalized version if it matches one of our statuses
         const capitalized = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
         if (["Completed", "Ongoing", "Upcoming", "Cancelled"].includes(capitalized)) {
             return capitalized;
         }
-        
+
         return "Upcoming"; // Default
     };
 
@@ -178,45 +190,43 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
         const customerId = job.customerId || job.customer || {};
         const customerFirstName = customerId.firstName || "";
         const customerLastName = customerId.lastName || "";
-        const customerName = `${customerFirstName} ${customerLastName}`.trim() || 
-                           customerId.name || 
-                           job.customerName || 
-                           "Unknown Customer";
+        const customerName = `${customerFirstName} ${customerLastName}`.trim() ||
+            customerId.name ||
+            job.customerName ||
+            "Unknown Customer";
         const customerEmail = customerId.email || job.customerEmail || "";
-        const customerAvatar = customerId.profilePhoto?.url || 
-                              customerId.avatar || 
-                              job.customer?.profilePhoto?.url ||
-                              job.customer?.avatar ||
-                              `https://ui-avatars.com/api/?name=${encodeURIComponent(customerName)}&background=random`;
+        const customerAvatar = customerId.profilePhoto?.url ||
+            customerId.avatar ||
+            job.customer?.profilePhoto?.url ||
+            job.customer?.avatar;
 
         // Extract cleaner data from acceptedQuoteId.cleanerId object
-        const cleanerId = job.acceptedQuoteId?.cleanerId || 
-                         job.cleanerId || 
-                         job.cleaner || {};
+        const cleanerId = job.acceptedQuoteId?.cleanerId ||
+            job.cleanerId ||
+            job.cleaner || {};
         const cleanerFirstName = cleanerId.firstName || "";
         const cleanerLastName = cleanerId.lastName || "";
-        const cleanerName = `${cleanerFirstName} ${cleanerLastName}`.trim() || 
-                           cleanerId.name || 
-                           job.cleanerName || 
-                           "Unassigned";
-        const cleanerAvatar = cleanerId.profilePhoto?.url || 
-                             cleanerId.avatar || 
-                             job.cleaner?.profilePhoto?.url ||
-                             job.cleaner?.avatar ||
-                             `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanerName)}&background=random`;
+        const cleanerName = `${cleanerFirstName} ${cleanerLastName}`.trim() ||
+            cleanerId.name ||
+            job.cleanerName ||
+            "Unassigned";
+        const cleanerAvatar = cleanerId.profilePhoto?.url ||
+            cleanerId.avatar ||
+            job.cleaner?.profilePhoto?.url ||
+            job.cleaner?.avatar;
 
         // Extract job type from serviceTypeDisplay or other fields
-        const jobType = job.serviceTypeDisplay || 
-                       job.jobType || 
-                       job.serviceType || 
-                       "Cleaning";
+        const jobType = job.serviceTypeDisplay ||
+            job.jobType ||
+            job.serviceType ||
+            "Cleaning";
 
         // Extract amount from acceptedQuoteId.price
-        const amountPaid = job.amountPaid || 
-                          job.acceptedQuoteId?.price || 
-                          job.payment?.amount || 
-                          job.totalAmount || 
-                          null;
+        const amountPaid = job.amountPaid ||
+            job.acceptedQuoteId?.price ||
+            job.payment?.amount ||
+            job.totalAmount ||
+            null;
 
         return {
             id: job._id || job.id,
@@ -224,18 +234,24 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
             jobType: jobType,
             customer: {
                 name: customerName,
+                firstName: customerFirstName,
+                lastName: customerLastName,
                 email: customerEmail,
                 avatar: customerAvatar,
+                id: customerId._id || customerId.id || customerId,
             },
             cleaner: {
                 name: cleanerName,
+                firstName: cleanerFirstName,
+                lastName: cleanerLastName,
                 avatar: cleanerAvatar,
+                id: cleanerId._id || cleanerId.id,
             },
             jobStatus: normalizeJobStatus(job.jobStatus || job.status || "Upcoming"),
-            paymentStatus: job.paymentStatus || 
-                          job.payment?.escrowStatus || 
-                          job.payment?.paymentStatus ||
-                          derivePaymentStatus(normalizeJobStatus(job.jobStatus || job.status || "Upcoming")),
+            paymentStatus: job.paymentStatus ||
+                job.payment?.escrowStatus ||
+                job.payment?.paymentStatus ||
+                derivePaymentStatus(normalizeJobStatus(job.jobStatus || job.status || "Upcoming")),
             date: formatDateFromAPI(job.date || job.createdAt || job.scheduledDate),
             amountPaid: amountPaid,
             // Keep original data for details view
@@ -246,7 +262,7 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
     // Expose functions via ref
     useImperativeHandle(ref, () => ({
         updateJobPaymentStatus: (jobId, paymentStatus) => {
-            setJobs(prevJobs => 
+            setJobs(prevJobs =>
                 prevJobs.map(job => {
                     const jobIdMatch = job.jobId === jobId || job._id === jobId || job.id === jobId;
                     if (jobIdMatch) {
@@ -280,34 +296,34 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
             setError(null);
             try {
                 const isDateFilterActive = !!(dateFilter?.start && dateFilter?.end);
-                
+
                 // Map frontend job status to API status
                 const apiJobStatus = mapJobStatusToAPI(jobStatusFilter);
-                
+
                 // For statuses that map to multiple backend values (Ongoing, Upcoming), 
                 // we need client-side filtering to catch all matching records
                 // For all status filters, we'll do client-side filtering to ensure accuracy
                 // Don't send status filter to API - fetch all and filter client-side
                 const needsClientSideStatusFilter = !!jobStatusFilter; // Always filter client-side when status is selected
-                
+
                 // For job type, we'll also do client-side filtering to ensure accuracy
                 const needsClientSideJobTypeFilter = !!jobTypeFilter; // Always filter client-side when job type is selected
-                
+
                 // For payment status, we need client-side filtering since it's derived from job status
                 const needsClientSidePaymentStatusFilter = !!paymentStatusFilter; // Always filter client-side when payment status is selected
-                
+
                 // For date filtering, client-side status filtering, job type filtering, or payment status filtering, we need to fetch all and filter client-side
                 const needsClientSideFilter = isDateFilterActive || needsClientSideStatusFilter || needsClientSideJobTypeFilter || needsClientSidePaymentStatusFilter;
-                
+
                 // Use empty string for status when doing client-side status filtering
                 const statusForAPI = needsClientSideStatusFilter ? '' : apiJobStatus;
-                
+
                 // Use empty string for job type when doing client-side job type filtering
                 const jobTypeForAPI = needsClientSideJobTypeFilter ? '' : jobTypeFilter;
-                
+
                 // Use empty string for payment status when doing client-side payment status filtering
                 const paymentStatusForAPI = needsClientSidePaymentStatusFilter ? '' : paymentStatusFilter;
-                
+
                 let response;
                 if (needsClientSideFilter) {
                     // Fetch all pages when doing client-side filtering
@@ -315,7 +331,7 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
                     let currentPageNum = 1;
                     let hasMore = true;
                     const pageLimit = 100;
-                    
+
                     while (hasMore) {
                         const pageResponse = await fetchJobs({
                             page: currentPageNum,
@@ -325,7 +341,7 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
                             jobStatus: statusForAPI,
                             paymentStatus: paymentStatusForAPI,
                         });
-                        
+
                         let pageData = [];
                         if (pageResponse?.data?.jobs && Array.isArray(pageResponse.data.jobs)) {
                             pageData = pageResponse.data.jobs;
@@ -336,9 +352,9 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
                         } else if (Array.isArray(pageResponse.jobs)) {
                             pageData = pageResponse.jobs;
                         }
-                        
+
                         allData = [...allData, ...pageData];
-                        
+
                         if (pageResponse?.data?.pagination) {
                             hasMore = pageResponse.data.pagination.hasNextPage === true;
                             currentPageNum++;
@@ -346,12 +362,12 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
                             hasMore = pageData.length === pageLimit && pageData.length > 0;
                             currentPageNum++;
                         }
-                        
+
                         if (pageData.length === 0 || currentPageNum > 100) {
                             hasMore = false;
                         }
                     }
-                    
+
                     response = {
                         data: {
                             jobs: allData,
@@ -376,7 +392,7 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
                         paymentStatus: paymentStatusForAPI,
                     });
                 }
-                
+
                 // Extract jobs array
                 let data = [];
                 if (response?.data?.jobs && Array.isArray(response.data.jobs)) {
@@ -391,17 +407,17 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
                 } else if (Array.isArray(response.jobs)) {
                     data = response.jobs;
                 }
-                
+
                 if (!Array.isArray(data)) {
                     console.error('API response is not an array. Response:', response);
                     setError('Invalid data format received from server. Expected array of jobs.');
                     setJobs([]);
                     return;
                 }
-                
+
                 // Map API response to UI structure
                 let mappedJobs = data.map(mapJobFromAPI);
-                
+
                 // Apply client-side status filtering for all status filters to ensure accuracy
                 if (jobStatusFilter) {
                     mappedJobs = mappedJobs.filter((job) => {
@@ -409,19 +425,33 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
                         return job.jobStatus === jobStatusFilter;
                     });
                 }
-                
+
                 // Apply client-side job type filtering to ensure accuracy
                 if (jobTypeFilter) {
                     const jobTypeVariations = getJobTypeVariations(jobTypeFilter);
                     mappedJobs = mappedJobs.filter((job) => {
                         // Filter by job type - check if it matches any of the variations (case-insensitive)
                         const jobTypeLower = job.jobType?.toLowerCase();
-                        return jobTypeVariations.some(variation => 
+                        return jobTypeVariations.some(variation =>
                             variation.toLowerCase() === jobTypeLower
-            );
-        });
+                        );
+                    });
                 }
-                
+
+                // Apply client-side search filtering if searchQuery is present
+                // This acts as an extra layer of accuracy if the API search is not exhaustive
+                if (searchQuery) {
+                    const lowerQuery = searchQuery.toLowerCase();
+                    mappedJobs = mappedJobs.filter((job) => {
+                        return (
+                            job.jobId?.toLowerCase().includes(lowerQuery) ||
+                            job.customer?.name?.toLowerCase().includes(lowerQuery) ||
+                            job.cleaner?.name?.toLowerCase().includes(lowerQuery) ||
+                            job.jobType?.toLowerCase().includes(lowerQuery)
+                        );
+                    });
+                }
+
                 // Apply client-side payment status filtering to ensure accuracy
                 // Since payment status is derived from job status, we must filter client-side
                 if (paymentStatusFilter) {
@@ -430,12 +460,12 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
                         return job.paymentStatus === paymentStatusFilter;
                     });
                 }
-                
+
                 // Check if API returned more jobs than the limit (indicating API didn't paginate correctly)
                 // If API returns all jobs on every page, we need to paginate client-side
                 const apiReturnedMoreThanLimit = mappedJobs.length > itemsPerPage;
                 const needsClientSidePagination = needsClientSideFilter || apiReturnedMoreThanLimit;
-                
+
                 // Apply client-side date filtering if needed
                 if (isDateFilterActive) {
                     const startTime = new Date(dateFilter.start).setHours(0, 0, 0, 0);
@@ -447,17 +477,17 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
                         return time >= startTime && time <= endTime;
                     });
                 }
-                
+
                 // If API returned all jobs instead of paginated results, store all and paginate client-side
                 if (apiReturnedMoreThanLimit && !needsClientSideFilter) {
                     // Store all jobs - we'll paginate client-side
                     setJobs(mappedJobs);
-                    
+
                     // Calculate pagination from total jobs
                     const total = mappedJobs.length;
                     const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
                     const validCurrentPage = Math.min(currentPage, totalPages);
-                    
+
                     setPaginationInfo({
                         currentPage: validCurrentPage,
                         totalPages,
@@ -466,7 +496,7 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
                         hasNextPage: validCurrentPage < totalPages,
                         hasPrevPage: validCurrentPage > 1
                     });
-                    
+
                     if (currentPage > totalPages) {
                         setCurrentPage(1);
                     }
@@ -475,7 +505,7 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
                     const total = mappedJobs.length;
                     const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
                     const validCurrentPage = Math.min(currentPage, totalPages);
-                    
+
                     setPaginationInfo({
                         currentPage: validCurrentPage,
                         totalPages,
@@ -484,16 +514,16 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
                         hasNextPage: validCurrentPage < totalPages,
                         hasPrevPage: validCurrentPage > 1
                     });
-                    
+
                     if (currentPage > totalPages) {
                         setCurrentPage(1);
                     }
-                    
+
                     setJobs(mappedJobs);
                 } else {
                     // API pagination is working correctly - use jobs as-is
                     setJobs(mappedJobs);
-                    
+
                     if (response?.data?.pagination) {
                         const apiPagination = response.data.pagination;
                         setPaginationInfo({
@@ -520,10 +550,10 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
                 }
             } catch (err) {
                 console.error('Error fetching jobs:', err);
-                const errorMessage = 
-                    err?.response?.data?.message || 
-                    err?.response?.data?.error || 
-                    err?.message || 
+                const errorMessage =
+                    err?.response?.data?.message ||
+                    err?.response?.data?.error ||
+                    err?.message ||
                     'Failed to load jobs data';
                 setError(errorMessage);
                 setJobs([]);
@@ -547,11 +577,11 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
     const needsClientSideJobTypeFilter = !!jobTypeFilter; // All job type filters use client-side filtering
     const needsClientSidePaymentStatusFilter = !!paymentStatusFilter; // Payment status is derived, so always filter client-side
     const needsClientSidePagination = isDateFilterActive || needsClientSideStatusFilter || needsClientSideJobTypeFilter || needsClientSidePaymentStatusFilter || jobs.length > itemsPerPage;
-    
+
     const paginatedJobs = useMemo(() => {
         if (needsClientSidePagination) {
             // Client-side pagination - slice the jobs array
-        const startIndex = (currentPage - 1) * itemsPerPage;
+            const startIndex = (currentPage - 1) * itemsPerPage;
             return jobs.slice(startIndex, startIndex + itemsPerPage);
         }
         // Server-side pagination - jobs are already paginated from API
@@ -605,8 +635,8 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
     }, [jobs.length, paginationInfo.totalJobs, needsClientSidePagination]);
 
     if (loading) {
-    return (
-        <>
+        return (
+            <>
                 <PageHeader
                     title="Jobs"
                     showBackArrow={false}
@@ -649,17 +679,10 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
                     <div className="flex flex-col xl:flex-row gap-3 md:gap-4 items-stretch xl:items-center justify-between">
                         {/* Search */}
                         <SearchInput
-                            placeholder="Search by Job ID, Customer Name, Cleaner Name (Press Enter to search)"
+                            placeholder="Search by Job ID, Customer Name, Cleaner Name"
                             value={searchInputValue}
                             onChange={setSearchInputValue}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    const trimmedValue = searchInputValue.trim();
-                                    setSearchQuery(trimmedValue);
-                                    setCurrentPage(1); // Reset to page 1 when searching
-                                }
-                            }}
-                            className="md:w-[300px]"
+                            className="w-full xl:max-w-[300px]"
                         />
 
                         {/* Filters */}
@@ -790,17 +813,14 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
                                         </td>
                                         <td className="min-w-[180px] md:min-w-[220px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
                                             <div className="flex items-center gap-2 md:gap-3">
-                                                {job.customer.avatar ? (
-                                                    <img
-                                                        src={job.customer.avatar}
-                                                        alt={job.customer.name}
-                                                        className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover flex-shrink-0"
-                                                    />
-                                                ) : (
-                                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                                        <User2 size={16} className="text-gray-400" />
-                                                    </div>
-                                                )}
+                                                <Avatar
+                                                    src={job.customer.avatar}
+                                                    firstName={job.customer.firstName}
+                                                    lastName={job.customer.lastName}
+                                                    fullName={job.customer.name}
+                                                    id={job.customer.id}
+                                                    className="w-8 h-8 md:w-10 md:h-10"
+                                                />
                                                 <div className="min-w-0">
                                                     <p className="font-medium text-primary text-xs md:text-sm truncate">
                                                         {job.customer.name}
@@ -813,17 +833,14 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
                                         </td>
                                         <td className="min-w-[150px] md:min-w-[180px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
                                             <div className="flex items-center gap-2 md:gap-3">
-                                                {job.cleaner.avatar ? (
-                                                    <img
-                                                        src={job.cleaner.avatar}
-                                                        alt={job.cleaner.name}
-                                                        className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover flex-shrink-0"
-                                                    />
-                                                ) : (
-                                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                                        <User2 size={16} className="text-gray-400" />
-                                                    </div>
-                                                )}
+                                                <Avatar
+                                                    src={job.cleaner.avatar}
+                                                    firstName={job.cleaner.firstName}
+                                                    lastName={job.cleaner.lastName}
+                                                    fullName={job.cleaner.name}
+                                                    id={job.cleaner.id}
+                                                    className="w-8 h-8 md:w-10 md:h-10"
+                                                />
                                                 <div className="min-w-0">
                                                     <p className="font-medium text-primary text-xs md:text-sm truncate">
                                                         {job.cleaner.name}
@@ -832,15 +849,15 @@ const JobsTable = forwardRef(({ onViewJob }, ref) => {
                                             </div>
                                         </td>
                                         <td className="min-w-[120px] md:min-w-[140px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                                            <StatusBadge 
-                                                status={job.jobStatus} 
+                                            <StatusBadge
+                                                status={job.jobStatus}
                                                 statusType="jobStatus"
                                                 size="sm"
                                             />
                                         </td>
                                         <td className="min-w-[130px] md:min-w-[150px] px-2 md:px-4 py-2 md:py-4 border-r border-gray-200">
-                                            <StatusBadge 
-                                                status={job.paymentStatus} 
+                                            <StatusBadge
+                                                status={job.paymentStatus}
                                                 statusType="paymentStatus"
                                                 size="sm"
                                             />

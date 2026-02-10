@@ -59,7 +59,7 @@ export default function FeedbackTab({ cleaner, averageRating = 0, reviews = [], 
             title: dateLabel ? `${title} • ${dateLabel}` : title,
             rating: Number(r?.rating || 0),
             tags,
-            feedback: feedbackText || "—",
+            feedback: feedbackText || "",
             customer: {
                 name: customerName,
                 avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(customerName)}&background=random`,
@@ -70,11 +70,11 @@ export default function FeedbackTab({ cleaner, averageRating = 0, reviews = [], 
     return (
         <div className="space-y-6">
             {/* Average Rating Card + Feedback Cards */}
-            <div className="flex gap-4 -mx-1 px-1 items-stretch">
+            <div className="flex flex-col md:flex-row gap-4 -mx-1 px-1 items-stretch">
 
                 {/* ⭐ Average Rating Summary Card (same height as others) */}
-                <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 md:p-6 shadow-md 
-        w-[320px] h-[212px] flex-shrink-0 flex flex-col justify-center 
+                <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 lg:p-6
+        w-full md:w-[260px] lg:w-[320px] h-[150px] md:h-[180px] lg:h-[212px] flex-shrink-0 flex flex-col justify-center 
         items-center">
 
                     <p className="text-sm md:text-sm font-medium text-primary-light mb-2 md:mb-3">
@@ -83,7 +83,7 @@ export default function FeedbackTab({ cleaner, averageRating = 0, reviews = [], 
 
                     <div className="space-y-2 md:space-y-3 flex flex-col items-center">
                         <div>{renderStars(averageRating, 32)}</div>
-                        <p className="text-2xl font-semibold text-primary">{averageRating}</p>
+                        <p className="text-2xl font-semibold text-primary">{Number(averageRating || 0).toFixed(1)}</p>
                         {pagination?.totalReviews !== undefined && (
                             <p className="text-xs text-primary-light font-medium">
                                 {pagination.totalReviews} reviews
@@ -95,59 +95,38 @@ export default function FeedbackTab({ cleaner, averageRating = 0, reviews = [], 
                 {/* ⭐ Feedback Cards Swiper */}
                 <div className="flex-1 min-w-0 flex items-stretch overflow-visible">
                     {mappedReviews.length === 0 ? (
-                        <div className="bg-white border border-[#E5E7EB] rounded-xl p-6 text-sm text-primary-light w-[320px] h-[212px] flex items-center justify-center">
+                        <div className="bg-white border border-[#E5E7EB] rounded-xl p-6 text-sm text-primary-light w-full h-[150px] md:h-[180px] lg:h-[212px] flex items-center justify-center">
                             No reviews found for this cleaner.
                         </div>
                     ) : (
                         <Swiper
                             modules={[Autoplay]}
-                            spaceBetween={16}
+                            spaceBetween={12}
                             slidesPerView="auto"
-                            autoplay={{
-                                delay: 3000,
-                                disableOnInteraction: false,
-                            }}
+                            autoplay={{ delay: 3000, disableOnInteraction: false }}
                             loop={mappedReviews.length > 1}
-                            className="feedback-swiper !flex"
-                            style={{
-                                height: "212px",
-                                display: "flex",
-                                alignItems: "stretch",
-                                overflow: "visible",
-                            }}
+                            className="!overflow-hidden !flex h-[150px] md:h-[180px] lg:h-[212px] w-full"
+                            style={{ display: "flex", alignItems: "stretch" }}
                         >
                             {mappedReviews.map((feedback) => (
-                            <SwiperSlide
-                                key={feedback.id}
-                                style={{
-                                    width: "320px",
-                                    height: "212px",
-                                    display: "flex",
-                                    overflow: "visible",
-                                }}
-                            >
+                                <SwiperSlide
+                                    key={feedback.id}
+                                    className="h-full flex !w-[220px] md:!w-[260px] lg:!w-[320px]"
+                                    style={{ height: "100%", display: "flex" }}
+                                >
                                     {/* ⭐ Feedback Card (same height as Avg Rating card) */}
-                                    <div className="bg-white border border-[#E5E7EB] rounded-[14px] p-3 md:p-4 shadow-md 
-                    w-[320px] h-[212px] flex flex-col cursor-pointer overflow-hidden">
+                                    <div className="bg-white border border-[#E5E7EB] rounded-[14px] p-3 md:p-4
+                                        w-full h-full flex flex-col cursor-pointer overflow-hidden">
 
                                         {/* Header */}
                                         <div className="flex items-start justify-between mb-2 gap-2">
-                                            <h3 className="text-sm font-semibold text-primary-light flex-1">
+                                            <h3 className="text-sm font-semibold text-primary-light flex-1 truncate">
                                                 {feedback.title}
                                             </h3>
-
-                                            <button
-                                                onClick={() => handleFlagReview(feedback.id)}
-                                                className="flex items-center gap-1 text-xs text-[#2563EB] font-medium 
-                      cursor-pointer transition-colors flex-shrink-0 whitespace-nowrap"
-                                            >
-                                                <Flag size={12} className="md:w-[14px] md:h-[14px]" />
-                                                <span>Flag Review</span>
-                                            </button>
                                         </div>
 
                                         {/* Feedback Text */}
-                                        <p className="text-xs md:text-sm text-primary mb-2 flex-grow line-clamp-2 overflow-hidden">
+                                        <p className="text-xs md:text-sm text-primary mb-2 flex-grow line-clamp-3 overflow-hidden">
                                             {feedback.feedback}
                                         </p>
 
@@ -157,7 +136,7 @@ export default function FeedbackTab({ cleaner, averageRating = 0, reviews = [], 
                                                 {renderStars(feedback.rating)}
                                             </div>
                                             <span className="text-xs md:text-sm font-medium text-primary">
-                                                {feedback.rating}
+                                                {Number(feedback.rating || 0).toFixed(1)}
                                             </span>
                                         </div>
 
@@ -167,7 +146,7 @@ export default function FeedbackTab({ cleaner, averageRating = 0, reviews = [], 
                                                 <span
                                                     key={index}
                                                     className="px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs 
-                        font-medium bg-[#EBF2FD] text-[#2563EB] border border-[#2563EB33]"
+                                                        font-medium bg-[#EBF2FD] text-[#2563EB] border border-[#2563EB33]"
                                                 >
                                                     {tag}
                                                 </span>
